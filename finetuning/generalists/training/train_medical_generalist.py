@@ -22,7 +22,6 @@ def get_dataloaders(data_path, patch_shape):
         shuffle=True,
         n_fraction_per_dataset=0.1,
         raw_transform=raw_transform,
-        verify_paths=False,
     )
     val_loader = get_sa_med2d_loader(
         path=data_path,
@@ -33,7 +32,6 @@ def get_dataloaders(data_path, patch_shape):
         num_workers=64,
         n_fraction_per_dataset=0.1,
         raw_transform=raw_transform,
-        verify_paths=False,
     )
     return train_loader, val_loader
 
