@@ -94,6 +94,7 @@ def finetune_btcv(args):
         n_sub_iteration=1,
         mask_prob=0,
         mask_loss=BCEDiceLossWithLogits(),
+        use_box=True,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
