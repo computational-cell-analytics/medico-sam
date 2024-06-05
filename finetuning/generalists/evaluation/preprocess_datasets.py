@@ -2,6 +2,7 @@ import os
 from glob import glob
 
 import numpy as np
+import imageio.v3 as imageio
 
 from tukra.utils import read_image
 
@@ -16,9 +17,20 @@ def has_foreground(label):
         return True
     else:
         return False
-    
 
-def _get_valid
+
+def _get_valid_slices_per_volume(image, gt, fname, save_dir):
+    """This function assumes the volumes to be channels first: Z * Y * X
+    """
+    assert image.shape == gt.shape
+
+    for image_slice, gt_slice in zip(image, gt):
+        image_path = ...
+        gt_path = ...
+
+        if has_foreground(gt_slice):
+            imageio.imwrite(image_path, image_slice, compression="zlib")
+            imageio.imwrite(gt_path, gt_slice, compression="zlib")
 
 
 #
@@ -43,10 +55,4 @@ def for_sega(save_dir):
         # make channels first
         image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
 
-        _get_valid_slices_per_volume(image=image, gt=gt)
-
-
-
-def for_han_seg(save_dir):
-    """
-    """
+        _get_valid_slices_per_volume(image=image, gt=gt, fname=image_path, save_dir=save_dir)
