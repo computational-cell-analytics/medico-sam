@@ -3,6 +3,7 @@ import argparse
 
 import torch
 
+from torch_em.data import MinInstanceSampler
 from torch_em.data.datasets.medical import get_sa_med2d_loader
 
 import micro_sam.training as sam_training
@@ -22,6 +23,7 @@ def get_dataloaders(data_path, patch_shape):
         shuffle=True,
         n_fraction_per_dataset=0.1,
         raw_transform=raw_transform,
+        sampler=MinInstanceSampler(),
     )
     val_loader = get_sa_med2d_loader(
         path=data_path,
@@ -32,6 +34,7 @@ def get_dataloaders(data_path, patch_shape):
         num_workers=64,
         n_fraction_per_dataset=0.1,
         raw_transform=raw_transform,
+        sampler=MinInstanceSampler(),
     )
     return train_loader, val_loader
 
@@ -58,8 +61,8 @@ def finetune_medical_generalist(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=1, verbose=True)
     train_loader, val_loader = get_dataloaders(data_path=args.input_path, patch_shape=patch_shape)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
