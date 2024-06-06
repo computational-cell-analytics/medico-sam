@@ -39,10 +39,6 @@ def finetune_btcv(args):
     }
     loader_kwargs = {"batch_size": 4, "shuffle": True, "num_workers": 16}
 
-    # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
-
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
@@ -57,12 +53,14 @@ def finetune_btcv(args):
         val_dataset_kwargs=val_dataset_kwargs,
         loader_kwargs=loader_kwargs,
         iterations=args.iterations,
+        optimizer_callable=torch.optim.Adam,
+        optimizer_kwargs={"lr": 5e-5},
+        lr_scheduler_callable=torch.optim.lr_scheduler.ReduceLROnPlateau,
+        lr_scheduler_kwargs={"mode": "min", "factor": 0.9, "patience": 10, "verbose": True},
         # trainer params
         trainer_callable=sam_training.SimpleSamTrainer,
         name=checkpoint_name,
         save_root=args.save_root,
-        optimizer=optimizer,
-        lr_scheduler=scheduler,
         logger=sam_training.SamLogger,
         log_image_interval=100,
         mixed_precision=True,
