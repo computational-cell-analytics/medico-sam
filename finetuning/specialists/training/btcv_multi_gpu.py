@@ -37,7 +37,7 @@ def finetune_btcv(args):
     val_dataset_kwargs = {
         "path": args.input_path, "patch_shape": patch_shape, "ndim": 2, "raw_transform": raw_transform,
     }
-    loader_kwargs = {"batch_size": 4, "shuffle": True, "num_workers": 16}
+    loader_kwargs = {"batch_size": 8, "shuffle": True, "num_workers": 16, "pin_memory": True}
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
@@ -53,7 +53,8 @@ def finetune_btcv(args):
         val_dataset_kwargs=val_dataset_kwargs,
         loader_kwargs=loader_kwargs,
         iterations=args.iterations,
-        optimizer_callable=torch.optim.Adam,
+        find_unused_parameters=True,
+        optimizer_callable=torch.optim.AdamW,
         optimizer_kwargs={"lr": 5e-5},
         lr_scheduler_callable=torch.optim.lr_scheduler.ReduceLROnPlateau,
         lr_scheduler_kwargs={"mode": "min", "factor": 0.9, "patience": 10, "verbose": True},
