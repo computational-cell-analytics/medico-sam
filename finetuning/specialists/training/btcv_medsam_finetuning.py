@@ -26,11 +26,12 @@ def get_dataloaders(patch_shape, data_path):
     train_loader = get_btcv_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=2,
+        batch_size=8,
         ndim=2,
         anatomy=None,
         organs=None,
         raw_transform=raw_transform,
+        num_workers=16,
     )
     val_loader = get_btcv_loader(
         path=data_path,
@@ -40,6 +41,7 @@ def get_dataloaders(patch_shape, data_path):
         anatomy=None,
         organs=None,
         raw_transform=raw_transform,
+        num_workers=16,
     )
     return train_loader, val_loader
 
