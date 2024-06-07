@@ -35,11 +35,11 @@ def finetune_medical_generalist(args):
     val_dataset_class = get_sa_med2d_dataset
     train_dataset_kwargs = {
         "path": args.input_path, "patch_shape": patch_shape, "split": "train", "resize_inputs": True,
-        "raw_transform": raw_transform, "sampler": MinInstanceSampler(),
+        "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.5,
     }
     val_dataset_kwargs = {
         "path": args.input_path, "patch_shape": patch_shape, "split": "train", "resize_inputs": True,
-        "raw_transform": raw_transform, "sampler": MinInstanceSampler(),
+        "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.5,
     }
     loader_kwargs = {"batch_size": 8, "shuffle": True, "num_workers": 16, "pin_memory": True}
 
@@ -52,7 +52,7 @@ def finetune_medical_generalist(args):
         val_dataset_kwargs=val_dataset_kwargs,
         loader_kwargs=loader_kwargs,
         iterations=args.iterations,
-        find_unused_parameters=False,
+        find_unused_parameters=True,
         optimizer_callable=torch.optim.AdamW,
         optimizer_kwargs={"lr": 5e-5},
         lr_scheduler_callable=torch.optim.lr_scheduler.ReduceLROnPlateau,  # TODO: StepLR?
@@ -68,7 +68,7 @@ def finetune_medical_generalist(args):
         n_objects_per_batch=n_objects_per_batch,
         n_sub_iteration=8,
         compile_model=False,
-        mask_prob=0.5,  # (optional) overwrite to provide the probability of using mask inputs while training
+        mask_prob=0,  # (optional) overwrite to provide the probability of using mask inputs while training
     )
 
 

@@ -17,6 +17,7 @@ def finetune_btcv(args):
     patch_shape = (1, 512, 512)  # the patch shape for training
     n_objects_per_batch = args.n_objects  # this is the number of objects per batch that will be sampled (default: 25)
     freeze_parts = args.freeze  # override this to freeze different parts of the model
+    checkpoint_name = f"{args.model_type}/btcv_medsam"
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
@@ -24,6 +25,8 @@ def finetune_btcv(args):
         checkpoint_path=checkpoint_path,
         freeze=freeze_parts
     )
+    # this class creates all the training data for a batch (inputs, prompts and labels)
+    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
     # dataset and respective kwargs
     raw_transform = sam_training.identity
@@ -37,11 +40,6 @@ def finetune_btcv(args):
         "path": args.input_path, "patch_shape": patch_shape, "ndim": 2, "raw_transform": raw_transform,
     }
     loader_kwargs = {"batch_size": 8, "shuffle": True, "num_workers": 16, "pin_memory": True}
-
-    # this class creates all the training data for a batch (inputs, prompts and labels)
-    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
-
-    checkpoint_name = f"{args.model_type}/btcv_medsam"
 
     train_multi_gpu(
         model_callable=sam_training.get_trainable_sam_model,
