@@ -11,7 +11,6 @@ import micro_sam.training as sam_training
 
 def finetune_btcv(args):
     """Code for finetuning SAM on BTCV using multiple GPUs in "micro_sam"-based MedSAM reimplementation"""
-
     # training settings:
     model_type = args.model_type
     checkpoint_path = None  # override this to start training from a custom checkpoint
@@ -92,10 +91,6 @@ def main():
     parser.add_argument(
         "--iterations", type=int, default=int(1e4),
         help="For how many iterations should the model be trained?"
-    )
-    parser.add_argument(
-        "--export_path", "-e",
-        help="Where to export the finetuned model to. The exported model can be used in the annotation tools."
     )
     parser.add_argument(
         "--freeze", type=str, nargs="+", default=None,
