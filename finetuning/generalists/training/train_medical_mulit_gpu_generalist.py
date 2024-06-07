@@ -8,6 +8,8 @@ from torch_em.data.datasets.medical import get_sa_med2d_dataset
 
 import micro_sam.training as sam_training
 
+from segment_anything.utils.transforms import ResizeLongestSide
+
 
 def finetune_medical_generalist(args):
     """Code for finetuning SAM on SA-Med2D-20M dataset using multiple GPUs, compposed of multiple medical datasets"""
@@ -19,14 +21,10 @@ def finetune_medical_generalist(args):
     freeze_parts = args.freeze  # override this to freeze one or more of these backbones
     checkpoint_name = f"{args.model_type}/medical_generalist_sam"
 
-    # get the trainable segment anything model
-    model = sam_training.get_trainable_sam_model(
-        model_type=model_type,
-        checkpoint_path=checkpoint_path,
-        freeze=freeze_parts
-    )
     # this class creates all the training data for a batch (inputs, prompts and labels)
-    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
+    convert_inputs = sam_training.ConvertToSamInputs(
+        transform=ResizeLongestSide(target_length=1024), box_distortion_factor=0.025
+    )
 
     # dataset and respective kwargs
     raw_transform = sam_training.identity
