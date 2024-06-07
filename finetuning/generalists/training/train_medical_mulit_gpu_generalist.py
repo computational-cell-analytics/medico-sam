@@ -41,7 +41,7 @@ def finetune_medical_generalist(args):
         "path": args.input_path, "patch_shape": patch_shape, "split": "train", "resize_inputs": True,
         "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.5,
     }
-    loader_kwargs = {"batch_size": 8, "shuffle": True, "num_workers": 16, "pin_memory": True}
+    loader_kwargs = {"batch_size": 1, "shuffle": True, "num_workers": 16, "pin_memory": True}
 
     train_multi_gpu(
         model_callable=sam_training.get_trainable_sam_model,
@@ -55,8 +55,8 @@ def finetune_medical_generalist(args):
         find_unused_parameters=True,
         optimizer_callable=torch.optim.AdamW,
         optimizer_kwargs={"lr": 5e-5},
-        lr_scheduler_callable=torch.optim.lr_scheduler.ReduceLROnPlateau,  # TODO: StepLR?
-        lr_scheduler_kwargs={"mode": "min", "factor": 0.9, "patience": 1, "verbose": True},
+        lr_scheduler_callable=torch.optim.lr_scheduler.StepLR,
+        lr_scheduler_kwargs={"step_size": 1, "gamma": 0.9, "verbose": True},
         # trainer params
         trainer_callable=sam_training.SamTrainer,
         name=checkpoint_name,
