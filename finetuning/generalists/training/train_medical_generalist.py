@@ -68,7 +68,7 @@ def finetune_medical_generalist(args):
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
-    checkpoint_name = f"{args.model_type}/medical_generalist_sam"
+    checkpoint_name = f"{args.model_type}/medical_generalist_sam_single_gpu"
 
     # the trainer which performs the joint training and validation (implemented using "torch_em")
     trainer = sam_training.SamTrainer(

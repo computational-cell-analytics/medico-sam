@@ -19,7 +19,7 @@ def finetune_medical_generalist(args):
     patch_shape = (1024, 1024)  # the patch shape for training
     n_objects_per_batch = args.n_objects  # this is the number of objects per batch that will be sampled (default: 25)
     freeze_parts = args.freeze  # override this to freeze one or more of these backbones
-    checkpoint_name = f"{args.model_type}/medical_generalist_sam"
+    checkpoint_name = f"{args.model_type}/medical_generalist_sam_multi_gpu"
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(
