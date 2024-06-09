@@ -5,8 +5,8 @@
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
-#SBATCH -c 16
-#SBATCH --mem 96G
+#SBATCH -c 64
+#SBATCH --mem 128G
 #SBATCH --qos=14d
 #SBATCH --constraint=80gb
 
