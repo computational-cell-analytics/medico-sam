@@ -88,13 +88,14 @@ def show_images(*images, save_path=None):
 
 
 def for_sega(save_dir, split_choice):
-    """We have three chunks of data: kits, rider, dongyang.
+    """Task: Aorta Segmentation in CT Scans.
+
+    We have three chunks of data: kits, rider, dongyang.
     - for validation:
     - for testing:
     """
-    # first, we convert all volumes to valid slices
     image_paths, gt_paths = medical.sega._get_sega_paths(
-        path=os.path.join(ROOT, "sega"), data_choice=split_choice, download=True
+        path=os.path.join(ROOT, "sega"), data_choice=split_choice, download=False,
     )
 
     for image_path, gt_path in zip(image_paths, gt_paths):
@@ -110,15 +111,92 @@ def for_sega(save_dir, split_choice):
             get_valid_slices_per_volume(
                 image=islice,
                 gt=gslice,
-                fname=image_id,
+                fname=f"sega_{image_id}",
                 save_dir=save_dir
             )
 
+    # TODO: make val-test splits
+
+
+def for_uwaterloo_skin(save_dir):
+    """Task: Skin Lesion Segmentation in Dermoscopy Images
+
+    - for validation:
+    - for testing:
+    """
+    image_paths, gt_paths = medical.uwaterloo_skin._get_uwaterloo_skin_paths(
+        path=os.path.join(ROOT, "uwaterloo_skin"), download=False,
+    )
+
+    # TODO: make val-test splits
+
+
+def for_idrid(save_dir):
+    """Task: Optic Disc Segmentation in Fundus Images
+
+    - for validation:
+    - for testing:
+    """
+    train_image_paths, train_gt_paths = medical.idrid._get_idrid_paths(
+        path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=True,
+    )
+
+    test_image_paths, test_gt_paths = medical.idrid._get_idrid_paths(
+        path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=True,
+    )
+
+
+def for_camus(save_dir, chamber_choice=2):
+    """Task: Cardiac Structure Segmentation in US Scans.
+
+    - for validation:
+    - for testing:
+    """
+    image_paths, gt_paths = medical.camus._get_camus_paths(
+        path=os.path.join(ROOT, "camus"), chamber=chamber_choice, download=True,
+    )
+
+    # TODO: check for 2 chamber and 4 chamber segmentations both
+
+    for image_path, gt_path in zip(image_paths, gt_paths):
+        image = read_image(image_path)
+        gt = read_image(gt_path)
+
+        image_id = Path(image_path).stem
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        for islice, gslice in tqdm(zip(image, gt), total=image.shape[0], desc=f"Processing '{image_id}'"):
+            get_valid_slices_per_volume(
+                image=islice,
+                gt=gslice,
+                fname=f"camus_{chamber_choice}_{image_id}",
+                save_dir=save_dir
+            )
+
+    # TODO: make val and test splits
+
+
+def for_montgomery(save_dir):
+    """Task: Lung Segmentation in CXR Images.
+
+    - for validation:
+    - for testing:
+    """
+    image_paths, gt_paths = medical.montgomery._get_montgomery_paths(
+        path=os.path.join(ROOT, "montgomery"), download=True,
+    )
+
+    # TODO: make val-test splits.
+
 
 def _preprocess_datasets(save_dir):
-    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
-    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
-    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
+    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
+    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
+    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
+
+    for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
 
 
 def main():

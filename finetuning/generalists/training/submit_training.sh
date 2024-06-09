@@ -13,5 +13,5 @@
 source ~/.bashrc
 mamba activate sam
 python train_medical_mulit_gpu_generalist.py -s /scratch/share/cidas/cca/models/medico-sam \
-                                            --iterations 250000 \
-                                            -m vit_b
+                                             --iterations 300000 \
+                                             -m vit_b
