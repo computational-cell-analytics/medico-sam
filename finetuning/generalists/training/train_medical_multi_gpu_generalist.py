@@ -32,14 +32,30 @@ def finetune_medical_generalist(args):
     train_dataset_class = get_sa_med2d_dataset
     val_dataset_class = get_sa_med2d_dataset
     train_dataset_kwargs = {
-        "path": args.input_path, "patch_shape": patch_shape, "split": "train", "resize_inputs": True,
-        "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.5,
+        "path": args.input_path,
+        "patch_shape": patch_shape,
+        "split": "train",
+        "resize_inputs": True,
+        "raw_transform": raw_transform,
+        "sampler": MinInstanceSampler(),
+        "n_fraction_per_dataset": 0.5,  # training on 50% of the train-split
     }
     val_dataset_kwargs = {
-        "path": args.input_path, "patch_shape": patch_shape, "split": "val", "resize_inputs": True,
-        "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.1,
+        "path": args.input_path,
+        "patch_shape": patch_shape,
+        "split": "val",
+        "resize_inputs": True,
+        "raw_transform": raw_transform,
+        "sampler": MinInstanceSampler(),
+        "n_fraction_per_dataset": 0.1,  # validating on 10% of the val-split
     }
-    loader_kwargs = {"batch_size": 7, "shuffle": True, "num_workers": 16, "pin_memory": True}
+
+    loader_kwargs = {
+        "batch_size": 7,
+        "shuffle": True,
+        "num_workers": 16,
+        "pin_memory": True
+    }
 
     train_multi_gpu(
         model_callable=sam_training.get_trainable_sam_model,
@@ -85,8 +101,8 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run from."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e5),
-        help="For how many iterations should the model be trained? By default 100k."
+        "--iterations", type=int, default=int(3e5),
+        help="For how many iterations should the model be trained? By default 300k."
     )
     parser.add_argument(
         "--freeze", type=str, nargs="+", default=None,

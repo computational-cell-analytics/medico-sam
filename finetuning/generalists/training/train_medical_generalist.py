@@ -21,6 +21,7 @@ def get_dataloaders(data_path, patch_shape):
         resize_inputs=True,
         num_workers=64,
         shuffle=True,
+        pin_memory=True,
         n_fraction_per_dataset=0.1,
         raw_transform=raw_transform,
         sampler=MinInstanceSampler(),
@@ -28,10 +29,11 @@ def get_dataloaders(data_path, patch_shape):
     val_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=1,
+        batch_size=8,
         split="val",
         resize_inputs=True,
         num_workers=64,
+        pin_memory=True,
         n_fraction_per_dataset=0.1,
         raw_transform=raw_transform,
         sampler=MinInstanceSampler(),
@@ -62,7 +64,7 @@ def finetune_medical_generalist(args):
 
     # all the stuff we need for training
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=1, verbose=True)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9, verbose=True)
     train_loader, val_loader = get_dataloaders(data_path=args.input_path, patch_shape=patch_shape)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
@@ -116,8 +118,8 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run from."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e5),
-        help="For how many iterations should the model be trained? By default 100k."
+        "--iterations", type=int, default=int(3e5),
+        help="For how many iterations should the model be trained? By default 300k."
     )
     parser.add_argument(
         "--export_path", "-e", type=str, default=None,
