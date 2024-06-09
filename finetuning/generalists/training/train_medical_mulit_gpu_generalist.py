@@ -36,10 +36,10 @@ def finetune_medical_generalist(args):
         "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.5,
     }
     val_dataset_kwargs = {
-        "path": args.input_path, "patch_shape": patch_shape, "split": "train", "resize_inputs": True,
-        "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.5,
+        "path": args.input_path, "patch_shape": patch_shape, "split": "val", "resize_inputs": True,
+        "raw_transform": raw_transform, "sampler": MinInstanceSampler(), "n_fraction_per_dataset": 0.1,
     }
-    loader_kwargs = {"batch_size": 8, "shuffle": True, "num_workers": 16, "pin_memory": True}
+    loader_kwargs = {"batch_size": 7, "shuffle": True, "num_workers": 16, "pin_memory": True}
 
     train_multi_gpu(
         model_callable=sam_training.get_trainable_sam_model,
