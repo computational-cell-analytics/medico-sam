@@ -1,12 +1,5 @@
-import os
-
-from torch_em.data.datasets import medical
-
-from preprocess_datasets import ROOT
-
-
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus",
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery",
 ]
 
 
