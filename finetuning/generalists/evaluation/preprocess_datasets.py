@@ -41,7 +41,7 @@ def resize_inputs(image, patch_shape=(1024, 1024), is_label=False):
     return image
 
 
-def get_valid_slices_per_volume(image, gt, fname, save_dir, visualize=False):
+def get_valid_slices_per_volume(image, gt, fname, save_dir, visualize=False, overwrite_images=True):
     """This function assumes the volumes to be channels first: Z * Y * X
     """
     assert image.shape == gt.shape
@@ -54,6 +54,9 @@ def get_valid_slices_per_volume(image, gt, fname, save_dir, visualize=False):
     for i, (image_slice, gt_slice) in enumerate(zip(image, gt)):
         image_path = os.path.join(image_dir, f"{fname}_{i:05}.tif")
         gt_path = os.path.join(gt_dir, f"{fname}_{i:05}.tif")
+
+        if os.path.exists(image_path) and os.path.exists(gt_path) and overwrite_images:
+            continue
 
         if has_foreground(gt_slice):
             image_slice = resize_inputs(image_slice)
