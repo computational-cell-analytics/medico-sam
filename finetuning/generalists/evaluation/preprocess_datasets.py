@@ -188,7 +188,16 @@ def for_montgomery(save_dir):
         path=os.path.join(ROOT, "montgomery"), download=True,
     )
 
-    # TODO: make val-test splits.
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path)
+        gt = read_image(gt_path)
+
+        image = resize_inputs(image)
+        gt = resize_inputs(gt, is_label=True)
+
+        show_images(image, gt)
+
+        breakpoint()
 
 
 def _preprocess_datasets(save_dir):
@@ -196,7 +205,9 @@ def _preprocess_datasets(save_dir):
     # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
     # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
 
-    for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
+    # for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
+
+    for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
 
 
 def main():
