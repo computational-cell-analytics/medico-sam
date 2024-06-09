@@ -38,7 +38,7 @@ def finetune_medical_generalist(args):
         "resize_inputs": True,
         "raw_transform": raw_transform,
         "sampler": MinInstanceSampler(),
-        "n_fraction_per_dataset": 0.5,
+        "n_fraction_per_dataset": 0.5,  # training on 50% of the train-split
     }
     val_dataset_kwargs = {
         "path": args.input_path,
@@ -47,7 +47,7 @@ def finetune_medical_generalist(args):
         "resize_inputs": True,
         "raw_transform": raw_transform,
         "sampler": MinInstanceSampler(),
-        "n_fraction_per_dataset": 0.1,
+        "n_fraction_per_dataset": 0.1,  # validating on 10% of the val-split
     }
 
     loader_kwargs = {
