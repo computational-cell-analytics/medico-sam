@@ -1,4 +1,5 @@
 import os
+import shutil
 import argparse
 from glob import glob
 from natsort import natsorted
@@ -8,8 +9,8 @@ VALID_DATASETS = [
     "sega", "uwaterloo_skin", "idrid", "camus", "montgomery",
 ]
 
-FEXT = {
-    "sega": ["kits", "rider", "dongyang"],
+DEXT = {
+    "sega": ["slices/kits", "slices/rider", "slices/dongyang"],
 }
 
 SEMANTIC_CLASS_MAPS = {
@@ -22,23 +23,45 @@ ROOT = "/scratch/share/cidas/cca/data"
 def get_dataset_paths(dataset_name, split="test"):
     assert dataset_name in VALID_DATASETS
 
-    dirext = f"{dataset_name}/slices/"
-    if dataset_name in FEXT:
-        dirext += f"{FEXT[dataset_name]}/"
-    dirext += f"{split}/"
+    if dataset_name in DEXT:
+        dexts = DEXT[dataset_name]
+    else:
+        dexts = ["slices"]
 
-    data_dir = os.path.join(ROOT, dirext)
-    assert os.path.exists(data_dir), f"The data directory does not exist at '{data_dir}'."
+    image_paths, gt_paths = [], []
+    for per_dext in dexts:
+        data_dir = os.path.join(ROOT, dataset_name, per_dext, split)
+        assert os.path.exists(data_dir), f"The data directory does not exist at '{data_dir}'."
 
-    image_paths = glob(os.path.join(data_dir, "images", "*.tif"))
-    gt_paths = glob(os.path.join(data_dir, "ground_truth", "*.tif"))
+        image_paths.extend(glob(os.path.join(data_dir, "images", "*.tif")))
+        gt_paths.extend(glob(os.path.join(data_dir, "ground_truth", "*.tif")))
 
-    return natsorted(image_paths), natsorted(gt_paths), SEMANTIC_CLASS_MAPS[data_dir]
+    assert len(image_paths) == len(gt_paths)
+
+    return natsorted(image_paths), natsorted(gt_paths), SEMANTIC_CLASS_MAPS[dataset_name]
 
 
 def get_pred_paths(prediction_folder):
     pred_paths = sorted(glob(os.path.join(prediction_folder, "*")))
     return pred_paths
+
+
+def _clear_files(experiment_folder, semantic_class_maps):
+    # Check if both the results from iterative prompting starting box and points are there.
+    _completed_inference = []
+    for cname in semantic_class_maps.keys():
+        box_rpath = os.path.join(experiment_folder, "results", cname, "iterative_prompts_start_box.csv")
+        point_rpath = os.path.join(experiment_folder, "results", cname, "iterative_prompts_start_point.csv")
+
+        if os.path.exists(box_rpath) and os.path.exists(point_rpath):
+            _completed_inference.append(True)
+        else:
+            _completed_inference.append(False)
+
+    if all(_completed_inference) and len(_completed_inference) > 0:
+        shutil.rmtree(os.path.join(experiment_folder, "embeddings"))
+        shutil.rmtree(os.path.join(experiment_folder, "start_with_point"))
+        shutil.rmtree(os.path.join(experiment_folder, "start_with_box"))
 
 
 #

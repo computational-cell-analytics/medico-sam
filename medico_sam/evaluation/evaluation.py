@@ -121,7 +121,9 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
         for pred_folder in prediction_folders:
             print("Evaluating", os.path.split(pred_folder)[-1])
             pred_paths = sorted(glob(os.path.join(pred_folder, semantic_class_name, "*")))
-            result = run_evaluation_per_semantic_class(gt_paths=gt_paths, prediction_paths=pred_paths, save_path=None)
+            result = run_evaluation_per_semantic_class(
+                gt_paths=gt_paths, prediction_paths=pred_paths, semantic_class_id=semantic_class_id, save_path=None
+            )
             list_of_results.append(result)
             print(result)
 

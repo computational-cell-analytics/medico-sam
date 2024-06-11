@@ -5,8 +5,7 @@ from medico_sam.evaluation.evaluation import run_evaluation_for_iterative_prompt
 
 from micro_sam.util import get_sam_model
 
-from util import get_dataset_paths
-from util import get_default_arguments
+from util import get_dataset_paths, get_default_arguments, _clear_files
 
 
 def _run_iterative_prompting(dataset_name, exp_folder, predictor, start_with_box_prompt, use_masks):
@@ -33,6 +32,8 @@ def _evaluate_iterative_prompting(
 ):
     _, gt_paths = get_dataset_paths(dataset_name=dataset_name, split="test")
 
+    breakpoint()
+
     run_evaluation_for_iterative_prompting_per_semantic_class(
         gt_paths=gt_paths,
         prediction_root=prediction_root,
@@ -57,6 +58,7 @@ def main():
         start_with_box_prompt=start_with_box_prompt,
         use_masks=args.use_masks
     )
+
     _evaluate_iterative_prompting(
         dataset_name=args.dataset,
         prediction_root=prediction_root,
@@ -64,6 +66,8 @@ def main():
         exp_folder=args.experiment_folder,
         semantic_class_maps=semantic_class_maps,
     )
+
+    _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
 
 
 if __name__ == "__main__":

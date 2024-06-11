@@ -2,7 +2,11 @@ import os
 from tqdm import tqdm
 from typing import List, Union, Dict
 
+import numpy as np
 import imageio.v3 as imageio
+from skimage.measure import label as connected_components
+
+from torch_em.util.segmentation import size_filter
 
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
 
@@ -20,7 +24,8 @@ def run_inference_with_iterative_prompting_per_semantic_class(
     dilation: int = 5,
     batch_size: int = 32,
     n_iterations: int = 8,
-    use_masks: bool = False
+    use_masks: bool = False,
+    min_size: int = 0,
 ) -> None:
     """Run segment anything inference for multiple images using prompts iteratively
     derived from model outputs and groundtruth (per semantic class)
@@ -41,16 +46,11 @@ def run_inference_with_iterative_prompting_per_semantic_class(
     if len(image_paths) != len(gt_paths):
         raise ValueError(f"Expect same number of images and gt images, got {len(image_paths)}, {len(gt_paths)}")
 
-    # create all prediction folders for all intermediate iterations
-    for i in range(n_iterations):
-        os.makedirs(os.path.join(prediction_dir, f"iteration{i:02}"), exist_ok=True)
-
     if use_masks:
         print("The iterative prompting will make use of logits masks from previous iterations.")
 
     for image_path, gt_path in tqdm(
-        zip(image_paths, gt_paths),
-        total=len(image_paths),
+        zip(image_paths, gt_paths), total=len(image_paths),
         desc="Run inference with iterative prompting for all images",
     ):
         image_name = os.path.basename(image_path)
@@ -63,7 +63,23 @@ def run_inference_with_iterative_prompting_per_semantic_class(
 
         # Perform segmentation only on the semantic class
         for semantic_class_name, semantic_class_id in semantic_class_map.items():
+            # create all prediction folders for all intermediate iterations
+            for i in range(n_iterations):
+                os.makedirs(os.path.join(prediction_dir, f"iteration{i:02}", semantic_class_name), exist_ok=True)
+
             gt = (gt == semantic_class_id).astype("uint32")
+
+            # Once we have the class labels, let's run connected components to label dissociated components, if any.
+            # - As an example, this is relevant for aortic structures (etc.), where the aorta could have multiple
+            #   branches in the thoracic cavity in the axial view.
+            gt = connected_components(gt)
+
+            # Filter out extremely small objects from segmentation
+            gt = size_filter(seg=gt, min_size=min_size)
+
+            # Check whether there are objects or it's not relevant for interactive segmentation
+            if not len(np.unique(gt)) > 1:
+                continue
 
             # We skip the images that already have been segmented
             prediction_paths = [
