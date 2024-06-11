@@ -42,7 +42,9 @@ def get_dataloaders(data_path, patch_shape):
 
 
 def finetune_medical_generalist(args):
-    """Code for finetuning SAM on SA-Med2D-20M dataset, compposed of multiple medical datasets"""
+    """Code for finetuning SAM in MedSAM-style on SA-Med2D-20M dataset,
+    composed of multiple medical datasets
+    """
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -63,8 +65,9 @@ def finetune_medical_generalist(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9, verbose=True)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    # (optional): the original implementation uses no LR scheduler, hence we set the step-size as the last epoch
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.9, verbose=True)
     train_loader, val_loader = get_dataloaders(data_path=args.input_path, patch_shape=patch_shape)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)

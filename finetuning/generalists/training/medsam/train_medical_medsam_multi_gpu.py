@@ -12,14 +12,16 @@ from segment_anything.utils.transforms import ResizeLongestSide
 
 
 def finetune_medical_generalist(args):
-    """Code for finetuning SAM on SA-Med2D-20M dataset using multiple GPUs, compposed of multiple medical datasets"""
+    """Code for finetuning SAM in MedSAM-style on SA-Med2D-20M dataset using multiple GPUs,
+    composed of multiple medical datasets
+    """
     # training settings:
     model_type = args.model_type
     checkpoint_path = None  # override this to start training from a custom checkpoint
     patch_shape = (1024, 1024)  # the patch shape for training
     n_objects_per_batch = args.n_objects  # this is the number of objects per batch that will be sampled (default: 25)
     freeze_parts = args.freeze  # override this to freeze one or more of these backbones
-    checkpoint_name = f"{args.model_type}/medical_generalist_sam_multi_gpu"
+    checkpoint_name = f"{args.model_type}/medical_generalist_medsam_multi_gpu"
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(
@@ -68,11 +70,12 @@ def finetune_medical_generalist(args):
         iterations=args.iterations,
         find_unused_parameters=True,
         optimizer_callable=torch.optim.AdamW,
-        optimizer_kwargs={"lr": 5e-5},
+        optimizer_kwargs={"lr": 1e-4},
+        # (optional): the original implementation uses no LR scheduler, hence we set the step-size as the last epoch
         lr_scheduler_callable=torch.optim.lr_scheduler.StepLR,
-        lr_scheduler_kwargs={"step_size": 1, "gamma": 0.9, "verbose": True},
+        lr_scheduler_kwargs={"step_size": 10, "gamma": 0.9, "verbose": True},
         # trainer params
-        trainer_callable=sam_training.SamTrainer,
+        trainer_callable=sam_training.MedSAMTrainer,
         name=checkpoint_name,
         save_root=args.save_root,
         logger=sam_training.SamLogger,
@@ -80,9 +83,7 @@ def finetune_medical_generalist(args):
         mixed_precision=True,
         convert_inputs=convert_inputs,
         n_objects_per_batch=n_objects_per_batch,
-        n_sub_iteration=8,
         compile_model=False,
-        mask_prob=0,  # (optional) overwrite to provide the probability of using mask inputs while training
     )
 
 
