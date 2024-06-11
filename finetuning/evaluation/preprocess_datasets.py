@@ -1,5 +1,4 @@
 import os
-import sys
 import shutil
 import random
 from tqdm import tqdm
@@ -140,9 +139,7 @@ def _get_val_test_splits(save_dir, val_fraction, fname_ext=None):
 
 
 def _check_preprocessing(save_dir):
-    if os.path.exists(os.path.join(save_dir, "val")) and os.path.exists(os.path.join(save_dir, "test")):
-        print("Looks like the preprocessing has completed.")
-        sys.exit(0)
+    return os.path.exists(os.path.join(save_dir, "val")) and os.path.exists(os.path.join(save_dir, "test"))
 
 
 #
@@ -156,10 +153,12 @@ def for_sega(save_dir, split_choice):
     """Task: Aorta Segmentation in CT Scans.
 
     We have three chunks of data: kits, rider, dongyang.
-    - for validation:
-    - for testing:
+    - for validation: 50*3 (respectively)
+    - for testing: ..., ..., ... (respectively)
     """
-    _check_preprocessing(save_dir=save_dir)
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
 
     image_paths, gt_paths = medical.sega._get_sega_paths(
         path=os.path.join(ROOT, "sega"), data_choice=split_choice, download=False,
@@ -191,6 +190,10 @@ def for_uwaterloo_skin(save_dir):
     - for validation:
     - for testing:
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     image_paths, gt_paths = medical.uwaterloo_skin._get_uwaterloo_skin_paths(
         path=os.path.join(ROOT, "uwaterloo_skin"), download=False,
     )
@@ -204,6 +207,10 @@ def for_idrid(save_dir):
     - for validation:
     - for testing:
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     train_image_paths, train_gt_paths = medical.idrid._get_idrid_paths(
         path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=True,
     )
@@ -224,6 +231,10 @@ def for_camus(save_dir, chamber_choice=2):
     - for validation:
     - for testing:
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     image_paths, gt_paths = medical.camus._get_camus_paths(
         path=os.path.join(ROOT, "camus"), chamber=chamber_choice, download=True,
     )
@@ -256,6 +267,10 @@ def for_montgomery(save_dir):
     - for validation:
     - for testing:
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     image_paths, gt_paths = medical.montgomery._get_montgomery_paths(
         path=os.path.join(ROOT, "montgomery"), download=True,
     )
@@ -265,8 +280,8 @@ def for_montgomery(save_dir):
 
 def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
 
     # for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
     # for_camus(save_dir=os.path.join(save_dir, "camus", "slices"), chamber_choice=2)
