@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=medico-sam
+#SBATCH --job-name=medsam
 #SBATCH -t 14-00:00:00
 #SBATCH --nodes=1
 #SBATCH -p grete:shared
@@ -12,4 +12,4 @@
 
 source ~/.bashrc
 mamba activate sam
-python train_medical_multi_gpu_generalist.py -s /scratch/share/cidas/cca/models/medico-sam/multi_gpu
+python train_medical_medsam_multi_gpu.py -s /scratch/share/cidas/cca/models/medsam/multi_gpu
