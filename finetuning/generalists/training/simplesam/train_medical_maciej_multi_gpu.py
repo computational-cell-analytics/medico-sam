@@ -12,7 +12,7 @@ from segment_anything.utils.transforms import ResizeLongestSide
 
 
 def finetune_medical_generalist(args):
-    """Code for finetuning SAM in MedSAM-style on SA-Med2D-20M dataset using multiple GPUs,
+    """Code for finetuning SAM in Mazurowski et al.-style on SA-Med2D-20M dataset using multiple GPUs,
     composed of multiple medical datasets
     """
     # training settings:
@@ -21,7 +21,7 @@ def finetune_medical_generalist(args):
     patch_shape = (1024, 1024)  # the patch shape for training
     n_objects_per_batch = args.n_objects  # this is the number of objects per batch that will be sampled (default: 25)
     freeze_parts = args.freeze  # override this to freeze one or more of these backbones
-    checkpoint_name = f"{args.model_type}/medical_generalist_medsam_multi_gpu"
+    checkpoint_name = f"{args.model_type}/medical_generalist_simplesam_multi_gpu"
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(
@@ -74,7 +74,7 @@ def finetune_medical_generalist(args):
         lr_scheduler_callable=torch.optim.lr_scheduler.StepLR,
         lr_scheduler_kwargs={"step_size": 1, "gamma": 0.9, "verbose": True},
         # trainer params
-        trainer_callable=sam_training.MedSAMTrainer,
+        trainer_callable=sam_training.SimpleSamTrainer,
         name=checkpoint_name,
         save_root=args.save_root,
         logger=sam_training.SamLogger,
@@ -83,6 +83,9 @@ def finetune_medical_generalist(args):
         convert_inputs=convert_inputs,
         n_objects_per_batch=n_objects_per_batch,
         compile_model=False,
+        # while choosing both the prompting choice, it randomly selects between either of the two per iteration.
+        use_points=True,
+        use_box=True,
     )
 
 

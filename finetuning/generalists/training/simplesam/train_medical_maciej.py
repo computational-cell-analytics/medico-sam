@@ -42,7 +42,7 @@ def get_dataloaders(data_path, patch_shape):
 
 
 def finetune_medical_generalist(args):
-    """Code for finetuning SAM in MedSAM-style on SA-Med2D-20M dataset,
+    """Code for finetuning SAM in Mazurowski et al.-style on SA-Med2D-20M dataset,
     composed of multiple medical datasets
     """
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
@@ -72,10 +72,10 @@ def finetune_medical_generalist(args):
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
-    checkpoint_name = f"{args.model_type}/medical_generalist_medsam_single_gpu"
+    checkpoint_name = f"{args.model_type}/medical_generalist_simplesam_single_gpu"
 
     # the trainer which performs the joint training and validation (implemented using "torch_em")
-    trainer = sam_training.MedSAMTrainer(
+    trainer = sam_training.SimpleSamTrainer(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
@@ -90,6 +90,9 @@ def finetune_medical_generalist(args):
         convert_inputs=convert_inputs,
         n_objects_per_batch=n_objects_per_batch,
         compile_model=False,
+        # while choosing both the prompting choice, it randomly selects between either of the two per iteration.
+        use_points=True,
+        use_box=True,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
