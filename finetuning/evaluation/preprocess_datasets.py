@@ -92,9 +92,13 @@ def show_images(*images, save_path=None):
     plt.close()
 
 
-def _get_val_test_splits(save_dir, fname_ext, val_fraction):
-    image_paths = sorted(glob(os.path.join(save_dir, "images", f"{fname_ext}*.tif")))
-    gt_paths = sorted(glob(os.path.join(save_dir, "ground_truth", f"{fname_ext}*.tif")))
+def _get_val_test_splits(save_dir, val_fraction, fname_ext=None):
+    if isinstance(save_dir, list):
+        image_paths, gt_paths = save_dir
+    else:
+        assert fname_ext is not None
+        image_paths = sorted(glob(os.path.join(save_dir, "images", f"{fname_ext}*.tif")))
+        gt_paths = sorted(glob(os.path.join(save_dir, "ground_truth", f"{fname_ext}*.tif")))
 
     assert len(image_paths) == len(gt_paths)
 
@@ -191,7 +195,7 @@ def for_uwaterloo_skin(save_dir):
         path=os.path.join(ROOT, "uwaterloo_skin"), download=False,
     )
 
-    # TODO: make val-test splits
+    _get_val_test_splits(save_dir=[image_paths, gt_paths], val_fraction=50)
 
 
 def for_idrid(save_dir):
@@ -207,6 +211,11 @@ def for_idrid(save_dir):
     test_image_paths, test_gt_paths = medical.idrid._get_idrid_paths(
         path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=True,
     )
+
+    train_image_paths.extend(test_image_paths)
+    train_gt_paths.extend(test_gt_paths)
+
+    _get_val_test_splits(save_dir=[train_image_paths, train_gt_paths], val_fraction=10)
 
 
 def for_camus(save_dir, chamber_choice=2):
@@ -238,7 +247,7 @@ def for_camus(save_dir, chamber_choice=2):
                 save_dir=save_dir
             )
 
-    # TODO: make val and test splits
+    _get_val_test_splits(save_dir=save_dir, val_fraction=50, fname_ext="camus_")
 
 
 def for_montgomery(save_dir):
@@ -251,16 +260,7 @@ def for_montgomery(save_dir):
         path=os.path.join(ROOT, "montgomery"), download=True,
     )
 
-    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
-        image = read_image(image_path)
-        gt = read_image(gt_path)
-
-        image = resize_inputs(image)
-        gt = resize_inputs(gt, is_label=True)
-
-        show_images(image, gt)
-
-        breakpoint()
+    _get_val_test_splits(save_dir=[image_paths, gt_paths], val_fraction=50)
 
 
 def _preprocess_datasets(save_dir):
@@ -269,7 +269,7 @@ def _preprocess_datasets(save_dir):
     # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
 
     # for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
-
+    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices"), chamber_choice=2)
     # for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
 
 
