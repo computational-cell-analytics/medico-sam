@@ -11,9 +11,9 @@ Experimental plan:
         - FT-SAM for sure
         - (optional) adapter
     - MedSAM (finetuned-our)
-        - 1 box only - BCE-DICE
+        - 1 box only per object
     - SimpleSam (finetuned-our)
-        - Maceij's paper (randomly sample either a box or a positive point) - (check the loss function)
+        - Maceij's paper (randomly sample either a box or a positive point per object)
 
 
 - semantic segmentation experiments (specific "limited" tasks)

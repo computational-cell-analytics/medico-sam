@@ -172,8 +172,6 @@ def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext):
 # Medical Imaging Datasets
 #
 
-# TODO: it would make more sense to make per-dataset task wise partitions - makes sense to report results like that.
-
 
 def for_sega(save_dir, split_choice):
     """Task: Aorta Segmentation in CT Scans.
