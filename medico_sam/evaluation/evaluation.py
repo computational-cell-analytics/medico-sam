@@ -8,12 +8,17 @@ import numpy as np
 import pandas as pd
 import imageio.v3 as imageio
 
-from elf.evaluation import mean_segmentation_accuracy
+
+def calculate_dice_score(input_, target, eps=1e-7):
+    numerator = (input_ * target).sum()
+    denominator = (input_ * input_).sum() + (target * target).sum()
+    score = 2. * (numerator / denominator.clip(min=eps))
+    return score
 
 
 def _run_evaluation_per_semantic_class(gt_paths, prediction_paths, semantic_class_id, verbose=True):
     assert len(gt_paths) == len(prediction_paths)
-    msas, sa50s, sa75s = [], [], []
+    dice_scores = []
 
     for gt_path, pred_path in tqdm(
         zip(gt_paths, prediction_paths), desc="Evaluate predictions", total=len(gt_paths), disable=not verbose
@@ -25,12 +30,12 @@ def _run_evaluation_per_semantic_class(gt_paths, prediction_paths, semantic_clas
         gt = (gt == semantic_class_id).astype("uint8")
 
         pred = imageio.imread(pred_path)
+        pred = (pred > 0).astype("uint8")
 
-        msa, scores = mean_segmentation_accuracy(pred, gt, return_accuracies=True)
-        sa50, sa75 = scores[0], scores[5]
-        msas.append(msa), sa50s.append(sa50), sa75s.append(sa75)
+        dice = calculate_dice_score(input_=pred, target=gt)
+        dice_scores.append(dice)
 
-    return msas, sa50s, sa75s
+    return dice_scores
 
 
 def run_evaluation_per_semantic_class(
@@ -40,7 +45,7 @@ def run_evaluation_per_semantic_class(
     save_path: Optional[Union[os.PathLike, str]] = None,
     verbose: bool = True,
 ) -> pd.DataFrame:
-    """Run evaluation for instance segmentation predictions.
+    """Run evaluation for semantic segmentation predictions.
 
     Args:
         gt_paths: The list of paths to ground-truth images.
@@ -57,15 +62,11 @@ def run_evaluation_per_semantic_class(
     if save_path is not None and os.path.exists(save_path):
         return pd.read_csv(save_path)
 
-    msas, sa50s, sa75s = _run_evaluation_per_semantic_class(
+    dice_scores = _run_evaluation_per_semantic_class(
         gt_paths, prediction_paths, semantic_class_id, verbose=verbose
     )
 
-    results = pd.DataFrame.from_dict({
-        "msa": [np.mean(msas)],
-        "sa50": [np.mean(sa50s)],
-        "sa75": [np.mean(sa75s)],
-    })
+    results = pd.DataFrame.from_dict({"dice": [np.mean(dice_scores)]})
 
     if save_path is not None:
         os.makedirs(Path(save_path).parent, exist_ok=True)

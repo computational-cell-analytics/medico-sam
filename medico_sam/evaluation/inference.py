@@ -58,11 +58,20 @@ def run_inference_with_iterative_prompting_per_semantic_class(
         assert os.path.exists(image_path), image_path
         assert os.path.exists(gt_path), gt_path
 
-        image = imageio.imread(image_path)
-        gt = imageio.imread(gt_path)
-
         # Perform segmentation only on the semantic class
         for semantic_class_name, semantic_class_id in semantic_class_map.items():
+            # We skip the images that already have been segmented
+            prediction_paths = [
+                os.path.join(
+                    prediction_dir, f"iteration{i:02}", semantic_class_name, image_name
+                ) for i in range(n_iterations)
+            ]
+            if all(os.path.exists(prediction_path) for prediction_path in prediction_paths):
+                continue
+
+            image = imageio.imread(image_path)
+            gt = imageio.imread(gt_path)
+
             # create all prediction folders for all intermediate iterations
             for i in range(n_iterations):
                 os.makedirs(os.path.join(prediction_dir, f"iteration{i:02}", semantic_class_name), exist_ok=True)
@@ -79,15 +88,6 @@ def run_inference_with_iterative_prompting_per_semantic_class(
 
             # Check whether there are objects or it's not relevant for interactive segmentation
             if not len(np.unique(gt)) > 1:
-                continue
-
-            # We skip the images that already have been segmented
-            prediction_paths = [
-                os.path.join(
-                    prediction_dir, f"iteration{i:02}", semantic_class_name, image_name
-                ) for i in range(n_iterations)
-            ]
-            if all(os.path.exists(prediction_path) for prediction_path in prediction_paths):
                 continue
 
             embedding_path = os.path.join(embedding_dir, f"{os.path.splitext(image_name)[0]}.zarr")

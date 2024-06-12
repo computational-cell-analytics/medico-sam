@@ -58,7 +58,7 @@ def _clear_files(experiment_folder, semantic_class_maps):
         else:
             _completed_inference.append(False)
 
-    if all(_completed_inference) and len(_completed_inference) > 0:
+    if len(_completed_inference) > 0 and all(_completed_inference):
         shutil.rmtree(os.path.join(experiment_folder, "embeddings"))
         shutil.rmtree(os.path.join(experiment_folder, "start_with_point"))
         shutil.rmtree(os.path.join(experiment_folder, "start_with_box"))
