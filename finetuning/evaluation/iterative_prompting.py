@@ -68,8 +68,6 @@ def main():
         exp_folder=args.experiment_folder,
     )
 
-    breakpoint()
-
     _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
 
 
