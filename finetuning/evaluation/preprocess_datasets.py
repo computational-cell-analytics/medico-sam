@@ -1,5 +1,4 @@
 import os
-import sys
 import shutil
 import random
 from tqdm import tqdm
@@ -93,12 +92,9 @@ def show_images(*images, save_path=None):
 
 
 def _get_val_test_splits(save_dir, val_fraction, fname_ext=None):
-    if isinstance(save_dir, list):
-        image_paths, gt_paths = save_dir
-    else:
-        assert fname_ext is not None
-        image_paths = sorted(glob(os.path.join(save_dir, "images", f"{fname_ext}*.tif")))
-        gt_paths = sorted(glob(os.path.join(save_dir, "ground_truth", f"{fname_ext}*.tif")))
+    assert fname_ext is not None
+    image_paths = sorted(glob(os.path.join(save_dir, "images", f"{fname_ext}*.tif")))
+    gt_paths = sorted(glob(os.path.join(save_dir, "ground_truth", f"{fname_ext}*.tif")))
 
     assert len(image_paths) == len(gt_paths)
 
@@ -140,9 +136,36 @@ def _get_val_test_splits(save_dir, val_fraction, fname_ext=None):
 
 
 def _check_preprocessing(save_dir):
-    if os.path.exists(os.path.join(save_dir, "val")) and os.path.exists(os.path.join(save_dir, "test")):
-        print("Looks like the preprocessing has completed.")
-        sys.exit(0)
+    return os.path.exists(os.path.join(save_dir, "val")) and os.path.exists(os.path.join(save_dir, "test"))
+
+
+def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext):
+    image_dir = os.path.join(save_dir, "images")
+    gt_dir = os.path.join(save_dir, "ground_truth")
+    os.makedirs(image_dir, exist_ok=True)
+    os.makedirs(gt_dir, exist_ok=True)
+
+    for idx, (image_path, gt_path) in tqdm(enumerate(zip(image_paths, gt_paths)), total=len(image_paths)):
+        image_id = Path(image_path).stem
+
+        trg_image_path = os.path.join(image_dir, f"{fname_ext}{image_id}_{idx:05}.tif")
+        trg_gt_path = os.path.join(gt_dir, f"{fname_ext}{image_id}_{idx:05}.tif")
+
+        if os.path.exists(trg_image_path) and os.path.exists(trg_gt_path):
+            continue
+
+        image = imageio.imread(image_path)
+        gt = imageio.imread(gt_path)
+
+        if has_foreground(gt):
+            image = resize_inputs(image)
+            gt = resize_inputs(gt, is_label=True)
+
+            if gt.dtype == "bool":  # for uwaterloo
+                gt = gt.astype("uint8")
+
+            imageio.imwrite(trg_image_path, image, compression="zlib")
+            imageio.imwrite(trg_gt_path, gt, compression="zlib")
 
 
 #
@@ -156,10 +179,12 @@ def for_sega(save_dir, split_choice):
     """Task: Aorta Segmentation in CT Scans.
 
     We have three chunks of data: kits, rider, dongyang.
-    - for validation:
-    - for testing:
+    - for validation: 50*3 (respectively)
+    - for testing: 4540, 4097, 2988 (respectively)
     """
-    _check_preprocessing(save_dir=save_dir)
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
 
     image_paths, gt_paths = medical.sega._get_sega_paths(
         path=os.path.join(ROOT, "sega"), data_choice=split_choice, download=False,
@@ -188,47 +213,62 @@ def for_sega(save_dir, split_choice):
 def for_uwaterloo_skin(save_dir):
     """Task: Skin Lesion Segmentation in Dermoscopy Images
 
-    - for validation:
-    - for testing:
+    We have two sets of data for the same task.
+    - for validation: 10
+    - for testing: 196
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     image_paths, gt_paths = medical.uwaterloo_skin._get_uwaterloo_skin_paths(
         path=os.path.join(ROOT, "uwaterloo_skin"), download=False,
     )
 
-    _get_val_test_splits(save_dir=[image_paths, gt_paths], val_fraction=50)
+    fext = "uwaterloo_skin_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 
 def for_idrid(save_dir):
     """Task: Optic Disc Segmentation in Fundus Images
 
-    - for validation:
-    - for testing:
+    - for validation: 5
+    - for testing: 76
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     train_image_paths, train_gt_paths = medical.idrid._get_idrid_paths(
-        path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=True,
+        path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=False,
     )
 
     test_image_paths, test_gt_paths = medical.idrid._get_idrid_paths(
-        path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=True,
+        path=os.path.join(ROOT, "idrid"), split="test", task="optic_disc", download=False,
     )
 
     train_image_paths.extend(test_image_paths)
     train_gt_paths.extend(test_gt_paths)
 
-    _get_val_test_splits(save_dir=[train_image_paths, train_gt_paths], val_fraction=10)
+    fext = "idrid_"
+    convert_simple_datasets(image_paths=train_image_paths, gt_paths=train_gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=5, fname_ext=fext)
 
 
-def for_camus(save_dir, chamber_choice=2):
-    """Task: Cardiac Structure Segmentation in US Scans.
+def for_camus(save_dir, chamber_choice):
+    """Task: Cardiac Structure Segmentation in Echocardiography Scans.
 
     - for validation:
     - for testing:
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     image_paths, gt_paths = medical.camus._get_camus_paths(
         path=os.path.join(ROOT, "camus"), chamber=chamber_choice, download=True,
     )
-
-    # TODO: check for 2 chamber and 4 chamber segmentations both
 
     for image_path, gt_path in zip(image_paths, gt_paths):
         image = read_image(image_path)
@@ -243,7 +283,7 @@ def for_camus(save_dir, chamber_choice=2):
             get_valid_slices_per_volume(
                 image=islice,
                 gt=gslice,
-                fname=f"camus_{chamber_choice}_{image_id}",
+                fname=f"camus_{image_id}",
                 save_dir=save_dir
             )
 
@@ -253,24 +293,33 @@ def for_camus(save_dir, chamber_choice=2):
 def for_montgomery(save_dir):
     """Task: Lung Segmentation in CXR Images.
 
-    - for validation:
-    - for testing:
+    - for validation: 10
+    - for testing: 128
     """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
     image_paths, gt_paths = medical.montgomery._get_montgomery_paths(
-        path=os.path.join(ROOT, "montgomery"), download=True,
+        path=os.path.join(ROOT, "montgomery"), download=False,
     )
 
-    _get_val_test_splits(save_dir=[image_paths, gt_paths], val_fraction=50)
+    fext = "montgomery_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 
 def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
+    for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
+    for_idrid(save_dir=os.path.join(save_dir, "idrid", "slices"))
 
-    # for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
-    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices"), chamber_choice=2)
-    # for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
+    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "2ch"), chamber_choice=2)
+    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
+
+    for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
 
 
 def main():
