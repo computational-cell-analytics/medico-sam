@@ -10,6 +10,7 @@ import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 
+# TODO: will make a release of tukra soon
 from tukra.utils import read_image
 
 from torch_em.data.datasets import medical
@@ -19,8 +20,8 @@ from torch_em.transform.raw import normalize
 ROOT = "/scratch/share/cidas/cca/data"
 
 
-def has_foreground(label):
-    if len(np.unique(label)) > 1:
+def has_foreground(label, min_num_instances=2):
+    if len(np.unique(label)) >= min_num_instances:
         return True
     else:
         return False
@@ -52,7 +53,9 @@ def resize_inputs(image, patch_shape=(1024, 1024), is_label=False):
     return image
 
 
-def get_valid_slices_per_volume(image, gt, fname, save_dir, visualize=False, overwrite_images=True):
+def get_valid_slices_per_volume(
+    image, gt, fname, save_dir, visualize=False, overwrite_images=True, min_num_instances=2
+):
     """This function assumes the volumes to be channels first: Z * Y * X
     """
     assert image.shape == gt.shape
@@ -69,7 +72,7 @@ def get_valid_slices_per_volume(image, gt, fname, save_dir, visualize=False, ove
         if os.path.exists(image_path) and os.path.exists(gt_path) and overwrite_images:
             continue
 
-        if has_foreground(gt_slice):
+        if has_foreground(gt_slice, min_num_instances=min_num_instances):
             image_slice = resize_inputs(image_slice)
             gt_slice = resize_inputs(gt_slice, is_label=True)
 
@@ -154,8 +157,8 @@ def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext):
         if os.path.exists(trg_image_path) and os.path.exists(trg_gt_path):
             continue
 
-        image = imageio.imread(image_path)
-        gt = imageio.imread(gt_path)
+        image = read_image(image_path)
+        gt = read_image(gt_path)
 
         if has_foreground(gt):
             image = resize_inputs(image)
@@ -257,16 +260,21 @@ def for_idrid(save_dir):
 def for_camus(save_dir, chamber_choice):
     """Task: Cardiac Structure Segmentation in Echocardiography Scans.
 
-    - for validation:
-    - for testing:
+    NOTE 1: We choose first 25 patients for extracting the slices.
+    NOTE 2: We choose the slices with all 4 cardiac structures present.
+    - for validation: 50 * 2
+    - for testing: 3133 + 3514
     """
     if _check_preprocessing(save_dir=save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
     image_paths, gt_paths = medical.camus._get_camus_paths(
-        path=os.path.join(ROOT, "camus"), chamber=chamber_choice, download=True,
+        path=os.path.join(ROOT, "camus"), chamber=chamber_choice, download=False,
     )
+
+    # HACK:
+    image_paths, gt_paths = image_paths[:25], gt_paths[:25]
 
     for image_path, gt_path in zip(image_paths, gt_paths):
         image = read_image(image_path)
@@ -282,14 +290,15 @@ def for_camus(save_dir, chamber_choice):
                 image=islice,
                 gt=gslice,
                 fname=f"camus_{image_id}",
-                save_dir=save_dir
+                save_dir=save_dir,
+                min_num_instances=4,
             )
 
     _get_val_test_splits(save_dir=save_dir, val_fraction=50, fname_ext="camus_")
 
 
 def for_montgomery(save_dir):
-    """Task: Lung Segmentation in CXR Images.
+    """Task: Lung Segmentation in Chest X-Rays Images.
 
     - for validation: 10
     - for testing: 128
@@ -313,10 +322,8 @@ def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
     for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
     for_idrid(save_dir=os.path.join(save_dir, "idrid", "slices"))
-
-    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "2ch"), chamber_choice=2)
-    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
-
+    for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "2ch"), chamber_choice=2)
+    for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
     for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
 
 
