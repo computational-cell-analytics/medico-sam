@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 
 
-ALL_SCRIPTS = ["precompute_embeddings", "iterative_prompting"]
+ALL_SCRIPTS = ["iterative_prompting"]
 
 ROOT = "/scratch/share/cidas/cca"
 
@@ -114,6 +114,8 @@ def get_checkpoint_path(experiment_set, model_type, n_gpus):
 
 def submit_slurm(args):
     "Submit python script that needs gpus with given inputs on a slurm node."
+    _add_dependency = False
+
     tmp_folder = "./gpu_jobs"
 
     # parameters to run the inference scripts
@@ -123,7 +125,7 @@ def submit_slurm(args):
     n_gpus = args.gpus
 
     if args.checkpoint_path is None:
-        checkpoint = get_checkpoint_path(experiment_set, n_gpus)
+        checkpoint = get_checkpoint_path(experiment_set=experiment_set, model_type=model_type, n_gpus=n_gpus)
     else:
         checkpoint = args.checkpoint_path
 
@@ -148,7 +150,7 @@ def submit_slurm(args):
     for i, my_script in enumerate(sorted(glob(tmp_folder + "/*"))):
         cmd = ["sbatch", my_script]
 
-        if i > 0:
+        if _add_dependency and i > 0:
             cmd.insert(1, f"--dependency=afterany:{job_id[0]}")
 
         cmd_out = subprocess.run(cmd, capture_output=True, text=True)
@@ -174,6 +176,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model_type", type=str, required=True)
     parser.add_argument("-e", "--experiment_set", type=str, required=True)
     parser.add_argument("--use_masks", action="store_true")
+    parser.add_argument("--gpus", type=int, default=None)
     parser.add_argument("--checkpoint_path", type=str, default=None)
     parser.add_argument("--experiment_path", type=str, default=None)
     args = parser.parse_args()

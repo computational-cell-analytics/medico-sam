@@ -4,20 +4,25 @@ Scripts for evaluating Segment Anything models and the finetuned `medico_sam` mo
 
 Experimental plan:
 - generalist evaluation for: (iterative prompting)
-    - SAM
-    - medico-sam
-    - MedSAM (pretrained)
+    - SAM +
+    - medico-sam +
+    - MedSAM (pretrained) +
     - SAM-Med2d (pretrained)
-        - FT-SAM for sure
-        - (optional) adapter
-    - MedSAM (finetuned-our)
+        - FT-SAM for sure -
+        - adapter -
+    - MedSAM (finetuned-our) +
         - 1 box only per object
-    - SimpleSam (finetuned-our)
+    - SimpleSam (finetuned-our) +
         - Maceij's paper (randomly sample either a box or a positive point per object)
 
 
 - semantic segmentation experiments (specific "limited" tasks)
+    - any is fine (2d datasets and nnUNet-2d for this)
     - SAMed style segmentation
+        - AA and CP: simple objective:
+            1. no prompts at all
+            2. lora and full finetuning
+
         - different approaches
             - learnable prompt (comparable important backbones)
             - input image to prompt encoder (optional)

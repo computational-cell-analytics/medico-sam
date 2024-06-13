@@ -1,6 +1,6 @@
 import os
 from tqdm import tqdm
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 
 import numpy as np
 import imageio.v3 as imageio
@@ -17,10 +17,10 @@ def run_inference_with_iterative_prompting_per_semantic_class(
     predictor: SamPredictor,
     image_paths: List[Union[str, os.PathLike]],
     gt_paths: List[Union[str, os.PathLike]],
-    embedding_dir: Union[str, os.PathLike],
     prediction_dir: Union[str, os.PathLike],
     start_with_box_prompt: bool,
     semantic_class_map: Dict[str, int],
+    embedding_dir: Optional[Union[str, os.PathLike]] = None,
     dilation: int = 5,
     batch_size: int = 32,
     n_iterations: int = 8,
@@ -90,7 +90,10 @@ def run_inference_with_iterative_prompting_per_semantic_class(
             if not len(np.unique(gt)) > 1:
                 continue
 
-            embedding_path = os.path.join(embedding_dir, f"{os.path.splitext(image_name)[0]}.zarr")
+            if embedding_dir is None:
+                embedding_path = None
+            else:
+                embedding_path = os.path.join(embedding_dir, f"{os.path.splitext(image_name)[0]}.zarr")
 
             _run_inference_with_iterative_prompting_for_image(
                 predictor, image, gt, start_with_box_prompt=start_with_box_prompt,

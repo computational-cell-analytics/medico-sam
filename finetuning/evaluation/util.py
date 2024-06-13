@@ -67,7 +67,8 @@ def _clear_files(experiment_folder, semantic_class_maps):
             _completed_inference.append(False)
 
     if len(_completed_inference) > 0 and all(_completed_inference):
-        shutil.rmtree(os.path.join(experiment_folder, "embeddings"))
+        if os.path.exists(os.path.join(experiment_folder, "embeddings")):
+            shutil.rmtree(os.path.join(experiment_folder, "embeddings"))
         shutil.rmtree(os.path.join(experiment_folder, "start_with_point"))
         shutil.rmtree(os.path.join(experiment_folder, "start_with_box"))
 
@@ -115,8 +116,8 @@ def _convert_sam_med2d_models(checkpoint_path, save_path):
 
 def test_medical_sam_models():
     # COMPATIBLE
-    ckpt_path = "/scratch-grete/projects/nim00007/sam/models/medsam/medsam_vit_b.pth"
-    save_path = None
+    # ckpt_path = "/scratch-grete/projects/nim00007/sam/models/medsam/medsam_vit_b.pth"
+    # save_path = None
 
     # 1. STATE NEEDS TO BE UPDATED
     # 2. It changes the input patch shape, hence the SAM model needs to be adapted likewise (inconvenient)
@@ -126,8 +127,8 @@ def test_medical_sam_models():
     # 1. STATE NEEDS TO BE UPDATED
     # 2. It changes the input patch shape, hence the SAM model needs to be adapted likewise (inconvenient)
     # 3. ADAPTER BLOCKS NEED TO BE ADDED
-    # ckpt_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b.pth"
-    # save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b_model.pt"
+    ckpt_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b.pth"
+    save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b_model.pt"
 
     if save_path is not None:
         _convert_sam_med2d_models(checkpoint_path=ckpt_path, save_path=save_path)
@@ -135,3 +136,6 @@ def test_medical_sam_models():
     _ = get_sam_model(model_type="vit_b", checkpoint_path=ckpt_path if save_path is None else save_path)
 
     print("Loading the model was successful.")
+
+
+test_medical_sam_models()

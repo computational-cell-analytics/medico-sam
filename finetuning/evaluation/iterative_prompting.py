@@ -14,7 +14,7 @@ def _run_iterative_prompting(
     prediction_root = os.path.join(
         exp_folder, "start_with_box" if start_with_box_prompt else "start_with_point"
     )
-    embedding_folder = os.path.join(exp_folder, "embeddings")
+    embedding_folder = None  # HACK: compute embeddings on-the-fly now, else: os.path.join(exp_folder, "embeddings")
     inference.run_inference_with_iterative_prompting_per_semantic_class(
         predictor=predictor,
         image_paths=image_paths,
@@ -37,6 +37,9 @@ def main():
     predictor = get_sam_model(model_type=args.model, checkpoint_path=args.checkpoint)
 
     image_paths, gt_paths, semantic_class_maps = get_dataset_paths(dataset_name=args.dataset, split="test")
+
+    # HACK: testing it on first 200 (or fewer) samples
+    image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
     prediction_root = _run_iterative_prompting(
         image_paths=image_paths,
