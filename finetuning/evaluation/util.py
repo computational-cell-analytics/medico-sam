@@ -4,6 +4,9 @@ import argparse
 from glob import glob
 from natsort import natsorted
 
+import torch
+from micro_sam.util import get_sam_model
+
 
 VALID_DATASETS = [
     "sega", "uwaterloo_skin", "idrid", "camus", "montgomery",
@@ -11,10 +14,15 @@ VALID_DATASETS = [
 
 DEXT = {
     "sega": ["slices/kits", "slices/rider", "slices/dongyang"],
+    "camus": ["slices/2ch", "slices/4ch"]
 }
 
 SEMANTIC_CLASS_MAPS = {
     "sega": {"aorta": 1},
+    "uwaterloo_skin": {"skin_lesion": 1},
+    "idrid": {"optic_disc": 1},
+    "montgomery": {"lungs": 1},
+    "camus": {"A": 1, "B": 2, "C": 3},
 }
 
 ROOT = "/scratch/share/cidas/cca/data"
@@ -89,3 +97,41 @@ def none_or_str(value):
     if value == 'None':
         return None
     return value
+
+
+#
+# EXPERIMENTAL SCRIPTS
+#
+
+
+def _convert_sam_med2d_models(checkpoint_path, save_path):
+    if os.path.exists(save_path):
+        return
+
+    state = torch.load(checkpoint_path)
+    model_state = state["model"]
+    torch.save(model_state, save_path)
+
+
+def test_medical_sam_models():
+    # COMPATIBLE
+    ckpt_path = "/scratch-grete/projects/nim00007/sam/models/medsam/medsam_vit_b.pth"
+    save_path = None
+
+    # 1. STATE NEEDS TO BE UPDATED
+    # 2. It changes the input patch shape, hence the SAM model needs to be adapted likewise (inconvenient)
+    # ckpt_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b.pth"
+    # save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b_model.pt"
+
+    # 1. STATE NEEDS TO BE UPDATED
+    # 2. It changes the input patch shape, hence the SAM model needs to be adapted likewise (inconvenient)
+    # 3. ADAPTER BLOCKS NEED TO BE ADDED
+    # ckpt_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b.pth"
+    # save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b_model.pt"
+
+    if save_path is not None:
+        _convert_sam_med2d_models(checkpoint_path=ckpt_path, save_path=save_path)
+
+    _ = get_sam_model(model_type="vit_b", checkpoint_path=ckpt_path if save_path is None else save_path)
+
+    print("Loading the model was successful.")

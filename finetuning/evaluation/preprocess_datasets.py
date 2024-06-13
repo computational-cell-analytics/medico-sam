@@ -142,7 +142,7 @@ def _check_preprocessing(save_dir):
     return os.path.exists(os.path.join(save_dir, "val")) and os.path.exists(os.path.join(save_dir, "test"))
 
 
-def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext):
+def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext, map_to_id=None):
     image_dir = os.path.join(save_dir, "images")
     gt_dir = os.path.join(save_dir, "ground_truth")
     os.makedirs(image_dir, exist_ok=True)
@@ -163,6 +163,12 @@ def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext):
         if has_foreground(gt):
             image = resize_inputs(image)
             gt = resize_inputs(gt, is_label=True)
+
+            if map_to_id is not None:
+                assert isinstance(map_to_id, dict)
+                for k, v in map_to_id.items():
+                    if k in gt:
+                        gt[gt == k] = v
 
             if gt.dtype == "bool":  # for uwaterloo
                 gt = gt.astype("uint8")
@@ -227,7 +233,9 @@ def for_uwaterloo_skin(save_dir):
     )
 
     fext = "uwaterloo_skin_"
-    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    convert_simple_datasets(
+        image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext, map_to_id={255: 1},
+    )
     _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 

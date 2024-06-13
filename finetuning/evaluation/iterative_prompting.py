@@ -28,18 +28,6 @@ def _run_iterative_prompting(
     return prediction_root
 
 
-def _evaluate_iterative_prompting(
-    gt_paths, semantic_class_maps, prediction_root, start_with_box_prompt, exp_folder
-):
-    run_evaluation_for_iterative_prompting_per_semantic_class(
-        gt_paths=gt_paths,
-        prediction_root=prediction_root,
-        experiment_folder=exp_folder,
-        start_with_box_prompt=start_with_box_prompt,
-        semantic_class_map=semantic_class_maps,
-    )
-
-
 def main():
     args = get_default_arguments()
 
@@ -60,12 +48,12 @@ def main():
         use_masks=args.use_masks
     )
 
-    _evaluate_iterative_prompting(
+    run_evaluation_for_iterative_prompting_per_semantic_class(
         gt_paths=gt_paths,
-        semantic_class_maps=semantic_class_maps,
         prediction_root=prediction_root,
+        experiment_folder=args.experiment_folder,
         start_with_box_prompt=start_with_box_prompt,
-        exp_folder=args.experiment_folder,
+        semantic_class_map=semantic_class_maps,
     )
 
     _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
