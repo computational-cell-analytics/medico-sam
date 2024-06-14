@@ -5,7 +5,6 @@ from glob import glob
 from natsort import natsorted
 
 import torch
-from micro_sam.util import get_sam_model
 
 
 VALID_DATASETS = [
@@ -135,6 +134,7 @@ def test_medical_sam_models():
     # if save_path is not None:
     #     _convert_sam_med2d_models(checkpoint_path=ckpt_path, save_path=save_path)
 
+    # from micro_sam.util import get_sam_model
     # _ = get_sam_model(model_type="vit_b", checkpoint_path=ckpt_path if save_path is None else save_path)
 
     from medico_sam.model.util import get_sam_med2d_model

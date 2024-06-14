@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Union, Tuple
+from typing import Optional, Union
 
 import torch
 
