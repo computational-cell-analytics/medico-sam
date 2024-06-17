@@ -5,7 +5,6 @@ from glob import glob
 from natsort import natsorted
 
 import torch
-from micro_sam.util import get_sam_model
 
 
 VALID_DATASETS = [
@@ -122,20 +121,28 @@ def test_medical_sam_models():
     # 1. STATE NEEDS TO BE UPDATED
     # 2. It changes the input patch shape, hence the SAM model needs to be adapted likewise (inconvenient)
     # ckpt_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b.pth"
+    # adapter = False
     # save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b_model.pt"
 
     # 1. STATE NEEDS TO BE UPDATED
     # 2. It changes the input patch shape, hence the SAM model needs to be adapted likewise (inconvenient)
     # 3. ADAPTER BLOCKS NEED TO BE ADDED
     ckpt_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b.pth"
-    save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b_model.pt"
+    adapter = True
+    # save_path = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b_model.pt"
 
-    if save_path is not None:
-        _convert_sam_med2d_models(checkpoint_path=ckpt_path, save_path=save_path)
+    # if save_path is not None:
+    #     _convert_sam_med2d_models(checkpoint_path=ckpt_path, save_path=save_path)
 
-    _ = get_sam_model(model_type="vit_b", checkpoint_path=ckpt_path if save_path is None else save_path)
+    # from micro_sam.util import get_sam_model
+    # _ = get_sam_model(model_type="vit_b", checkpoint_path=ckpt_path if save_path is None else save_path)
+
+    from medico_sam.model.util import get_sam_med2d_model
+    predictor = get_sam_med2d_model(model_type="vit_b", checkpoint_path=ckpt_path, encoder_adapter=adapter)
 
     print("Loading the model was successful.")
+
+    breakpoint()
 
 
 test_medical_sam_models()
