@@ -138,11 +138,6 @@ def test_medical_sam_models():
     # _ = get_sam_model(model_type="vit_b", checkpoint_path=ckpt_path if save_path is None else save_path)
 
     from medico_sam.model.util import get_sam_med2d_model
-    predictor = get_sam_med2d_model(model_type="vit_b", checkpoint_path=ckpt_path, encoder_adapter=adapter)
+    _ = get_sam_med2d_model(model_type="vit_b", checkpoint_path=ckpt_path, encoder_adapter=adapter)
 
     print("Loading the model was successful.")
-
-    breakpoint()
-
-
-test_medical_sam_models()
