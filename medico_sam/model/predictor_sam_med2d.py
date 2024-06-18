@@ -40,6 +40,9 @@ class SamPredictor:
         augments = transforms(image=input_image)
         input_image = augments['image'][None, :, :, :]
 
+        # NOTE: This is crucial for micro-sam's downstream inference functions.
+        self.input_size = input_image.shape[-2:]
+
         assert (
             len(input_image.shape) == 4
             and input_image.shape[1] == 3

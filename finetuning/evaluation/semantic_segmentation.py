@@ -1,9 +1,9 @@
 import os
 
 from medico_sam.evaluation import inference
+from medico_sam.util import get_medico_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
-from micro_sam.util import get_sam_model
 
 from util import get_dataset_paths, get_default_arguments, _clear_files
 
@@ -25,7 +25,7 @@ def main():
     args = get_default_arguments()
 
     # get the predictor to perform inference
-    predictor = get_sam_model(model_type=args.model, checkpoint_path=args.checkpoint)
+    predictor = get_medico_sam_model(model_type=args.model, checkpoint_path=args.checkpoint)
 
     image_paths, gt_paths, semantic_class_maps = get_dataset_paths(dataset_name=args.dataset, split="test")
 
@@ -46,7 +46,7 @@ def main():
         semantic_class_map=semantic_class_maps,
     )
 
-    # _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
+    _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
 
 
 if __name__ == "__main__":

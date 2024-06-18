@@ -57,10 +57,12 @@ def _clear_files(experiment_folder, semantic_class_maps):
     # Check if both the results from iterative prompting starting box and points are there.
     _completed_inference = []
     for cname in semantic_class_maps.keys():
-        box_rpath = os.path.join(experiment_folder, "results", cname, "iterative_prompts_start_box.csv")
-        point_rpath = os.path.join(experiment_folder, "results", cname, "iterative_prompts_start_point.csv")
+        res_dir = os.path.join(experiment_folder, "results", cname)
+        box_rpath = os.path.join(res_dir, "iterative_prompts_start_box.csv")
+        point_rpath = os.path.join(res_dir, "iterative_prompts_start_point.csv")
+        semantic_rpath = os.path.join(res_dir, "semantic_segmentation.csv")
 
-        if os.path.exists(box_rpath) and os.path.exists(point_rpath):
+        if os.path.exists(box_rpath) and os.path.exists(point_rpath) and os.path.exists(semantic_rpath):
             _completed_inference.append(True)
         else:
             _completed_inference.append(False)
@@ -70,6 +72,7 @@ def _clear_files(experiment_folder, semantic_class_maps):
             shutil.rmtree(os.path.join(experiment_folder, "embeddings"))
         shutil.rmtree(os.path.join(experiment_folder, "start_with_point"))
         shutil.rmtree(os.path.join(experiment_folder, "start_with_box"))
+        shutil.rmtree(os.path.join(experiment_folder, "semantic_segmentation"))
 
 
 #
@@ -86,10 +89,16 @@ def get_default_arguments():
     parser.add_argument("-e", "--experiment_folder", type=str, required=True)
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("--box", action="store_true", help="If passed, starts with first prompt as box")
-    parser.add_argument(
-        "--use_masks", action="store_true", help="To use logits masks for iterative prompting."
-    )
+    parser.add_argument("--use_masks", action="store_true", help="To use logits masks for iterative prompting.")
+
+    # for SAM-Med2d models
+    parser.add_argument("--use_sam_med2d", action="store_true", help="Whether to use the SAM-Med2d model.")
+    parser.add_argument("--adapter", action="store_true", help="Whether the model has the adapter blocks or not.")
     args = parser.parse_args()
+
+    if args.adapter:
+        assert args.use_sam_med2d, "You need to use SAM-Med2d model as adapters are only supported for SAM-Med2d atm."
+
     return args
 
 
