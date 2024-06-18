@@ -1,7 +1,7 @@
 import os
 
 from medico_sam.evaluation import inference
-# from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
+from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
 from micro_sam.util import get_sam_model
 
@@ -39,14 +39,14 @@ def main():
         predictor=predictor,
     )
 
-    # run_evaluation_for_semantic_segmentation(
-    #     gt_paths=gt_paths,
-    #     prediction_root=prediction_root,
-    #     experiment_folder=args.experiment_folder,
-    #     semantic_class_map=semantic_class_maps,
-    # )
+    run_evaluation_for_semantic_segmentation(
+        gt_paths=gt_paths,
+        prediction_root=prediction_root,
+        experiment_folder=args.experiment_folder,
+        semantic_class_map=semantic_class_maps,
+    )
 
-    _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
+    # _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
 
 
 if __name__ == "__main__":

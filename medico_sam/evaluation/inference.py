@@ -115,10 +115,11 @@ def _run_semantic_segmentation_for_image(
     image,
     embedding_path,
     prediction_path,
+    mask_threshold=0.6,
 ):
     # Compute the image embeddings.
     image_embeddings = util.precompute_image_embeddings(
-        predictor, image, embedding_path, ndim=2, verbose=True,
+        predictor, image, embedding_path, ndim=2, verbose=False,
     )
     util.set_precomputed(predictor, image_embeddings)
 
@@ -135,17 +136,11 @@ def _run_semantic_segmentation_for_image(
     masks = torch.sigmoid(batch_masks)
     masks = masks.detach().cpu().numpy().squeeze()
 
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 2, figsize=(10, 10))
-    ax[0].imshow(image.astype(np.uint8))
-    ax[1].imshow(masks)
-    plt.savefig("./semantic.png")
-    plt.close()
-
-    breakpoint()
+    # threshold the outputs to get binary segmentation
+    masks = (masks > mask_threshold).astype("uint8")
 
     # save the segmentations
-    # imageio.imwrite(prediction_path, masks, compression="zlib")
+    imageio.imwrite(prediction_path, masks, compression="zlib")
 
 
 def run_semantic_segmentation(
@@ -157,7 +152,7 @@ def run_semantic_segmentation(
 ):
     """
     """
-    for image_path in tqdm(image_paths, desc="Run inference for semantic segmentation with all images",):
+    for image_path in tqdm(image_paths, desc="Run inference for semantic segmentation with all images"):
         image_name = os.path.basename(image_path)
 
         assert os.path.exists(image_path), image_path

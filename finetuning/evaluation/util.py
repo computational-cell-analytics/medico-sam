@@ -49,7 +49,7 @@ def get_dataset_paths(dataset_name, split="test"):
 
 
 def get_pred_paths(prediction_folder):
-    pred_paths = sorted(glob(os.path.join(prediction_folder, "*")))
+    pred_paths = natsorted(glob(os.path.join(prediction_folder, "*")))
     return pred_paths
 
 
