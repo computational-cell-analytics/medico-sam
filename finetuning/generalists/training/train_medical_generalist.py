@@ -16,7 +16,7 @@ def get_dataloaders(data_path, patch_shape):
     train_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=8,
+        batch_size=7,
         split="train",
         resize_inputs=True,
         num_workers=64,
@@ -29,7 +29,7 @@ def get_dataloaders(data_path, patch_shape):
     val_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=8,
+        batch_size=7,
         split="val",
         resize_inputs=True,
         num_workers=64,
