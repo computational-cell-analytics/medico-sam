@@ -1,33 +1,16 @@
 import os
 import argparse
 
-import numpy as np
-
 import torch
 
 from torch_em.loss import DiceLoss
 from torch_em.data import MinInstanceSampler
+from torch_em.transform.label import OneHotTransform
 from torch_em.data.datasets.medical import get_oimhs_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
-
-
-# NOTE:
-# for this, we need to make some changes to the output tokens of the mask decoder
-# which is a bit tricky, as loading the Segment Anything weight would get messier then.
-# hence, this ideally works for binary segmentation at the moment
-# TODO: need to see if we can adapt this to multi-class segmentation.
-
-
-def _label_transform(inputs):
-    assert len(np.unique(inputs)) >= 4
-    one_hot = [
-        (inputs == i).astype("uint8") for i in range(1, 5)
-    ]
-    one_hot = np.stack(one_hot)
-    return one_hot
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -42,7 +25,8 @@ def get_dataloaders(patch_shape, data_path):
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
     raw_transform = sam_training.identity
-    sampler = MinInstanceSampler(min_num_instances=4)
+    sampler = MinInstanceSampler(min_num_instances=5)
+    label_transform = OneHotTransform(class_ids=[1, 2, 3, 4])
 
     train_loader = get_oimhs_loader(
         path=data_path,
@@ -54,7 +38,7 @@ def get_dataloaders(patch_shape, data_path):
         shuffle=True,
         sampler=sampler,
         pin_memory=True,
-        label_transform=_label_transform,
+        label_transform=label_transform,
     )
     val_loader = get_oimhs_loader(
         path=data_path,
@@ -65,7 +49,7 @@ def get_dataloaders(patch_shape, data_path):
         num_workers=16,
         sampler=sampler,
         pin_memory=True,
-        label_transform=_label_transform,
+        label_transform=label_transform,
     )
     return train_loader, val_loader
 
@@ -80,13 +64,16 @@ def finetune_oimhs(args):
     checkpoint_path = None  # override this to start training from a custom checkpoint
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
+    num_classes = 4
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
         model_type=model_type,
         device=device,
         checkpoint_path=checkpoint_path,
-        freeze=freeze_parts
+        freeze=freeze_parts,
+        flexible_load_checkpoint=True,
+        num_multimask_outputs=num_classes,
     )
     model.to(device)
 
@@ -94,6 +81,9 @@ def finetune_oimhs(args):
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
+
+    train_loader.dataset.max_sampling_attempts = 10000
+    val_loader.dataset.max_sampling_attempts = 10000
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
@@ -113,6 +103,7 @@ def finetune_oimhs(args):
         log_image_interval=10,
         mixed_precision=True,
         convert_inputs=convert_inputs,
+        num_classes=num_classes,
         compile_model=False,
         loss=DiceLoss(),
         metric=DiceLoss(),
