@@ -25,6 +25,8 @@ SEMANTIC_CLASS_MAPS = {
     "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4}
 }
 
+MULTICLASS_SEMANTIC = ["oimhs"]
+
 ROOT = "/scratch/share/cidas/cca/data"
 
 

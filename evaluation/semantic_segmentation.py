@@ -5,10 +5,10 @@ from medico_sam.util import get_medico_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
 
-from util import get_dataset_paths, get_default_arguments, _clear_files
+from util import get_dataset_paths, get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
 
 
-def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, predictor):
+def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, predictor, is_multiclass):
     prediction_root = os.path.join(exp_folder, "semantic_segmentation")
     embedding_folder = None  # HACK: compute embeddings on-the-fly now, else: os.path.join(exp_folder, "embeddings")
     inference.run_semantic_segmentation(
@@ -17,6 +17,7 @@ def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, pre
         embedding_dir=embedding_folder,
         prediction_dir=prediction_root,
         semantic_class_map=semantic_class_maps,
+        is_multiclass=is_multiclass,
     )
     return prediction_root
 
@@ -42,6 +43,7 @@ def main():
         semantic_class_maps=semantic_class_maps,
         exp_folder=args.experiment_folder,
         predictor=predictor,
+        is_multiclass=args.dataset in MULTICLASS_SEMANTIC,
     )
 
     run_evaluation_for_semantic_segmentation(

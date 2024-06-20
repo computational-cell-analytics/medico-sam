@@ -4,6 +4,7 @@ from typing import List, Union, Dict, Optional
 
 import numpy as np
 import imageio.v3 as imageio
+from skimage.transform import resize
 from skimage.measure import label as connected_components
 
 import torch
@@ -129,20 +130,56 @@ def _run_semantic_segmentation_for_image(
         point_labels=None,
         boxes=None,
         mask_input=None,
-        multimask_output=False,
+        multimask_output=True,
         return_logits=True,
     )
 
-    breakpoint()
+    import matplotlib.pyplot as plt
 
+    #
+    # APPROACH 1:
+    #
+    # masks = torch.softmax(batch_masks, dim=1)
+    # masks = torch.argmax(masks, dim=1)
+    # masks = masks.detach().cpu().numpy().squeeze()
+    # NOTE: below resizing only for batch_logits
+    # masks = resize(
+    #     image=image,
+    #     output_shape=image.shape[:2],
+    #     preserve_range=True,
+    #     order=0,
+    #     anti_aliasing=False
+    # )
+    # cols = 1 + masks.shape[0] if masks.ndim == 3 else 2
+    # fig, ax = plt.subplots(1, cols, figsize=(20, 20))
+    # ax[0].imshow(image.astype("uint8"))
+
+    # if masks.ndim == 2:
+    #     masks = masks[None]
+    # for i, mask in enumerate(masks, start=1):
+    #     ax[i].imshow(mask)
+
+    # plt.savefig("./seg.png")
+    # plt.close()
+
+    #
+    # APPROACH 2:
+    #
     masks = torch.sigmoid(batch_masks)
     masks = masks.detach().cpu().numpy().squeeze()
 
-    # threshold the outputs to get binary segmentation
-    masks = (masks > mask_threshold).astype("uint8")
+    fig, ax = plt.subplots(1, 5, figsize=(20, 20))
+    ax[0].imshow(image.astype("uint8"))
+    for i in range(masks.shape[0]):
+        ax[i+1].imshow(masks[i] > 0.6)
+
+    plt.savefig("./seg.png")
+    plt.close()
+
+    breakpoint()
 
     # save the segmentations
-    imageio.imwrite(prediction_path, masks, compression="zlib")
+    # imageio.imwrite(prediction_path, masks, compression="zlib")
 
 
 def run_semantic_segmentation(
@@ -151,6 +188,7 @@ def run_semantic_segmentation(
     prediction_dir: Union[str, os.PathLike],
     semantic_class_map: Dict[str, int],
     embedding_dir: Optional[Union[str, os.PathLike]] = None,
+    is_multiclass: bool = False,
 ):
     """
     """
@@ -160,7 +198,12 @@ def run_semantic_segmentation(
         assert os.path.exists(image_path), image_path
 
         # Perform segmentation only on the semantic class
-        for semantic_class_name, _ in semantic_class_map.items():
+        for i, (semantic_class_name, _) in enumerate(semantic_class_map.items()):
+            if is_multiclass:
+                semantic_class_name = "all"
+                if i > 0:  # We only perform segmentation for multiclass once.
+                    continue
+
             # We skip the images that already have been segmented
             prediction_path = os.path.join(prediction_dir, semantic_class_name, image_name)
             if os.path.exists(prediction_path):
