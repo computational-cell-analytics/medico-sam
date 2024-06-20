@@ -3,7 +3,6 @@ import argparse
 
 import torch
 
-from torch_em.loss import DiceLoss
 from torch_em.data import MinInstanceSampler
 from torch_em.transform.label import OneHotTransform
 from torch_em.data.datasets.medical import get_oimhs_loader
@@ -105,8 +104,6 @@ def finetune_oimhs(args):
         convert_inputs=convert_inputs,
         num_classes=num_classes,
         compile_model=False,
-        loss=DiceLoss(),
-        metric=DiceLoss(),
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:

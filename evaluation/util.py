@@ -8,7 +8,7 @@ import torch
 
 
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery",
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs"
 ]
 
 DEXT = {
@@ -22,6 +22,7 @@ SEMANTIC_CLASS_MAPS = {
     "idrid": {"optic_disc": 1},
     "montgomery": {"lungs": 1},
     "camus": {"A": 1, "B": 2, "C": 3},
+    "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4}
 }
 
 ROOT = "/scratch/share/cidas/cca/data"

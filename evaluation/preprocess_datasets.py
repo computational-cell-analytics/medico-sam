@@ -324,6 +324,23 @@ def for_montgomery(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 
+def for_oimhs(save_dir):
+    """Task: Macular region segmentation in OCT images.
+
+    - for validation:
+    - for testing:
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.oimhs._get_oimhs_paths(path=os.path.join(ROOT, "oimhs"), download=False)
+
+    fext = "oimhs_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
 def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
@@ -333,6 +350,7 @@ def _preprocess_datasets(save_dir):
     for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "2ch"), chamber_choice=2)
     for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
     for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
+    for_oimhs(save_dir=os.path.join(save_dir, "oimhs", "slices"))
 
 
 def main():

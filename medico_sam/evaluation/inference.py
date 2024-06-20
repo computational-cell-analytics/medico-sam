@@ -133,6 +133,8 @@ def _run_semantic_segmentation_for_image(
         return_logits=True,
     )
 
+    breakpoint()
+
     masks = torch.sigmoid(batch_masks)
     masks = masks.detach().cpu().numpy().squeeze()
 

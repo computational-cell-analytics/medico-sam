@@ -20,7 +20,6 @@ def get_medico_sam_model(
         _fetch_model = get_sam_model
 
         for k, v in kwargs.items():
-            if k in ["return_state", "return_sam"]:
-                model_kwargs[k] = v
+            model_kwargs[k] = v
 
     return _fetch_model(**model_kwargs)

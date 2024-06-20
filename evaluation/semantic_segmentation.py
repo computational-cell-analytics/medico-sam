@@ -24,10 +24,15 @@ def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, pre
 def main():
     args = get_default_arguments()
 
-    # get the predictor to perform inference
-    predictor = get_medico_sam_model(model_type=args.model, checkpoint_path=args.checkpoint)
-
     image_paths, gt_paths, semantic_class_maps = get_dataset_paths(dataset_name=args.dataset, split="test")
+
+    # get the predictor to perform inference
+    predictor = get_medico_sam_model(
+        model_type=args.model,
+        checkpoint_path=args.checkpoint,
+        flexible_load_checkpoint=True,
+        num_multimask_outputs=len(semantic_class_maps.keys()),
+    )
 
     # HACK: testing it on first 200 (or fewer) samples
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
