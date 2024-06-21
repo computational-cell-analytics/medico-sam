@@ -32,7 +32,7 @@ def main():
         model_type=args.model,
         checkpoint_path=args.checkpoint,
         flexible_load_checkpoint=True,
-        num_multimask_outputs=len(semantic_class_maps.keys()),
+        num_multimask_outputs=(len(semantic_class_maps.keys()) + 1),
     )
 
     # HACK: testing it on first 200 (or fewer) samples
@@ -51,6 +51,7 @@ def main():
         prediction_root=prediction_root,
         experiment_folder=args.experiment_folder,
         semantic_class_map=semantic_class_maps,
+        is_multiclass=args.dataset in MULTICLASS_SEMANTIC,
     )
 
     _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)

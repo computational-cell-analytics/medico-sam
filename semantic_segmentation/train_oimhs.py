@@ -25,7 +25,7 @@ def get_dataloaders(patch_shape, data_path):
     """
     raw_transform = sam_training.identity
     sampler = MinInstanceSampler(min_num_instances=5)
-    label_transform = OneHotTransform(class_ids=[1, 2, 3, 4])
+    label_transform = OneHotTransform(class_ids=[0, 1, 2, 3, 4])
 
     train_loader = get_oimhs_loader(
         path=data_path,
@@ -63,7 +63,7 @@ def finetune_oimhs(args):
     checkpoint_path = None  # override this to start training from a custom checkpoint
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
-    num_classes = 4
+    num_classes = 5  # 1 background class and 4 semantic foreground classes
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(

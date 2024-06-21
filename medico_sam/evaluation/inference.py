@@ -4,7 +4,6 @@ from typing import List, Union, Dict, Optional
 
 import numpy as np
 import imageio.v3 as imageio
-from skimage.transform import resize
 from skimage.measure import label as connected_components
 
 import torch
@@ -113,10 +112,9 @@ def run_inference_with_iterative_prompting_per_semantic_class(
 
 def _run_semantic_segmentation_for_image(
     predictor: SamPredictor,
-    image,
-    embedding_path,
-    prediction_path,
-    mask_threshold=0.6,
+    image: np.ndarray,
+    embedding_path: Union[os.PathLike, str],
+    prediction_path: Union[os.PathLike, str],
 ):
     # Compute the image embeddings.
     image_embeddings = util.precompute_image_embeddings(
@@ -125,7 +123,7 @@ def _run_semantic_segmentation_for_image(
     util.set_precomputed(predictor, image_embeddings)
 
     # Get the predictions out of the SamPredictor
-    batch_masks, batch_ious, batch_logits = predictor.predict_torch(
+    batch_masks, _, _ = predictor.predict_torch(
         point_coords=None,
         point_labels=None,
         boxes=None,
@@ -134,52 +132,11 @@ def _run_semantic_segmentation_for_image(
         return_logits=True,
     )
 
-    import matplotlib.pyplot as plt
-
-    #
-    # APPROACH 1:
-    #
-    # masks = torch.softmax(batch_masks, dim=1)
-    # masks = torch.argmax(masks, dim=1)
-    # masks = masks.detach().cpu().numpy().squeeze()
-    # NOTE: below resizing only for batch_logits
-    # masks = resize(
-    #     image=image,
-    #     output_shape=image.shape[:2],
-    #     preserve_range=True,
-    #     order=0,
-    #     anti_aliasing=False
-    # )
-    # cols = 1 + masks.shape[0] if masks.ndim == 3 else 2
-    # fig, ax = plt.subplots(1, cols, figsize=(20, 20))
-    # ax[0].imshow(image.astype("uint8"))
-
-    # if masks.ndim == 2:
-    #     masks = masks[None]
-    # for i, mask in enumerate(masks, start=1):
-    #     ax[i].imshow(mask)
-
-    # plt.savefig("./seg.png")
-    # plt.close()
-
-    #
-    # APPROACH 2:
-    #
-    masks = torch.sigmoid(batch_masks)
+    masks = torch.argmax(batch_masks, dim=1)
     masks = masks.detach().cpu().numpy().squeeze()
 
-    fig, ax = plt.subplots(1, 5, figsize=(20, 20))
-    ax[0].imshow(image.astype("uint8"))
-    for i in range(masks.shape[0]):
-        ax[i+1].imshow(masks[i] > 0.6)
-
-    plt.savefig("./seg.png")
-    plt.close()
-
-    breakpoint()
-
     # save the segmentations
-    # imageio.imwrite(prediction_path, masks, compression="zlib")
+    imageio.imwrite(prediction_path, masks, compression="zlib")
 
 
 def run_semantic_segmentation(
