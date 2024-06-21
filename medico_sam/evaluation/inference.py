@@ -6,8 +6,11 @@ import numpy as np
 import imageio.v3 as imageio
 from skimage.measure import label as connected_components
 
+import torch
+
 from torch_em.util.segmentation import size_filter
 
+from micro_sam import util
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
 
 from segment_anything import SamPredictor
@@ -99,4 +102,80 @@ def run_inference_with_iterative_prompting_per_semantic_class(
                 predictor, image, gt, start_with_box_prompt=start_with_box_prompt,
                 dilation=dilation, batch_size=batch_size, embedding_path=embedding_path,
                 n_iterations=n_iterations, prediction_paths=prediction_paths, use_masks=use_masks
+            )
+
+
+#
+# SEMANTIC SEGMENTATION FUNCTIONALITIES
+#
+
+
+def _run_semantic_segmentation_for_image(
+    predictor: SamPredictor,
+    image: np.ndarray,
+    embedding_path: Union[os.PathLike, str],
+    prediction_path: Union[os.PathLike, str],
+):
+    # Compute the image embeddings.
+    image_embeddings = util.precompute_image_embeddings(
+        predictor, image, embedding_path, ndim=2, verbose=False,
+    )
+    util.set_precomputed(predictor, image_embeddings)
+
+    # Get the predictions out of the SamPredictor
+    batch_masks, _, _ = predictor.predict_torch(
+        point_coords=None,
+        point_labels=None,
+        boxes=None,
+        mask_input=None,
+        multimask_output=True,
+        return_logits=True,
+    )
+
+    masks = torch.argmax(batch_masks, dim=1)
+    masks = masks.detach().cpu().numpy().squeeze()
+
+    # save the segmentations
+    imageio.imwrite(prediction_path, masks, compression="zlib")
+
+
+def run_semantic_segmentation(
+    predictor: SamPredictor,
+    image_paths: List[Union[str, os.PathLike]],
+    prediction_dir: Union[str, os.PathLike],
+    semantic_class_map: Dict[str, int],
+    embedding_dir: Optional[Union[str, os.PathLike]] = None,
+    is_multiclass: bool = False,
+):
+    """
+    """
+    for image_path in tqdm(image_paths, desc="Run inference for semantic segmentation with all images"):
+        image_name = os.path.basename(image_path)
+
+        assert os.path.exists(image_path), image_path
+
+        # Perform segmentation only on the semantic class
+        for i, (semantic_class_name, _) in enumerate(semantic_class_map.items()):
+            if is_multiclass:
+                semantic_class_name = "all"
+                if i > 0:  # We only perform segmentation for multiclass once.
+                    continue
+
+            # We skip the images that already have been segmented
+            prediction_path = os.path.join(prediction_dir, semantic_class_name, image_name)
+            if os.path.exists(prediction_path):
+                continue
+
+            image = imageio.imread(image_path)
+
+            # create the prediction folder
+            os.makedirs(os.path.join(prediction_dir, semantic_class_name), exist_ok=True)
+
+            if embedding_dir is None:
+                embedding_path = None
+            else:
+                embedding_path = os.path.join(embedding_dir, f"{os.path.splitext(image_name)[0]}.zarr")
+
+            _run_semantic_segmentation_for_image(
+                predictor=predictor, image=image, embedding_path=embedding_path, prediction_path=prediction_path,
             )

@@ -1,9 +1,8 @@
 import os
 
 from medico_sam.evaluation import inference
+from medico_sam.util import get_medico_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_iterative_prompting_per_semantic_class
-
-from micro_sam.util import get_sam_model
 
 from util import get_dataset_paths, get_default_arguments, _clear_files
 
@@ -34,7 +33,12 @@ def main():
     start_with_box_prompt = args.box  # overwrite to start first iters' prompt with box instead of single point
 
     # get the predictor to perform inference
-    predictor = get_sam_model(model_type=args.model, checkpoint_path=args.checkpoint)
+    predictor = get_medico_sam_model(
+        model_type=args.model,
+        checkpoint_path=args.checkpoint,
+        use_sam_med2d=args.use_sam_med2d,
+        encoder_adapter=args.adapter,
+    )
 
     image_paths, gt_paths, semantic_class_maps = get_dataset_paths(dataset_name=args.dataset, split="test")
 

@@ -8,8 +8,8 @@ Experimental plan:
     - medico-sam +
     - MedSAM (pretrained) +
     - SAM-Med2d (pretrained)
-        - FT-SAM for sure -
-        - adapter -
+        - FT-SAM for sure +
+        - adapter +
     - MedSAM (finetuned-our) +
         - 1 box only per object
     - SimpleSam (finetuned-our) +
@@ -18,8 +18,7 @@ Experimental plan:
 
 - semantic segmentation experiments (specific "limited" tasks)
     - any is fine (2d datasets and nnUNet-2d for this)
-    - SAMed style segmentation
-        - AA and CP: simple objective:
+    - SAMed style segmentation +
             1. no prompts at all
             2. lora and full finetuning
 
@@ -34,3 +33,8 @@ Experimental plan:
     - napari tools (DKFZ, micro-sam)
     - 3d slicer (maceij's extension)
     - monai label (optional)
+
+
+- Ablation:
+    - single mask vs no mask
+    - input size (optional)
