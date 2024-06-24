@@ -199,6 +199,8 @@ def submit_slurm(args):
             **extra_params
             )
 
+    quit()
+
     # the logic below automates the process of first running the precomputation of embeddings, and only then inference.
     job_id = []
     for i, my_script in enumerate(sorted(glob(tmp_folder + "/*"))):

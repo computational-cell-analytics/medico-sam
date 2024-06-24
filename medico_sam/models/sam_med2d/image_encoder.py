@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 from typing import Optional, Tuple, Type
 
-from segment_anything.modeling.common import LayerNorm2d, MLPBlock
+from .common import LayerNorm2d, MLPBlock
 
 
 # This class and its supporting functions below lightly adapted from the ViTDet backbone available at: https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/vit.py # noqa

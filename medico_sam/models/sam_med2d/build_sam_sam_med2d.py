@@ -13,9 +13,12 @@ from functools import partial
 import torch
 from torch.nn import functional as F
 
-from segment_anything.modeling import MaskDecoder, PromptEncoder, Sam, TwoWayTransformer
-
-from .image_encoder_sam_med2d import ImageEncoderViT  # comes from medico-sam's adaptation of SAM-Med2d
+# scripts come from medico-sam's adaptation of SAM-Med2d
+from .sam_model import Sam
+from .transformer import TwoWayTransformer
+from .image_encoder import ImageEncoderViT
+from .mask_decoder import MaskDecoder
+from .prompt_encoder import PromptEncoder
 
 
 def build_sam_vit_h(args):

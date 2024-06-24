@@ -120,6 +120,11 @@ class SamPredictor:
 
         if boxes is not None and boxes.shape[0] > 1:
             mask_list = []
+
+            # ADDITIONS BY AA:
+            low_res_mask_list = []
+            iou_prediction_list = []
+
             # Embed prompts
             for i in range(boxes.shape[0]):
                 pre_boxes = boxes[i:i+1, ...]
@@ -142,14 +147,23 @@ class SamPredictor:
                 if multimask_output:
                     max_values, max_indexs = torch.max(iou_predictions, dim=1)
                     max_values = max_values.unsqueeze(1)
-                    iou_predictions = max_values
+                    # iou_predictions = max_values  # NOTE: AA: I have no clue why is this necessary in the predictor
                     low_res_masks = low_res_masks[:, max_indexs]
 
                 # Upscale the masks to the original image resolution
                 pre_masks = self.postprocess_masks(low_res_masks, self.model.image_encoder.img_size, self.original_size)
 
                 mask_list.append(pre_masks)
+
+                # ADDITIONS BY AA:
+                low_res_mask_list.append(low_res_masks)
+                iou_prediction_list.append(iou_predictions)
+
             masks = torch.cat(mask_list, dim=0)
+
+            # ADDITIONS BY AA:
+            low_res_masks = torch.cat(low_res_mask_list, dim=0)
+            iou_predictions = torch.cat(iou_prediction_list, dim=0)
 
         else:
             # Embed prompts
@@ -171,7 +185,7 @@ class SamPredictor:
             if multimask_output:
                 max_values, max_indexs = torch.max(iou_predictions, dim=1)
                 max_values = max_values.unsqueeze(1)
-                iou_predictions = max_values
+                # iou_predictions = max_values  # # NOTE: AA: I have no clue why is this necessary in the predictor
                 low_res_masks = low_res_masks[:, max_indexs]
 
             # Upscale the masks to the original image resolution
