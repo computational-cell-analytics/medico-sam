@@ -13,7 +13,8 @@ def _run_iterative_prompting(
     prediction_root = os.path.join(
         exp_folder, "start_with_box" if start_with_box_prompt else "start_with_point"
     )
-    embedding_folder = None  # HACK: compute embeddings on-the-fly now, else: os.path.join(exp_folder, "embeddings")
+    # HACK: compute embeddings on-the-fly now, else: os.path.join(exp_folder, "embeddings")
+    embedding_folder = None
     inference.run_inference_with_iterative_prompting_per_semantic_class(
         predictor=predictor,
         image_paths=image_paths,

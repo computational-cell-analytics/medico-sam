@@ -1,5 +1,6 @@
 import re
 import subprocess
+import itertools
 
 
 CMD = "python submit_all_evaluations.py "
@@ -22,18 +23,20 @@ def run_specific_experiment(dataset_name, model_type, experiment_set, gpu):
 
 
 def run_one_setup(model_choice, all_dataset_list, all_experiment_set_list, n_gpus):
-    for dataset_name in all_dataset_list:
-        for experiment_set in all_experiment_set_list:
-            for gpu in n_gpus:
-                run_specific_experiment(dataset_name, model_choice, experiment_set, gpu)
+    for (dataset_name, experiment_set, gpu) in itertools.product(all_dataset_list, all_experiment_set_list, n_gpus):
+        run_specific_experiment(dataset_name, model_choice, experiment_set, gpu)
+        breakpoint()
 
 
 def for_medical_generalist():
-    n_gpus = [2]
+    n_gpus = [1]
     run_one_setup(
         model_choice="vit_b",
         all_dataset_list=["idrid", "camus", "uwaterloo_skin", "montgomery", "sega"],
-        all_experiment_set_list=["vanilla", "generalist", "medsam"],
+        all_experiment_set_list=[
+            "vanilla", "generalist", "simplesam", "medsam-self",
+            "medsam", "sam-med2d", "sam-med2d-adapter"
+        ],
         n_gpus=n_gpus,
     )
 

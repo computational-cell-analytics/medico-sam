@@ -13,7 +13,15 @@ ROOT = "/scratch/share/cidas/cca"
 
 
 def write_batch_script(
-    out_path, inference_setup, checkpoint, model_type, experiment_folder, dataset_name, use_masks=False
+    out_path,
+    inference_setup,
+    checkpoint,
+    model_type,
+    experiment_folder,
+    dataset_name,
+    use_masks=False,
+    use_sam_med2d=False,
+    adapter=False,
 ):
     "Writing scripts with different fold-trainings for medico-sam evaluation"
     batch_script = f"""#!/bin/bash
@@ -51,6 +59,12 @@ mamba activate sam \n"""
     if inference_setup == "iterative_prompting" and use_masks:
         python_script += "--use_masks "
 
+    # use SAM-Med2d for inference
+    if use_sam_med2d:
+        python_script += "--use_sam_med2d "
+        if adapter:
+            python_script += "--adapter "
+
     # let's add the python script to the bash script
     batch_script += python_script
 
@@ -79,7 +93,9 @@ def get_batch_script_names(tmp_folder):
     return batch_script
 
 
-def get_checkpoint_path(experiment_set, model_type, n_gpus):
+def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
+    extra_params = {}
+
     # let's set the experiment type - either using the generalist (or specific models) or using vanilla model
     if experiment_set == "generalist":
         if n_gpus == 1:
@@ -92,10 +108,36 @@ def get_checkpoint_path(experiment_set, model_type, n_gpus):
                 ROOT, "models/medico-sam/multi_gpu/checkpoints",
                 model_type, "medical_generalist_sam_multi_gpu/best.pt"
             )
-        else:  # just a test model
+        else:
+            raise ValueError
+
+    elif experiment_set == "simplesam":
+        if n_gpus == 1:
             checkpoint = os.path.join(
-                ROOT, "models", "test", "checkpoints", model_type, "medical_generalist_sam", "best.pt"
+                ROOT, "models/simplesam/single_gpu/checkpoints",
+                model_type, "medical_generalist_simplesam_single_gpu/best.pt"
             )
+        elif n_gpus == 8:
+            checkpoint = os.path.join(
+                ROOT, "models/simplesam/multi_gpu/checkpoints",
+                model_type, "medical_generalist_simplesam_multi_gpu/best.pt"
+            )
+        else:
+            raise ValueError
+
+    elif experiment_set == "medsam-self":
+        if n_gpus == 1:
+            checkpoint = os.path.join(
+                ROOT, "models/medsam/single_gpu/checkpoints",
+                model_type, "medical_generalist_medsam_single_gpu/best.pt"
+            )
+        elif n_gpus == 8:
+            checkpoint = os.path.join(
+                ROOT, "models/medsam/multi_gpu/checkpoints",
+                model_type, "medical_generalist_sam_single_gpu/best.pt"
+            )
+        else:
+            raise ValueError
 
     elif experiment_set == "vanilla":
         checkpoint = None
@@ -103,13 +145,22 @@ def get_checkpoint_path(experiment_set, model_type, n_gpus):
     elif experiment_set == "medsam":
         checkpoint = "/scratch-grete/projects/nim00007/sam/models/medsam/medsam_vit_b.pth"
 
+    elif experiment_set == "sam-med2d":
+        checkpoint = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b.pth"
+        extra_params["use_sam_med2d"] = True
+
+    elif experiment_set == "sam-med2d-adapter":
+        checkpoint = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/sam-med2d_b.pth"
+        extra_params["use_sam_med2d"] = True
+        extra_params["adapter"] = True
+
     else:
-        raise ValueError("Choose from 'generalist' / 'vanilla' / 'medsam'.")
+        raise ValueError(experiment_set)
 
     if checkpoint is not None:
         assert os.path.exists(checkpoint), checkpoint
 
-    return checkpoint
+    return checkpoint, extra_params
 
 
 def submit_slurm(args):
@@ -125,7 +176,9 @@ def submit_slurm(args):
     n_gpus = args.gpus
 
     if args.checkpoint_path is None:
-        checkpoint = get_checkpoint_path(experiment_set=experiment_set, model_type=model_type, n_gpus=n_gpus)
+        checkpoint, extra_params = get_checkpoint_path_and_params(
+            experiment_set=experiment_set, model_type=model_type, n_gpus=n_gpus
+        )
     else:
         checkpoint = args.checkpoint_path
 
@@ -142,7 +195,8 @@ def submit_slurm(args):
             model_type=model_type,
             experiment_folder=experiment_folder,
             dataset_name=dataset_name,
-            use_masks=args.use_masks
+            use_masks=args.use_masks,
+            **extra_params
             )
 
     # the logic below automates the process of first running the precomputation of embeddings, and only then inference.
