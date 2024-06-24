@@ -113,10 +113,17 @@ class SamPredictor:
         if not self.is_image_set:
             raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
 
+        from segment_anything.utils.transforms import ResizeLongestSide
+        trafo = ResizeLongestSide(self.new_size[0])
+
         if point_coords is not None:
+            point_coords = trafo.apply_coords_torch(point_coords, self.original_size)
             points = (point_coords, point_labels)
         else:
             points = None
+
+        if boxes is not None:
+            boxes = trafo.apply_boxes_torch(boxes, self.original_size)
 
         if boxes is not None and boxes.shape[0] > 1:
             mask_list = []
