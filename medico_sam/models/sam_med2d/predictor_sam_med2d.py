@@ -127,6 +127,7 @@ class SamPredictor:
 
         # SPOT: Also not sure why the team decided to do this previously on a per-box level.
         # (seems unnecessary to me as SAM internally takes care of it.)
+        # (+ also creates a mess to map box/point embeddings with sparse embeddings)
 
         # Embed prompts
         sparse_embeddings, dense_embeddings = self.model.prompt_encoder(

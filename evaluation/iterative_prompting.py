@@ -8,7 +8,7 @@ from util import get_dataset_paths, get_default_arguments, _clear_files
 
 
 def _run_iterative_prompting(
-    image_paths, gt_paths, semantic_class_maps, exp_folder, predictor, start_with_box_prompt, use_masks,
+    image_paths, gt_paths, semantic_class_maps, exp_folder, predictor, start_with_box_prompt, use_masks
 ):
     prediction_root = os.path.join(
         exp_folder, "start_with_box" if start_with_box_prompt else "start_with_point"
@@ -53,7 +53,7 @@ def main():
         exp_folder=args.experiment_folder,
         predictor=predictor,
         start_with_box_prompt=start_with_box_prompt,
-        use_masks=args.use_masks,
+        use_masks=args.use_masks
     )
 
     run_evaluation_for_iterative_prompting_per_semantic_class(

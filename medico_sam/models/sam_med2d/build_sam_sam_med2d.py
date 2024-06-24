@@ -13,7 +13,7 @@ from functools import partial
 import torch
 from torch.nn import functional as F
 
-from segment_anything.modeling import PromptEncoder, TwoWayTransformer, MaskDecoder, Sam
+from segment_anything.modeling import MaskDecoder, PromptEncoder, Sam, TwoWayTransformer
 
 from .image_encoder import ImageEncoderViT  # scripts come from medico-sam's adaptation of SAM-Med2d
 
