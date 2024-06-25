@@ -332,7 +332,9 @@ def for_oimhs(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.oimhs._get_oimhs_paths(path=os.path.join(ROOT, "oimhs"), download=False)
+    image_paths, gt_paths = medical.oimhs._get_oimhs_paths(
+        path=os.path.join(ROOT, "oimhs"), split="test", download=False
+    )
 
     fext = "oimhs_"
     convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)

@@ -106,7 +106,7 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         elif n_gpus == 8:
             checkpoint = os.path.join(
                 ROOT, "models/medico-sam/multi_gpu/checkpoints",
-                model_type, "medical_generalist_sam_multi_gpu/best.pt"
+                model_type, "medical_generalist_sam_multi_gpu/best_exported.pt"
             )
         else:
             raise ValueError
@@ -120,7 +120,7 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         elif n_gpus == 8:
             checkpoint = os.path.join(
                 ROOT, "models/simplesam/multi_gpu/checkpoints",
-                model_type, "medical_generalist_simplesam_multi_gpu/best.pt"
+                model_type, "medical_generalist_simplesam_multi_gpu/best_exported.pt"
             )
         else:
             raise ValueError
@@ -134,7 +134,7 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         elif n_gpus == 8:
             checkpoint = os.path.join(
                 ROOT, "models/medsam/multi_gpu/checkpoints",
-                model_type, "medical_generalist_sam_single_gpu/best.pt"
+                model_type, "medical_generalist_medsam_multi_gpu/best_exported.pt"
             )
         else:
             raise ValueError
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model_type", type=str, required=True)
     parser.add_argument("-e", "--experiment_set", type=str, required=True)
     parser.add_argument("--use_masks", action="store_true")
-    parser.add_argument("--gpus", type=int, default=None)
+    parser.add_argument("--gpus", default=None)
     parser.add_argument("--checkpoint_path", type=str, default=None)
     parser.add_argument("--experiment_path", type=str, default=None)
     args = parser.parse_args()

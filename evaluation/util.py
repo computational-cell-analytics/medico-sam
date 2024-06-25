@@ -153,3 +153,52 @@ def test_medical_sam_models():
     _ = get_sam_med2d_model(model_type="vit_b", checkpoint_path=ckpt_path, encoder_adapter=adapter)
 
     print("Loading the model was successful.")
+
+
+def _export_multi_gpu_models(checkpoint_path, save_path):
+    from collections import OrderedDict
+    from micro_sam.util import _load_checkpoint
+
+    _, model_state = _load_checkpoint(checkpoint_path=checkpoint_path)
+
+    sam_prefix = "module.sam."
+    model_state = OrderedDict(
+        [(k[len(sam_prefix):] if k.startswith(sam_prefix) else k, v) for k, v in model_state.items()]
+    )
+
+    torch.save(model_state, save_path)
+    print(f"Model is saved at {save_path}.")
+
+
+def _export_all_models():
+    root_dir = "/scratch/share/cidas/cca/models/"
+
+    # generalist
+    _export_multi_gpu_models(
+        checkpoint_path=os.path.join(
+            root_dir, "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best.pt"
+        ),
+        save_path=os.path.join(
+            root_dir, "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt"
+        ),
+    )
+
+    # medsam
+    _export_multi_gpu_models(
+        checkpoint_path=os.path.join(
+            root_dir, "medsam/multi_gpu/checkpoints/vit_b/medical_generalist_medsam_multi_gpu/best.pt"
+        ),
+        save_path=os.path.join(
+            root_dir, "medsam/multi_gpu/checkpoints/vit_b/medical_generalist_medsam_multi_gpu/best_exported.pt"
+        ),
+    )
+
+    # simplesam
+    _export_multi_gpu_models(
+        checkpoint_path=os.path.join(
+            root_dir, "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best.pt"
+        ),
+        save_path=os.path.join(
+            root_dir, "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt"
+        ),
+    )
