@@ -41,6 +41,9 @@ def _get_paths(path, dataset, split):
     elif dataset == "isic":
         image_paths, gt_paths = medical.isic._get_isic_paths(path=path, split=split, download=False)
 
+    elif dataset == "dca1":
+        image_paths, gt_paths = medical.dca1._get_dca1_paths(path=path, split=split, download=False)
+
     else:
         raise ValueError(dataset)
 

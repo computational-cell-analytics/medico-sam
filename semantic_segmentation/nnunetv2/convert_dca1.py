@@ -1,10 +1,10 @@
 import os
-import shutil
 from glob import glob
 from tqdm import tqdm
 from pathlib import Path
 
 import json
+import imageio.v3 as imageio
 
 from common import _get_paths, DATA_ROOT, NNUNET_ROOT, create_json_files
 
@@ -19,19 +19,16 @@ def _write_dataset_json_file(trg_dir, dataset_name):
 
     data = {
         "channel_names": {
-            "0": "OCT"
+            "0": "X-Ray Angiography"
         },
         "labels": {
             "background": 0,
-            "choroid": 1,
-            "retina": 2,
-            "intraretinal_cysts": 3,
-            "macular_hole": 4,
+            "vessels": 1,
         },
         "numTraining": len(val_ids) + len(train_ids),
         "file_ending": ".tif",
         "name": dataset_name,
-        "description": "OIMHS: https://doi.org/10.1038/s41597-023-02675-1"
+        "description": "DCA1: https://doi.org/10.1038/s41597-023-02675-1"
     }
 
     with open(json_file, "w") as f:
@@ -40,9 +37,9 @@ def _write_dataset_json_file(trg_dir, dataset_name):
     return train_ids, val_ids
 
 
-def convert_oimhs_for_training(path, trg_dir, dataset_name):
-    train_image_paths, train_gt_paths = _get_paths(path, "oimhs", "train")
-    val_image_paths, val_gt_paths = _get_paths(path, "oimhs", "val")
+def convert_dca1_for_training(path, trg_dir, dataset_name):
+    train_image_paths, train_gt_paths = _get_paths(path, "dca1", "train")
+    val_image_paths, val_gt_paths = _get_paths(path, "dca1", "val")
 
     # the idea is we move all the images to one directory, write their image ids into a split.json file,
     # which nnunet will read to define the custom validation split
@@ -61,10 +58,10 @@ def convert_oimhs_for_training(path, trg_dir, dataset_name):
             image_id = Path(image_path).stem
 
             trg_image_path = os.path.join(image_dir, f"{image_id}_{split}_0000.tif")
-            shutil.copy(src=image_path, dst=trg_image_path)
+            imageio.imwrite(trg_image_path, imageio.imread(image_path))
 
             trg_gt_path = os.path.join(gt_dir, f"{image_id}_{split}.tif")
-            shutil.copy(src=gt_path, dst=trg_gt_path)
+            imageio.imwrite(trg_gt_path, imageio.imread(gt_path))
 
             _ids.append(Path(trg_gt_path).stem)
 
@@ -75,13 +72,13 @@ def convert_oimhs_for_training(path, trg_dir, dataset_name):
 
 
 def main():
-    path = os.path.join(DATA_ROOT, "oimhs")
-    dataset_name = "Dataset201_OIMHS"
+    path = os.path.join(DATA_ROOT, "dca1")
+    dataset_name = "Dataset204_DCA1"
 
     # space to store your top-level nnUNet files
     trg_root = NNUNET_ROOT
 
-    convert_oimhs_for_training(path=path, trg_dir=trg_root, dataset_name=dataset_name)
+    convert_dca1_for_training(path=path, trg_dir=trg_root, dataset_name=dataset_name)
     create_json_files(trg_dir=trg_root, dataset_name=dataset_name, write_json_function=_write_dataset_json_file)
 
 
