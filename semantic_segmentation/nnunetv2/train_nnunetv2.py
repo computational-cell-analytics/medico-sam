@@ -29,7 +29,7 @@ def declare_paths(nnunet_path: str):
 
 def preprocess_data(dataset_id):
     # let's check the preprocessing first
-    cmd = f"nnUNetv2_plan_and_preprocess -d {dataset_id} --verify_dataset_integrity"
+    cmd = f"nnUNetv2_plan_and_preprocess -d {dataset_id} -pl nnUNetPlannerResEncL --verify_dataset_integrity"
     os.system(cmd)
 
 
@@ -41,7 +41,8 @@ def train_nnunetv2(fold, dataset_name, dataset_id):
 
     # train 2d nnUNet
     gpus = torch.cuda.device_count()
-    cmd = f"nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train {dataset_id} 2d {fold} -num_gpus {gpus} --c"
+    cmd = f"nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train {dataset_id} 2d {fold} -num_gpus {gpus} --c "
+    cmd += "-p nnUNetResEncUNetLPlans"
     os.system(cmd)
 
 
@@ -51,7 +52,8 @@ def predict_nnunetv2(fold, dataset_name, dataset_id):
 
     output_dir = os.path.join(NNUNET_ROOT, "test", dataset_name, "predictionTs")
 
-    cmd = f"nnUNetv2_predict -i {input_dir} -o {output_dir} -d {dataset_id} -c 2d -f {fold}"
+    cmd = f"nnUNetv2_predict -i {input_dir} -o {output_dir} -d {dataset_id} -c 2d -f {fold} "
+    cmd += "-p nnUNetResEncUNetLPlans"
     os.system(cmd)
 
 
