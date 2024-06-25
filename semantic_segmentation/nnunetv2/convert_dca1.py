@@ -61,7 +61,7 @@ def convert_dca1_for_training(path, trg_dir, dataset_name):
             imageio.imwrite(trg_image_path, imageio.imread(image_path))
 
             trg_gt_path = os.path.join(gt_dir, f"{image_id}_{split}.tif")
-            imageio.imwrite(trg_gt_path, imageio.imread(gt_path))
+            imageio.imwrite(trg_gt_path, (imageio.imread(gt_path) > 1).astype("uint8"))
 
             _ids.append(Path(trg_gt_path).stem)
 
