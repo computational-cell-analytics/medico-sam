@@ -142,7 +142,7 @@ def _check_preprocessing(save_dir):
     return os.path.exists(os.path.join(save_dir, "val")) and os.path.exists(os.path.join(save_dir, "test"))
 
 
-def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext, map_to_id=None):
+def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext, map_to_id=None, extension=".tif"):
     image_dir = os.path.join(save_dir, "images")
     gt_dir = os.path.join(save_dir, "ground_truth")
     os.makedirs(image_dir, exist_ok=True)
@@ -157,8 +157,8 @@ def convert_simple_datasets(image_paths, gt_paths, save_dir, fname_ext, map_to_i
         if os.path.exists(trg_image_path) and os.path.exists(trg_gt_path):
             continue
 
-        image = read_image(image_path)
-        gt = read_image(gt_path)
+        image = read_image(image_path, extension=extension)
+        gt = read_image(gt_path, extension=extension)
 
         if has_foreground(gt):
             image = resize_inputs(image)
@@ -187,7 +187,7 @@ def for_sega(save_dir, split_choice):
 
     We have three chunks of data: kits, rider, dongyang.
     - for validation: 50*3 (respectively)
-    - for testing: 4540, 4097, 2988 (respectively)
+    - for testing: ...
     """
     if _check_preprocessing(save_dir=save_dir):
         print("Looks like the preprocessing has completed.")
@@ -197,22 +197,21 @@ def for_sega(save_dir, split_choice):
         path=os.path.join(ROOT, "sega"), data_choice=split_choice, download=False,
     )
 
-    for image_path, gt_path in zip(image_paths, gt_paths):
-        image = read_image(image_path)
-        gt = read_image(gt_path)
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nrrd")
+        gt = read_image(gt_path, extension=".seg.nrrd")
 
         image_id = Path(image_path).stem
 
         # make channels first
         image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
 
-        for islice, gslice in tqdm(zip(image, gt), total=image.shape[0], desc=f"Processing '{image_id}'"):
-            get_valid_slices_per_volume(
-                image=islice,
-                gt=gslice,
-                fname=f"sega_{image_id}",
-                save_dir=save_dir
-            )
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"sega_{image_id}",
+            save_dir=save_dir
+        )
 
     _get_val_test_splits(save_dir=save_dir, fname_ext="sega_", val_fraction=50)
 
@@ -271,7 +270,7 @@ def for_camus(save_dir, chamber_choice):
     NOTE 1: We choose first 25 patients for extracting the slices.
     NOTE 2: We choose the slices with all 4 cardiac structures present.
     - for validation: 50 * 2
-    - for testing: 3133 + 3514
+    - for testing: ...
     """
     if _check_preprocessing(save_dir=save_dir):
         print("Looks like the preprocessing has completed.")
@@ -284,23 +283,22 @@ def for_camus(save_dir, chamber_choice):
     # HACK:
     image_paths, gt_paths = image_paths[:25], gt_paths[:25]
 
-    for image_path, gt_path in zip(image_paths, gt_paths):
-        image = read_image(image_path)
-        gt = read_image(gt_path)
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
 
         image_id = Path(image_path).stem
 
         # make channels first
         image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
 
-        for islice, gslice in tqdm(zip(image, gt), total=image.shape[0], desc=f"Processing '{image_id}'"):
-            get_valid_slices_per_volume(
-                image=islice,
-                gt=gslice,
-                fname=f"camus_{image_id}",
-                save_dir=save_dir,
-                min_num_instances=4,
-            )
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"camus_{image_id}",
+            save_dir=save_dir,
+            min_num_instances=4,
+        )
 
     _get_val_test_splits(save_dir=save_dir, val_fraction=50, fname_ext="camus_")
 
@@ -327,7 +325,7 @@ def for_montgomery(save_dir):
 def for_oimhs(save_dir):
     """Task: Macular region segmentation in OCT images.
 
-    - for validation:
+    - for validation: 10
     - for testing:
     """
     if _check_preprocessing(save_dir=save_dir):
