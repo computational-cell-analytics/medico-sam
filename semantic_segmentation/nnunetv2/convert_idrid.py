@@ -30,7 +30,9 @@ def _write_dataset_json_file(trg_dir, dataset_name):
 
     data = {
         "channel_names": {
-            "0": "Fundus"
+            "0": "R",
+            "1": "G",
+            "2": "B",
         },
         "labels": {
             "background": 0,

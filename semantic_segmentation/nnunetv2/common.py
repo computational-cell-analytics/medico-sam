@@ -15,22 +15,24 @@ def _get_paths(path, dataset, split):
 
     elif dataset == "idrid":
         if split != "test":
-            split = "train"
+            chosen_split = "train"
+        else:
+            chosen_split = split
 
         image_paths, gt_paths = medical.idrid._get_idrid_paths(
-            path=path, split=split, task="microaneurysms", download=False
+            path=path, split=chosen_split, task="microaneurysms", download=False
         )
         gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=split, task="haemorrhages", download=False)[-1]
+            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="haemorrhages", download=False)[-1]
         )
         gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=split, task="hard_exudates", download=False)[-1]
+            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="hard_exudates", download=False)[-1]
         )
         gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=split, task="soft_exudates", download=False)[-1]
+            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="soft_exudates", download=False)[-1]
         )
         gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=split, task="optic_disc", download=False)[-1]
+            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="optic_disc", download=False)[-1]
         )
 
         if split == "train":
