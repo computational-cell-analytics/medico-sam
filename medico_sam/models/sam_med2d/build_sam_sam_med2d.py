@@ -15,7 +15,7 @@ from torch.nn import functional as F
 
 from segment_anything.modeling import MaskDecoder, PromptEncoder, Sam, TwoWayTransformer
 
-from .image_encoder_sam_med2d import ImageEncoderViT  # comes from medico-sam's adaptation of SAM-Med2d
+from .image_encoder import ImageEncoderViT  # scripts come from medico-sam's adaptation of SAM-Med2d
 
 
 def build_sam_vit_h(args):
@@ -129,7 +129,7 @@ def _build_sam(
                     sam.load_state_dict(state_dict, False)
                 else:
                     sam.load_state_dict(state_dict)
-        except:
+        except:  # noqa
             print('*******interpolate')
             new_state_dict = load_from(sam, state_dict, image_size, vit_patch_size)
             sam.load_state_dict(new_state_dict)

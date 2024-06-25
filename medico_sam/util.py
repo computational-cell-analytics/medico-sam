@@ -8,7 +8,7 @@ def get_medico_sam_model(
     }
 
     if use_sam_med2d:
-        from medico_sam.model.util import get_sam_med2d_model
+        from medico_sam.models.sam_med2d.util import get_sam_med2d_model
         _fetch_model = get_sam_med2d_model
         model_kwargs["encoder_adapter"] = encoder_adapter
 

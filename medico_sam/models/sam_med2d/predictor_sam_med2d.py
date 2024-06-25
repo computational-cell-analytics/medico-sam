@@ -113,69 +113,47 @@ class SamPredictor:
         if not self.is_image_set:
             raise RuntimeError("An image must be set with .set_image(...) before mask prediction.")
 
+        from segment_anything.utils.transforms import ResizeLongestSide
+        trafo = ResizeLongestSide(self.new_size[0])
+
         if point_coords is not None:
+            point_coords = trafo.apply_coords_torch(point_coords, self.original_size)
             points = (point_coords, point_labels)
         else:
             points = None
 
-        if boxes is not None and boxes.shape[0] > 1:
-            mask_list = []
-            # Embed prompts
-            for i in range(boxes.shape[0]):
-                pre_boxes = boxes[i:i+1, ...]
+        if boxes is not None:
+            boxes = trafo.apply_boxes_torch(boxes, self.original_size)
 
-                sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
-                    points=points,
-                    boxes=pre_boxes,
-                    masks=mask_input,
-                )
+        # SPOT: Also not sure why the team decided to do this previously on a per-box level.
+        # (seems unnecessary to me as SAM internally takes care of it.)
+        # (+ also creates a mess to map box/point embeddings with sparse embeddings)
 
-                # Predict masks
-                low_res_masks, iou_predictions = self.model.mask_decoder(
-                    image_embeddings=self.features,
-                    image_pe=self.model.prompt_encoder.get_dense_pe(),
-                    sparse_prompt_embeddings=sparse_embeddings,
-                    dense_prompt_embeddings=dense_embeddings,
-                    multimask_output=multimask_output,
-                )
+        # Embed prompts
+        sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
+            points=points,
+            boxes=boxes,
+            masks=mask_input,
+        )
 
-                if multimask_output:
-                    max_values, max_indexs = torch.max(iou_predictions, dim=1)
-                    max_values = max_values.unsqueeze(1)
-                    iou_predictions = max_values
-                    low_res_masks = low_res_masks[:, max_indexs]
+        # Predict masks
+        low_res_masks, iou_predictions = self.model.mask_decoder(
+            image_embeddings=self.features,
+            image_pe=self.model.prompt_encoder.get_dense_pe(),
+            sparse_prompt_embeddings=sparse_embeddings,
+            dense_prompt_embeddings=dense_embeddings,
+            multimask_output=multimask_output,
+        )
 
-                # Upscale the masks to the original image resolution
-                pre_masks = self.postprocess_masks(low_res_masks, self.model.image_encoder.img_size, self.original_size)
+        if multimask_output:
+            max_values, max_indexs = torch.max(iou_predictions, dim=1)
+            max_values = max_values.unsqueeze(1)
+            # NOTE: AA: I have no clue why is this necessary in the predictor
+            # iou_predictions = max_values  
+            # low_res_masks = low_res_masks[:, max_indexs]
 
-                mask_list.append(pre_masks)
-            masks = torch.cat(mask_list, dim=0)
-
-        else:
-            # Embed prompts
-            sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
-                points=points,
-                boxes=boxes,
-                masks=mask_input,
-            )
-
-            # Predict masks
-            low_res_masks, iou_predictions = self.model.mask_decoder(
-                image_embeddings=self.features,
-                image_pe=self.model.prompt_encoder.get_dense_pe(),
-                sparse_prompt_embeddings=sparse_embeddings,
-                dense_prompt_embeddings=dense_embeddings,
-                multimask_output=multimask_output,
-            )
-
-            if multimask_output:
-                max_values, max_indexs = torch.max(iou_predictions, dim=1)
-                max_values = max_values.unsqueeze(1)
-                iou_predictions = max_values
-                low_res_masks = low_res_masks[:, max_indexs]
-
-            # Upscale the masks to the original image resolution
-            masks = self.postprocess_masks(low_res_masks, self.model.image_encoder.img_size, self.original_size)
+        # Upscale the masks to the original image resolution
+        masks = self.postprocess_masks(low_res_masks, self.model.image_encoder.img_size, self.original_size)
 
         if not return_logits:
             sigmoid_output = torch.sigmoid(masks)
@@ -227,6 +205,7 @@ class SamPredictor:
         assert self.features is not None, "Features must exist if an image has been set."
         return self.features
 
+    # SPOT: Their custom image transform functionality
     def transforms(self, new_size):
         Transforms = []
         new_h, new_w = new_size
