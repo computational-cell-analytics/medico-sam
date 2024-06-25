@@ -148,8 +148,9 @@ class SamPredictor:
         if multimask_output:
             max_values, max_indexs = torch.max(iou_predictions, dim=1)
             max_values = max_values.unsqueeze(1)
-            # iou_predictions = max_values  # # NOTE: AA: I have no clue why is this necessary in the predictor
-            low_res_masks = low_res_masks[:, max_indexs]
+            # NOTE: AA: I have no clue why is this necessary in the predictor
+            # iou_predictions = max_values  
+            # low_res_masks = low_res_masks[:, max_indexs]
 
         # Upscale the masks to the original image resolution
         masks = self.postprocess_masks(low_res_masks, self.model.image_encoder.img_size, self.original_size)

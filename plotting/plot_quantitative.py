@@ -15,8 +15,11 @@ def _get_results_per_dataset(dataset_name, experiment_name):
     for res_dir in glob(os.path.join(ROOT, experiment_name, dataset_name, MODEL, "results", "*")):
         semantic_class = os.path.split(res_dir)[-1]
 
-        ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
-        ip_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_point.csv"))
+        try:
+            ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
+            ip_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_point.csv"))
+        except FileNotFoundError:
+            continue
 
         res = {
             "semantic_class": semantic_class,
@@ -24,11 +27,9 @@ def _get_results_per_dataset(dataset_name, experiment_name):
             "dataset": dataset_name,
             "point": ip_results["dice"][0],
             "box": ib_results["dice"][0],
+            "ip": ip_results["dice"][7],
+            "ib": ib_results["dice"][7],
         }
-
-        if not experiment_name.startswith("sam-med2d"):
-            res["ip"] = ip_results["dice"][7]
-            res["ib"] = ib_results["dice"][7]
 
         print(res)
 
