@@ -26,10 +26,11 @@ def run_specific_experiment(dataset_name, model_type, experiment_set):
     esplits = experiment_set.split("_")
     if len(esplits) > 1:
         experiment_set, gpu = esplits
-    else:
-        gpu = None
 
-    cmd = CMD + f"-d {dataset_name} " + f"-m {model_type} " + f"-e {experiment_set} " + f"--gpus {gpu}"
+    cmd = CMD + f"-d {dataset_name} " + f"-m {model_type} " + f"-e {experiment_set}"
+    if len(esplits) > 1:
+        cmd += f" --gpus {gpu}"
+
     print(f"Running the command: {cmd} \n")
     _cmd = re.split(r"\s", cmd)
     run_eval_process(_cmd)

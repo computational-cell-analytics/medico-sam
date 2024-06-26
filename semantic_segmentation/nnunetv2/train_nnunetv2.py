@@ -7,11 +7,15 @@ import torch
 
 NNUNET_ROOT = "/scratch/share/cidas/cca/nnUNetv2"
 
-DATASET_MAPPING = {
+DATASET_MAPPING_2D = {
     "oimhs": [201, "Dataset201_OIMHS"],
     "idrid": [202, "Dataset202_IDRiD"],
     "isic": [203, "Dataset203_ISIC"],
     "dca1": [204, "Dataset204_DCA1"],
+}
+
+DATASET_MAPPING_3D = {
+    "btcv": [301, "Dataset301_BTCV"],
 }
 
 
@@ -33,26 +37,26 @@ def preprocess_data(dataset_id):
     os.system(cmd)
 
 
-def train_nnunetv2(fold, dataset_name, dataset_id):
+def train_nnunetv2(fold, dataset_name, dataset_id, dim):
     _have_splits = os.path.exists(
         os.path.join(NNUNET_ROOT, "nnUNet_preprocessed", dataset_name, "splits_final.json")
     )
     assert _have_splits, "The experiment expects you to create the splits yourself."
 
-    # train 2d nnUNet
+    # train 2d / 3d_fullres nnUNet
     gpus = torch.cuda.device_count()
-    cmd = f"nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train {dataset_id} 2d {fold} -num_gpus {gpus} --c "
+    cmd = f"nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train {dataset_id} {dim} {fold} -num_gpus {gpus} --c "
     cmd += "-p nnUNetResEncUNetLPlans"
     os.system(cmd)
 
 
-def predict_nnunetv2(fold, dataset_name, dataset_id):
+def predict_nnunetv2(fold, dataset_name, dataset_id, dim):
     input_dir = os.path.join(NNUNET_ROOT, "test", dataset_name, "imagesTs")
     assert os.path.exists(input_dir)
 
     output_dir = os.path.join(NNUNET_ROOT, "test", dataset_name, "predictionTs")
 
-    cmd = f"nnUNetv2_predict -i {input_dir} -o {output_dir} -d {dataset_id} -c 2d -f {fold} "
+    cmd = f"nnUNetv2_predict -i {input_dir} -o {output_dir} -d {dataset_id} -c {dim} -f {fold} "
     cmd += "-p nnUNetResEncUNetLPlans"
     os.system(cmd)
 
@@ -60,16 +64,25 @@ def predict_nnunetv2(fold, dataset_name, dataset_id):
 def main(args):
     declare_paths(NNUNET_ROOT)
 
-    dataset_id, dataset_name = DATASET_MAPPING[args.dataset]
+    if args.dataset in DATASET_MAPPING_2D:
+        dmap_base = DATASET_MAPPING_2D
+        dim = "2d"
+    elif args.dataset in DATASET_MAPPING_3D:
+        dmap_base = DATASET_MAPPING_3D
+        dim = "3d_fullres"
+    else:
+        raise ValueError(args.dataset)
+
+    dataset_id, dataset_name = dmap_base[args.dataset]
 
     if args.preprocess:
         preprocess_data(dataset_id=dataset_id)
 
     if args.train:
-        train_nnunetv2(fold=args.fold, dataset_name=dataset_name, dataset_id=dataset_id)
+        train_nnunetv2(fold=args.fold, dataset_name=dataset_name, dataset_id=dataset_id, dim=dim)
 
     if args.predict:
-        predict_nnunetv2(fold=args.fold, dataset_name=dataset_name, dataset_id=dataset_id)
+        predict_nnunetv2(fold=args.fold, dataset_name=dataset_name, dataset_id=dataset_id, dim=dim)
 
 
 if __name__ == "__main__":

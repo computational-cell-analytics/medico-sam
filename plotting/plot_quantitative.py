@@ -6,8 +6,13 @@ import pandas as pd
 
 
 ROOT = "/scratch/share/cidas/cca/experiments/v1/"
-DATASETS = ["idrid", "montgomery", "sega", "camus", "uwaterloo_skin"]
-EXPERIMENTS = ["vanilla", "generalist", "simplesam", "medsam-self", "medsam", "sam-med2d", "sam-med2d-adapter"]
+DATASETS = [
+    "idrid", "camus", "uwaterloo_skin", "montgomery", "sega"
+]
+EXPERIMENTS = [
+    "vanilla", "generalist_1", "generalist_8", "simplesam_1", "simplesam_8",
+    "medsam-self_1", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter"
+]
 MODEL = "vit_b"
 
 
