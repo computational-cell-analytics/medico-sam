@@ -5,7 +5,7 @@ import torch
 
 from torch_em.data import MinInstanceSampler
 from torch_em.transform.label import OneHotTransform
-from torch_em.data.datasets.medical import get_oimhs_loader
+from torch_em.data.datasets.medical import get_isic_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
@@ -13,9 +13,9 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 
 
 def get_dataloaders(patch_shape, data_path):
-    """This returns the oimhs data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/oimhs.py
-    It will not automatically download the OIMHS data. Take a look at `get_oimhs_dataset`.
+    """This returns the isic data loaders implemented in torch_em:
+    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/isic.py
+    It will not automatically download the ISIC data. Take a look at `get_isic_dataset`.
 
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
@@ -24,39 +24,39 @@ def get_dataloaders(patch_shape, data_path):
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
     raw_transform = sam_training.identity
-    sampler = MinInstanceSampler(min_num_instances=5)
-    label_transform = OneHotTransform(class_ids=[0, 1, 2, 3, 4])
+    sampler = MinInstanceSampler()
+    label_transform = OneHotTransform(class_ids=[0, 255])
 
-    train_loader = get_oimhs_loader(
+    train_loader = get_isic_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=8,
         split="train",
         resize_inputs=True,
         raw_transform=raw_transform,
+        label_transform=label_transform,
         num_workers=16,
         shuffle=True,
         sampler=sampler,
         pin_memory=True,
-        label_transform=label_transform,
     )
-    val_loader = get_oimhs_loader(
+    val_loader = get_isic_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=1,
         split="val",
         resize_inputs=True,
         raw_transform=raw_transform,
+        label_transform=label_transform,
         num_workers=16,
         sampler=sampler,
         pin_memory=True,
-        label_transform=label_transform,
     )
     return train_loader, val_loader
 
 
-def finetune_oimhs(args):
-    """Code for finetuning SAM on OIMHS for semantic segmentation."""
+def finetune_isic(args):
+    """Code for finetuning SAM on ISIC for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -65,7 +65,7 @@ def finetune_oimhs(args):
     checkpoint_path = None  # override this to start training from a custom checkpoint
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
-    num_classes = 5  # 1 background class and 4 semantic foreground classes
+    num_classes = 2  # 1 background class and 1 semantic foreground classes
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
@@ -83,13 +83,10 @@ def finetune_oimhs(args):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
-    train_loader.dataset.max_sampling_attempts = 10000
-    val_loader.dataset.max_sampling_attempts = 10000
-
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
-    checkpoint_name = f"{args.model_type}/oimhs_semanticsam"
+    checkpoint_name = f"{args.model_type}/isic_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.SemanticSamTrainer(
@@ -120,10 +117,10 @@ def finetune_oimhs(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the OIMHS dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the ISIC dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/data/oimhs/",
-        help="The filepath to the OIMHS data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/data/isic/",
+        help="The filepath to the ISIC data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -150,7 +147,7 @@ def main():
         help="To save every kth epoch while fine-tuning. Expects an integer value."
     )
     args = parser.parse_args()
-    finetune_oimhs(args)
+    finetune_isic(args)
 
 
 if __name__ == "__main__":

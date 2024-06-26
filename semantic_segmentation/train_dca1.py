@@ -3,9 +3,9 @@ import argparse
 
 import torch
 
-from torch_em.loss import DiceLoss
 from torch_em.data import MinInstanceSampler
-from torch_em.data.datasets.medical import get_uwaterloo_skin_loader
+from torch_em.transform.label import OneHotTransform
+from torch_em.data.datasets.medical import get_dca1_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
@@ -13,9 +13,9 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 
 
 def get_dataloaders(patch_shape, data_path):
-    """This returns the uwaterloo skin data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/uwaterloo_skin.py
-    It will not automatically download the UWaterloo Skin data. Take a look at `get_uwaterloo_skin_dataset`.
+    """This returns the dca1 data loaders implemented in torch_em:
+    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/dca1.py
+    It will not automatically download the DCA1 data. Take a look at `get_dca1_dataset`.
 
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
@@ -25,24 +25,30 @@ def get_dataloaders(patch_shape, data_path):
     """
     raw_transform = sam_training.identity
     sampler = MinInstanceSampler()
+    label_transform = OneHotTransform(class_ids=[0, 255])
 
-    train_loader = get_uwaterloo_skin_loader(
+    train_loader = get_dca1_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=8,
+        split="train",
         resize_inputs=True,
         raw_transform=raw_transform,
+        label_transform=label_transform,
         num_workers=16,
         shuffle=True,
         sampler=sampler,
         pin_memory=True,
+        n_samples=400,
     )
-    val_loader = get_uwaterloo_skin_loader(
+    val_loader = get_dca1_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=1,
+        split="val",
         resize_inputs=True,
         raw_transform=raw_transform,
+        label_transform=label_transform,
         num_workers=16,
         sampler=sampler,
         pin_memory=True,
@@ -50,8 +56,8 @@ def get_dataloaders(patch_shape, data_path):
     return train_loader, val_loader
 
 
-def finetune_uwaterloo_skin(args):
-    """Code for finetuning SAM on UWaterloo Skin in "micro_sam"-based MedSAM reimplementation"""
+def finetune_dca1(args):
+    """Code for finetuning SAM on DCA1 for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -60,13 +66,16 @@ def finetune_uwaterloo_skin(args):
     checkpoint_path = None  # override this to start training from a custom checkpoint
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
+    num_classes = 2  # 1 background class and 1 semantic foreground classes
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
         model_type=model_type,
         device=device,
         checkpoint_path=checkpoint_path,
-        freeze=freeze_parts
+        freeze=freeze_parts,
+        flexible_load_checkpoint=True,
+        num_multimask_outputs=num_classes,
     )
     model.to(device)
 
@@ -78,7 +87,7 @@ def finetune_uwaterloo_skin(args):
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
-    checkpoint_name = f"{args.model_type}/uwaterloo_skin_semanticsam"
+    checkpoint_name = f"{args.model_type}/dca1_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.SemanticSamTrainer(
@@ -93,9 +102,8 @@ def finetune_uwaterloo_skin(args):
         log_image_interval=10,
         mixed_precision=True,
         convert_inputs=convert_inputs,
+        num_classes=num_classes,
         compile_model=False,
-        loss=DiceLoss(),
-        metric=DiceLoss(),
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
@@ -110,10 +118,10 @@ def finetune_uwaterloo_skin(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the UWaterloo Skin dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the DCA1 dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/data/uwaterloo_skin/",
-        help="The filepath to the UWaterloo Skin data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/data/dca1/",
+        help="The filepath to the DCA1 data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -140,7 +148,7 @@ def main():
         help="To save every kth epoch while fine-tuning. Expects an integer value."
     )
     args = parser.parse_args()
-    finetune_uwaterloo_skin(args)
+    finetune_dca1(args)
 
 
 if __name__ == "__main__":

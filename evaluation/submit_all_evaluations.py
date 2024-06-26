@@ -106,10 +106,10 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         elif n_gpus == 8:
             checkpoint = os.path.join(
                 ROOT, "models/medico-sam/multi_gpu/checkpoints",
-                model_type, "medical_generalist_sam_multi_gpu/best.pt"
+                model_type, "medical_generalist_sam_multi_gpu/best_exported.pt"
             )
         else:
-            raise ValueError
+            raise ValueError(n_gpus)
 
     elif experiment_set == "simplesam":
         if n_gpus == 1:
@@ -120,10 +120,10 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         elif n_gpus == 8:
             checkpoint = os.path.join(
                 ROOT, "models/simplesam/multi_gpu/checkpoints",
-                model_type, "medical_generalist_simplesam_multi_gpu/best.pt"
+                model_type, "medical_generalist_simplesam_multi_gpu/best_exported.pt"
             )
         else:
-            raise ValueError
+            raise ValueError(n_gpus)
 
     elif experiment_set == "medsam-self":
         if n_gpus == 1:
@@ -134,10 +134,10 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         elif n_gpus == 8:
             checkpoint = os.path.join(
                 ROOT, "models/medsam/multi_gpu/checkpoints",
-                model_type, "medical_generalist_sam_single_gpu/best.pt"
+                model_type, "medical_generalist_medsam_multi_gpu/best_exported.pt"
             )
         else:
-            raise ValueError
+            raise ValueError(n_gpus)
 
     elif experiment_set == "vanilla":
         checkpoint = None
@@ -174,6 +174,8 @@ def submit_slurm(args):
     model_type = args.model_type
     experiment_set = args.experiment_set  # infer using generalist or vanilla models
     n_gpus = args.gpus
+    if n_gpus is not None:
+        n_gpus = int(n_gpus)
 
     if args.checkpoint_path is None:
         checkpoint, extra_params = get_checkpoint_path_and_params(
@@ -183,7 +185,11 @@ def submit_slurm(args):
         checkpoint = args.checkpoint_path
 
     if args.experiment_path is None:
-        experiment_folder = os.path.join(ROOT, "experiments", "v1", experiment_set, dataset_name, model_type)
+        if n_gpus is not None:
+            ename = f"{experiment_set}_{n_gpus}"
+        else:
+            ename = experiment_set
+        experiment_folder = os.path.join(ROOT, "experiments", "v1", ename, dataset_name, model_type)
     else:
         experiment_folder = args.experiment_path
 
@@ -230,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model_type", type=str, required=True)
     parser.add_argument("-e", "--experiment_set", type=str, required=True)
     parser.add_argument("--use_masks", action="store_true")
-    parser.add_argument("--gpus", type=int, default=None)
+    parser.add_argument("--gpus", default=None)
     parser.add_argument("--checkpoint_path", type=str, default=None)
     parser.add_argument("--experiment_path", type=str, default=None)
     args = parser.parse_args()
