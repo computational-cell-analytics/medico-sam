@@ -8,7 +8,7 @@ import torch
 
 
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d",
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1"
 ]
 
 DEXT = {
@@ -30,7 +30,8 @@ SEMANTIC_CLASS_MAPS = {
         "pancreas": 11, "right_adrenal_gland": 12, "left_adrenal_gland": 13,
     },
     "btcv_3d": {"aorta": 8},
-
+    "isic": {"skin_lesion": 255},
+    "dca1": {"vessel": 255},
 }
 
 MULTICLASS_SEMANTIC = ["oimhs", "btcv"]

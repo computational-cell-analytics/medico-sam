@@ -9,9 +9,10 @@ NNUNET_ROOT = "/scratch/share/cidas/cca/nnUNetv2"
 
 DATASET_MAPPING_2D = {
     "oimhs": [201, "Dataset201_OIMHS"],
-    "idrid": [202, "Dataset202_IDRiD"],
     "isic": [203, "Dataset203_ISIC"],
     "dca1": [204, "Dataset204_DCA1"],
+    "m2caiseg": [205, "Dataset205_m2caiseg"],
+    "cbis_ddsm": [206, "Dataset206_CBISDDSM"],
 }
 
 DATASET_MAPPING_3D = {
