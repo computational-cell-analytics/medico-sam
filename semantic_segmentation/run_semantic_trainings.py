@@ -46,7 +46,7 @@ source activate sam \n"""
         f.write(batch_script)
 
     cmd = ["sbatch", _op]
-    # subprocess.run(cmd)
+    subprocess.run(cmd)
 
 
 def get_batch_script_names(tmp_folder):

@@ -90,7 +90,7 @@ def finetune_osic_pulmofib(args):
     num_classes = 4  # 1 background class and 3 semantic foreground classes
 
     # get the trainable segment anything model
-    model = get_3d_sam_model(device, n_classes=num_classes, image_size=512)
+    model = get_3d_sam_model(device, n_classes=num_classes, image_size=512, checkpoint_path=checkpoint_path)
     model.to(device)
 
     # all the stuff we need for training
