@@ -50,28 +50,45 @@ def _get_results_per_dataset(dataset_name):
     return res_per_dataset
 
 
-def _make_plots2(dataframes, datasets):
+def _make_plots(dataframes, datasets):
     # Create subplots in a 3x3 grid
-    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(15, 15))
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(20, 20))
     axes = axes.flatten()
 
-    # Iterate over each dataframe and plot
+    # Calculate the differences relative to the "vanilla" experiment
     bar_width = 0.2  # Width of the bars
     for i, df in enumerate(dataframes):
-        r1 = np.arange(len(df))  # Positions for point bars
-        r2 = [x + bar_width for x in r1]  # Positions for box bars
-        r3 = [x + 2*bar_width for x in r1]  # Positions for ip bars
-        r4 = [x + 3*bar_width for x in r1]  # Positions for ib bars
+        # Reference row (vanilla experiment)
+        ref = df[df['experiment'] == 'vanilla'].iloc[0]
 
-        # Plot bars for point, box, ip, and ib
-        axes[i].bar(r1, df['point'], color='b', width=bar_width, edgecolor='grey', label='point')
-        axes[i].bar(r2, df['box'], color='lightblue', width=bar_width, edgecolor='grey', label='box')
-        axes[i].bar(r3, df['ip'], color='g', width=bar_width, edgecolor='grey', label='ip')
-        axes[i].bar(r4, df['ib'], color='lightgreen', width=bar_width, edgecolor='grey', label='ib')
+        df = df[df['experiment'] != 'vanilla']
+
+        # Calculate differences
+        df_diff = df.copy()
+        df_diff['point_diff'] = df['point'] - ref['point']
+        df_diff['box_diff'] = df['box'] - ref['box']
+        df_diff['ip_diff'] = df['ip'] - ref['ip']
+        df_diff['ib_diff'] = df['ib'] - ref['ib']
+
+        # Positions for bars
+        r1 = np.arange(len(df))  # Positions for point_diff bars
+        r2 = [x + bar_width for x in r1]  # Positions for box_diff bars
+        r3 = [x + 2*bar_width for x in r1]  # Positions for ip_diff bars
+        r4 = [x + 3*bar_width for x in r1]  # Positions for ib_diff bars
+
+        # Plot bars for point_diff, box_diff, ip_diff, and ib_diff
+        axes[i].bar(r1, df_diff['point_diff'], color='b', width=bar_width, edgecolor='grey', label='point_diff')
+        axes[i].bar(r2, df_diff['box_diff'], color='lightblue', width=bar_width, edgecolor='grey', label='box_diff')
+        axes[i].bar(r3, df_diff['ip_diff'], color='g', width=bar_width, edgecolor='grey', label='ip_diff')
+        axes[i].bar(r4, df_diff['ib_diff'], color='lightgreen', width=bar_width, edgecolor='grey', label='ib_diff')
 
         # Adjust x-axis ticks and labels
-        axes[i].set_xticks(r2)
+        axes[i].set_xticks([r + 1.5 * bar_width for r in range(len(df))])
         axes[i].set_xticklabels(df['experiment'], rotation=45, ha='right')
+
+        # Set labels and title
+        axes[i].set_xlabel('Experiment', fontweight='bold')
+        axes[i].set_ylabel('Difference from Vanilla', fontweight='bold')
         axes[i].set_title(f'{datasets[i]}')
 
         # Add legend
@@ -79,7 +96,6 @@ def _make_plots2(dataframes, datasets):
 
     # Adjust layout
     plt.tight_layout()
-    plt.show()
     plt.savefig("./test.png")
 
 
@@ -89,7 +105,7 @@ def main():
         res = _get_results_per_dataset(dataset_name=dataset_name)
         results.append(res)
 
-    _make_plots2(results, DATASETS)
+    _make_plots(results, DATASETS)
     breakpoint()
 
 
