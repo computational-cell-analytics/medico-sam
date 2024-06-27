@@ -4,7 +4,6 @@ from medico_sam.evaluation import inference
 from medico_sam.util import get_medico_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
-
 from util import get_dataset_paths, get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
 
 
