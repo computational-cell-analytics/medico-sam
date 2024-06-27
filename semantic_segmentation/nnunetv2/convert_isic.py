@@ -73,6 +73,30 @@ def convert_isic_for_training(path, trg_dir, dataset_name):
     _move_per_split("val", val_image_paths, val_gt_paths)
 
 
+def convert_isic_for_testing(path, trg_dir, dataset_name):
+    test_image_paths, test_gt_paths = _get_paths(path, "isic", "test")
+
+    # the idea for here is to move the data to a central location,
+    # where we can automate the inference procedure
+    image_dir = os.path.join(trg_dir, "test", dataset_name, "imagesTs")
+    gt_dir = os.path.join(trg_dir, "test", dataset_name, "labelsTs")
+
+    os.makedirs(image_dir, exist_ok=True)
+    os.makedirs(gt_dir, exist_ok=True)
+
+    assert len(test_image_paths) == len(test_gt_paths)
+    for image_path, gt_path in tqdm(
+        zip(sorted(test_image_paths), sorted(test_gt_paths)), total=len(test_image_paths)
+    ):
+        image_id = Path(image_path).stem
+
+        trg_image_path = os.path.join(image_dir, f"{image_id}_0000.tif")
+        imageio.imwrite(trg_image_path, imageio.imread(image_path))
+
+        trg_gt_path = os.path.join(gt_dir, f"{image_id}.tif")
+        imageio.imwrite(trg_gt_path, (imageio.imread(gt_path) > 1).astype("uint8"))
+
+
 def main():
     path = os.path.join(DATA_ROOT, "isic")
     dataset_name = "Dataset203_ISIC"
@@ -80,8 +104,10 @@ def main():
     # space to store your top-level nnUNet files
     trg_root = NNUNET_ROOT
 
-    convert_isic_for_training(path=path, trg_dir=trg_root, dataset_name=dataset_name)
-    create_json_files(trg_dir=trg_root, dataset_name=dataset_name, write_json_function=_write_dataset_json_file)
+    # convert_isic_for_training(path=path, trg_dir=trg_root, dataset_name=dataset_name)
+    # create_json_files(trg_dir=trg_root, dataset_name=dataset_name, write_json_function=_write_dataset_json_file)
+
+    convert_isic_for_testing(path=path, trg_dir=trg_root, dataset_name=dataset_name)
 
 
 if __name__ == "__main__":

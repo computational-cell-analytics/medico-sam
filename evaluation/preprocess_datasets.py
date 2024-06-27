@@ -352,7 +352,7 @@ def for_isic(save_dir):
 
     fext = "isic_"
     convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
-    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
 def for_papila(save_dir, task):
@@ -510,6 +510,22 @@ def for_cbis_ddsm(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 
+def for_dca1(save_dir):
+    """Task: Vessel segmentation in X-Ray angiography.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.dca1._get_dca1_paths(
+        path=os.path.join(ROOT, "dca1"), split="test", download=False
+    )
+
+    fext = "dca1_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
+
+
 def for_cholecseg8k(save_dir):
     ...
 
@@ -536,12 +552,14 @@ def _preprocess_datasets(save_dir):
     for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
     for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
     for_oimhs(save_dir=os.path.join(save_dir, "oimhs", "slices"))
+    for_dca1(save_dir=os.path.join(save_dir, "dca1", "slices"))
     for_isic(save_dir=os.path.join(save_dir, "isic", "slices"))
-    for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "cup"), task="cup")
-    for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "disc"), task="disc")
-    for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
-    for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
-    for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
+
+    # for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "cup"), task="cup")
+    # for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "disc"), task="disc")
+    # for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
+    # for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
+    # for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
 
 
 def main():

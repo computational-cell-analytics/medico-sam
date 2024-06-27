@@ -13,32 +13,23 @@ def _get_paths(path, dataset, split):
     if dataset == "oimhs":
         image_paths, gt_paths = medical.oimhs._get_oimhs_paths(path=path, split=split, download=False)
 
-    elif dataset == "idrid":
-        if split != "test":
-            chosen_split = "train"
-        else:
-            chosen_split = split
+    elif dataset == "m2caiseg":
+        image_paths, gt_paths = medical.m2caiseg._get_m2caiseg_paths(path=path, split=split, download=True)
 
-        image_paths, gt_paths = medical.idrid._get_idrid_paths(
-            path=path, split=chosen_split, task="microaneurysms", download=False
-        )
-        gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="haemorrhages", download=False)[-1]
-        )
-        gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="hard_exudates", download=False)[-1]
-        )
-        gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="soft_exudates", download=False)[-1]
-        )
-        gt_paths.extend(
-            medical.idrid._get_idrid_paths(path=path, split=chosen_split, task="optic_disc", download=False)[-1]
+    elif dataset == "cbis_ddsm":
+        if split == "val":
+            chosen_split = "Train"
+        else:
+            chosen_split = split.title()
+
+        image_paths, gt_paths = medical.cbis_ddsm._get_cbis_ddsm_paths(
+            path=path, split=chosen_split, task="Mass", tumour_type=None, download=True
         )
 
         if split == "train":
-            image_paths = image_paths[:-6]
+            image_paths, gt_paths = image_paths[125:], gt_paths[125:]
         elif split == "val":
-            image_paths = image_paths[-6:]
+            image_paths, gt_paths = image_paths[:125], gt_paths[:125]
 
     elif dataset == "isic":
         image_paths, gt_paths = medical.isic._get_isic_paths(path=path, split=split, download=False)
