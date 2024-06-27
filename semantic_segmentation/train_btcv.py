@@ -8,9 +8,8 @@ import numpy as np
 import torch
 
 import torch_em
-from torch_em.data import MinSemanticLabelForegroundSampler
 from torch_em.transform.raw import normalize
-from torch_em.transform.label import OneHotTransform
+from torch_em.data import MinInstanceSampler
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
@@ -41,8 +40,7 @@ def get_dataloaders(patch_shape, data_path):
     """
     kwargs = {}
     kwargs["raw_transform"] = RawTrafoFor3dInputs()
-    kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[8], min_fraction=0.001)
-    kwargs["label_transform"] = OneHotTransform(class_ids=[0, 8])
+    kwargs["sampler"] = MinInstanceSampler(min_num_instances=8)
 
     train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.nii.gz")))
     train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.nii.gz")))
@@ -89,14 +87,14 @@ def finetune_btcv(args):
     model_type = args.model_type
     checkpoint_path = None  # override this to start training from a custom checkpoint
     patch_shape = (32, 512, 512)  # the patch shape for training
-    num_classes = 2  # 1 background class and 13 semantic foreground classes
+    num_classes = 14  # 1 background class and 13 semantic foreground classes
 
     # get the trainable segment anything model
     model = get_3d_sam_model(device, n_classes=num_classes, image_size=512)
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
@@ -115,12 +113,12 @@ def finetune_btcv(args):
         optimizer=optimizer,
         device=device,
         lr_scheduler=scheduler,
-        log_image_interval=200000,
+        log_image_interval=10,
         mixed_precision=True,
         convert_inputs=convert_inputs,
         num_classes=num_classes,
         compile_model=False,
-        logger=sam_training.semantic_sam_trainer.SemanticSamLogger3D
+        logger=sam_training.semantic_sam_trainer.SemanticSamLogger
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
@@ -149,7 +147,7 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e4),
+        "--iterations", type=int, default=int(1e5),
         help="For how many iterations should the model be trained?"
     )
     parser.add_argument(
