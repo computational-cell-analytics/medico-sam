@@ -118,7 +118,6 @@ def finetune_btcv(args):
         convert_inputs=convert_inputs,
         num_classes=num_classes,
         compile_model=False,
-        logger=sam_training.semantic_sam_trainer.SemanticSamLogger
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
