@@ -85,7 +85,7 @@ def finetune_osic_pulmofib(args):
 
     # training settings:
     model_type = args.model_type
-    checkpoint_path = None  # override this to start training from a custom checkpoint
+    checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     patch_shape = (32, 512, 512)  # the patch shape for training
     num_classes = 4  # 1 background class and 3 semantic foreground classes
 
@@ -156,6 +156,9 @@ def main():
     parser.add_argument(
         "--save_every_kth_epoch", type=int, default=None,
         help="To save every kth epoch while fine-tuning. Expects an integer value."
+    )
+    parser.add_argument(
+        "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     args = parser.parse_args()
     finetune_osic_pulmofib(args)

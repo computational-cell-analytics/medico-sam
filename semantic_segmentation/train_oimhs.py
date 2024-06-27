@@ -58,7 +58,7 @@ def finetune_oimhs(args):
 
     # training settings:
     model_type = args.model_type
-    checkpoint_path = None  # override this to start training from a custom checkpoint
+    checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
     num_classes = 5  # 1 background class and 4 semantic foreground classes
@@ -144,6 +144,9 @@ def main():
     parser.add_argument(
         "--save_every_kth_epoch", type=int, default=None,
         help="To save every kth epoch while fine-tuning. Expects an integer value."
+    )
+    parser.add_argument(
+        "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     args = parser.parse_args()
     finetune_oimhs(args)
