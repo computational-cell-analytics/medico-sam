@@ -341,6 +341,191 @@ def for_oimhs(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 
+def for_isic(save_dir):
+    """Task: Skin lesion segmentation in dermoscopy images.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.isic._get_isic_paths(path=os.path.join(ROOT, "isic"), split="test", download=False)
+
+    fext = "isic_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
+def for_papila(save_dir, task):
+    """Task: Optic disc and optic cup segmentation in fundus images
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.papila._get_papila_paths(
+        path=os.path.join(ROOT, "papila"), task=task, expert_choice="exp1", download=True,
+    )
+
+    fext = "papila_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
+def for_osic_pulmofib(save_dir):
+    """Task: Lung, heart and trachea segmentation in CT scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.osic_pulmofib._get_osic_pulmofib_paths(
+        path=os.path.join(ROOT, "osic_pulmofib"), download=True
+    )
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image_id = Path(image_path).stem
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"osic_pulmofib_{image_id}",
+            save_dir=save_dir,
+            min_num_instances=4,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=50, fname_ext="osic_pulmofib_")
+
+
+def for_m2caiseg(save_dir):
+    """Instrument and organ segmentation in laparoscopy.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.m2caiseg._get_m2caiseg_paths(
+        path=os.path.join(ROOT, "m2caiseg"), split="test", download=True,
+    )
+
+    fext = "m2caiseg_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
+def for_siim_acr(save_dir):
+    """Pneumothorax segmentation in X-Ray.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.siim_acr._get_siim_acr_paths(
+        path=os.path.join(ROOT, "siim_acr"), split="test", download=True,
+    )
+
+    fext = "siim_acr_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
+def for_jnu_fim(save_dir):
+    """Task: Fetal head and pubic symphysis segmentation in ultrasound.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.jnuifm._get_jnuifm_paths(path=os.path.join(ROOT, "jnuifm"), download=True)
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".mha")
+        gt = read_image(gt_path, extension=".mha")
+
+        image_id = Path(image_path).stem
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"jnuifm_{image_id}",
+            save_dir=save_dir,
+            min_num_instances=4,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext="jnuifm_")
+
+
+def for_microusp(save_dir):
+    """Task: Prostate segmentation in micro-ultrasound.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.micro_usp._get_micro_usp_paths(
+        path=os.path.jon(ROOT, "microusp"), split="test", download=True
+    )
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".mha")
+        gt = read_image(gt_path, extension=".mha")
+
+        image_id = Path(image_path).stem
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"microusp_{image_id}",
+            save_dir=save_dir,
+            min_num_instances=4,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext="microusp_")
+
+
+def for_cbis_ddsm(save_dir):
+    """Task: (Lesion) Mass segmentation in mammography
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.cbis_ddsm._get_cbis_ddsm_paths(
+        path=os.path.join(ROOT, "cbis_ddsm"), split="Test", task="Mass", tumour_type=None, download=True,
+    )
+
+    fext = "cbis_ddsm_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
+def for_cholecseg8k(save_dir):
+    ...
+
+
+def for_piccolo(save_dir):
+    ...
+
+
+def for_duke_liver(save_dir):
+    ...
+
+
+def for_toothfairy(save_dir):
+    ...
+
+
 def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
@@ -351,6 +536,12 @@ def _preprocess_datasets(save_dir):
     for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
     for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
     for_oimhs(save_dir=os.path.join(save_dir, "oimhs", "slices"))
+    for_isic(save_dir=os.path.join(save_dir, "isic", "slices"))
+    for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "cup"), task="cup")
+    for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "disc"), task="disc")
+    for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
+    for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
+    for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
 
 
 def main():
