@@ -16,6 +16,7 @@ DATASET_MAPPING_2D = {
 
 DATASET_MAPPING_3D = {
     "btcv": [301, "Dataset301_BTCV"],
+    "amos": [302, "Dataset302_AMOS"]
 }
 
 

@@ -57,6 +57,14 @@ def _get_paths(path, dataset, split):
         elif split == "test":
             image_paths, gt_paths = image_paths[22:], gt_paths[22:]
 
+    elif dataset == "amos":
+        image_paths, gt_paths = medical.amos._get_amos_paths(path=path, split=split, modality="MRI", download=False)
+
+    elif dataset == "camus":
+        image_paths, gt_paths = medical.camus._get_camus_paths(
+            path=path, chamber="2", download=False,
+        )
+
     else:
         raise ValueError(dataset)
 

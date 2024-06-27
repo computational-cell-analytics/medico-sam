@@ -8,12 +8,13 @@ import torch
 
 
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs"
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d",
 ]
 
 DEXT = {
     "sega": ["slices/kits", "slices/rider", "slices/dongyang"],
-    "camus": ["slices/2ch", "slices/4ch"]
+    "camus": ["slices/2ch", "slices/4ch"],
+    "btcv_3d": ["slices_3d"],
 }
 
 SEMANTIC_CLASS_MAPS = {
@@ -21,11 +22,18 @@ SEMANTIC_CLASS_MAPS = {
     "uwaterloo_skin": {"skin_lesion": 1},
     "idrid": {"optic_disc": 1},
     "montgomery": {"lungs": 1},
-    "camus": {"A": 1, "B": 2, "C": 3},
-    "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4}
+    "camus": {"endocardium": 1, "left_ventricle": 2, "left_atrium": 3},
+    "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
+    "btcv": {
+        "background": 0, "spleen": 1, "right_kidney": 2, "left_kidney": 3, "gallbladder": 4, "esophagus": 5,
+        "liver": 6, "stomach": 7, "aorta": 8, "inferior_vena_cava": 9, "portan_vein_and_splenic_vein": 10,
+        "pancreas": 11, "right_adrenal_gland": 12, "left_adrenal_gland": 13,
+    },
+    "btcv_3d": {"aorta": 8},
+
 }
 
-MULTICLASS_SEMANTIC = ["oimhs"]
+MULTICLASS_SEMANTIC = ["oimhs", "btcv"]
 
 ROOT = "/scratch/share/cidas/cca/data"
 
@@ -40,11 +48,16 @@ def get_dataset_paths(dataset_name, split="test"):
 
     image_paths, gt_paths = [], []
     for per_dext in dexts:
-        data_dir = os.path.join(ROOT, dataset_name, per_dext, split)
+        data_dir = os.path.join(ROOT, dataset_name.split("_3d")[0], per_dext, split)
         assert os.path.exists(data_dir), f"The data directory does not exist at '{data_dir}'."
 
-        image_paths.extend(glob(os.path.join(data_dir, "images", "*.tif")))
-        gt_paths.extend(glob(os.path.join(data_dir, "ground_truth", "*.tif")))
+        if dataset_name.endswith("_3d"):
+            ext = "*.nii.gz"
+        else:
+            ext = "*tif"
+
+        image_paths.extend(glob(os.path.join(data_dir, "images", ext)))
+        gt_paths.extend(glob(os.path.join(data_dir, "ground_truth", ext)))
 
     assert len(image_paths) == len(gt_paths)
 
