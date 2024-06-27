@@ -1,20 +1,36 @@
 import os
 import argparse
+from glob import glob
+from natsort import natsorted
+
+import numpy as np
 
 import torch
 
+import torch_em
+from torch_em.transform.raw import normalize
 from torch_em.data import MinInstanceSampler
-from torch_em.data.datasets.medical import get_isic_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
+from micro_sam.sam_3d_wrapper import get_3d_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
 
+class RawTrafoFor3dInputs:
+    def __call__(self, raw):
+        raw = normalize(raw)
+        raw = raw * 255
+        raw = np.stack([raw] * 3, axis=1)
+        return raw
+
+
 def get_dataloaders(patch_shape, data_path):
-    """This returns the isic data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/isic.py
-    It will not automatically download the ISIC data. Take a look at `get_isic_dataset`.
+    """This returns the btcv data loaders implemented in torch_em:
+    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/btcv.py
+    It will not automatically download the BTCV data. Take a look at `get_btcv_dataset`.
+
+    NOTE: The step below is done to obtain the BTCV dataset in splits.
 
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
@@ -22,63 +38,59 @@ def get_dataloaders(patch_shape, data_path):
     I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
-    def _convert_to_binary(labels):
-        labels = (labels == 255).astype(labels.dtype)
-        return labels
+    kwargs = {}
+    kwargs["raw_transform"] = RawTrafoFor3dInputs()
+    kwargs["sampler"] = MinInstanceSampler(min_num_instances=8)
 
-    raw_transform = sam_training.identity
-    sampler = MinInstanceSampler()
-    label_transform = _convert_to_binary
+    train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.nii.gz")))
+    train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.nii.gz")))
+    val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.nii.gz")))
+    val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.nii.gz")))
 
-    train_loader = get_isic_loader(
-        path=data_path,
+    train_dataset = torch_em.default_segmentation_dataset(
+        raw_paths=train_image_paths,
+        raw_key="data",
+        label_paths=train_gt_paths,
+        label_key="data",
+        is_seg_dataset=True,
+        ndim=3,
         patch_shape=patch_shape,
-        batch_size=8,
-        split="train",
-        resize_inputs=True,
-        raw_transform=raw_transform,
-        label_transform=label_transform,
-        num_workers=16,
-        shuffle=True,
-        sampler=sampler,
-        pin_memory=True,
+        **kwargs
     )
-    val_loader = get_isic_loader(
-        path=data_path,
+    val_dataset = torch_em.default_segmentation_dataset(
+        raw_paths=val_image_paths,
+        raw_key="data",
+        label_paths=val_gt_paths,
+        label_key="data",
+        is_seg_dataset=True,
+        ndim=3,
         patch_shape=patch_shape,
-        batch_size=1,
-        split="val",
-        resize_inputs=True,
-        raw_transform=raw_transform,
-        label_transform=label_transform,
-        num_workers=16,
-        sampler=sampler,
-        pin_memory=True,
+        **kwargs
     )
+
+    train_loader = torch_em.get_data_loader(
+        dataset=train_dataset, batch_size=1, num_workers=16, shuffle=True, pin_memory=True,
+    )
+    val_loader = torch_em.get_data_loader(
+        dataset=val_dataset, batch_size=1, num_workers=16, shuffle=True, pin_memory=True,
+    )
+
     return train_loader, val_loader
 
 
-def finetune_isic(args):
-    """Code for finetuning SAM on ISIC for semantic segmentation."""
+def finetune_btcv(args):
+    """Code for finetuning SAM on BTCV for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # training settings:
     model_type = args.model_type
     checkpoint_path = None  # override this to start training from a custom checkpoint
-    patch_shape = (1024, 1024)  # the patch shape for training
-    freeze_parts = args.freeze  # override this to freeze different parts of the model
-    num_classes = 2  # 1 background class and 1 semantic foreground classes
+    patch_shape = (32, 512, 512)  # the patch shape for training
+    num_classes = 14  # 1 background class and 13 semantic foreground classes
 
     # get the trainable segment anything model
-    model = sam_training.get_trainable_sam_model(
-        model_type=model_type,
-        device=device,
-        checkpoint_path=checkpoint_path,
-        freeze=freeze_parts,
-        flexible_load_checkpoint=True,
-        num_multimask_outputs=num_classes,
-    )
+    model = get_3d_sam_model(device, n_classes=num_classes, image_size=512)
     model.to(device)
 
     # all the stuff we need for training
@@ -89,10 +101,10 @@ def finetune_isic(args):
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
-    checkpoint_name = f"{args.model_type}/isic_semanticsam"
+    checkpoint_name = f"{args.model_type}/btcv_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
-    trainer = sam_training.SemanticSamTrainer(
+    trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer3D(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
@@ -120,10 +132,10 @@ def finetune_isic(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the ISIC dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the BTCV dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/data/isic/",
-        help="The filepath to the ISIC data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset301_BTCV/",
+        help="The filepath to the BTCV data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -142,15 +154,11 @@ def main():
         help="Where to export the finetuned model to. The exported model can be used in the annotation tools."
     )
     parser.add_argument(
-        "--freeze", type=str, nargs="+", default=None,
-        help="Which parts of the model to freeze for finetuning."
-    )
-    parser.add_argument(
         "--save_every_kth_epoch", type=int, default=None,
         help="To save every kth epoch while fine-tuning. Expects an integer value."
     )
     args = parser.parse_args()
-    finetune_isic(args)
+    finetune_btcv(args)
 
 
 if __name__ == "__main__":

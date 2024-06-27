@@ -6,6 +6,7 @@ from glob import glob
 from pathlib import Path
 
 import numpy as np
+import nibabel as nib
 import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 from skimage.transform import resize
@@ -526,6 +527,58 @@ def for_dca1(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
+def for_btcv(save_dir):
+    """Task: Organ segmentation in abdominal CT scans.
+    """
+    if _check_preprocessing(save_dir=save_dir) and _check_preprocessing(save_dir=f"{save_dir}_3d"):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.btcv._get_raw_and_label_paths(
+        path=os.path.join(ROOT, "btcv"), anatomy=["Abdomen"]
+    )
+    # taking the chosen test split - last 8 volumes
+    image_paths, gt_paths = image_paths["Abdomen"][22:], gt_paths["Abdomen"][22:]
+
+    # for this dataset, we store the 2d and 3d slices both
+
+    # directory to save 3d volumes
+    image3d_dir = os.path.join(f"{save_dir}_3d", "test", "images")
+    gt3d_dir = os.path.join(f"{save_dir}_3d", "test", "ground_truth")
+    os.makedirs(image3d_dir, exist_ok=True)
+    os.makedirs(gt3d_dir, exist_ok=True)
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image_id = Path(image_path).stem.split(".")[0]
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        # let's do 2d first
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"btcv_{image_id}",
+            save_dir=save_dir,
+            min_num_instances=4,
+        )
+
+        # next, let's store the 3d volumes as well
+        image_nifti = nib.Nifti2Image(image, np.eye(4))
+        gt_nifti = nib.Nifti2Image(gt, np.eye(4))
+
+        neu_image_path = os.path.join(image3d_dir, f"{image_id}_0000.nii.gz")
+        neu_gt_path = os.path.join(gt3d_dir, f"{image_id}.nii.gz")
+
+        nib.save(image_nifti, neu_image_path)
+        nib.save(gt_nifti, neu_gt_path)
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext="btcv_")
+
+
 def for_cholecseg8k(save_dir):
     ...
 
@@ -553,6 +606,7 @@ def _preprocess_datasets(save_dir):
     for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
     for_oimhs(save_dir=os.path.join(save_dir, "oimhs", "slices"))
     for_dca1(save_dir=os.path.join(save_dir, "dca1", "slices"))
+    for_btcv(save_dir=os.path.join(save_dir, "btcv", "slices"))
     for_isic(save_dir=os.path.join(save_dir, "isic", "slices"))
 
     # for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "cup"), task="cup")

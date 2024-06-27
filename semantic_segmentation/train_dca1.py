@@ -4,7 +4,6 @@ import argparse
 import torch
 
 from torch_em.data import MinInstanceSampler
-from torch_em.transform.label import OneHotTransform
 from torch_em.data.datasets.medical import get_dca1_loader
 
 import micro_sam.training as sam_training
@@ -23,9 +22,13 @@ def get_dataloaders(patch_shape, data_path):
     I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
+    def _convert_to_binary(labels):
+        labels = (labels == 255).astype(labels.dtype)
+        return labels
+
     raw_transform = sam_training.identity
     sampler = MinInstanceSampler()
-    label_transform = OneHotTransform(class_ids=[0, 255])
+    label_transform = _convert_to_binary
 
     train_loader = get_dca1_loader(
         path=data_path,
@@ -80,7 +83,7 @@ def finetune_dca1(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
@@ -132,7 +135,7 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e4),
+        "--iterations", type=int, default=int(1e5),
         help="For how many iterations should the model be trained?"
     )
     parser.add_argument(
