@@ -8,13 +8,15 @@ import torch
 
 
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1"
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1",
+    "papila", "m2caiseg", "siim_acr", "jnu_ifm", "cbis_ddsm", "piccolo", "duke_liver",
 ]
 
 DEXT = {
     "sega": ["slices/kits", "slices/rider", "slices/dongyang"],
     "camus": ["slices/2ch", "slices/4ch"],
     "btcv_3d": ["slices_3d"],
+    "papila": ["slices/cup", "slices/disc"],
 }
 
 SEMANTIC_CLASS_MAPS = {
@@ -32,9 +34,17 @@ SEMANTIC_CLASS_MAPS = {
     "btcv_3d": {"aorta": 8},
     "isic": {"skin_lesion": 255},
     "dca1": {"vessel": 255},
+    "papila": {"oc_or_od": 255},
+    "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
+    "m2caiseg": {},
+    "siim_acr": {"pneumothorax": 1},
+    "jnu_ifm": {"pubic_symphysis": 1, "fetal_head": 2},
+    "cbis_ddsm": {"mass": 255},
+    "piccolo": {"polyp": 255},
+    "duke_liver": {"liver": 1},
 }
 
-MULTICLASS_SEMANTIC = ["oimhs", "btcv"]
+MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu_ifm", "osic_pulmofib"]
 
 ROOT = "/scratch/share/cidas/cca/data"
 

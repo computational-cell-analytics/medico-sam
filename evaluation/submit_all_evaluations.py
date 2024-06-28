@@ -25,13 +25,12 @@ def write_batch_script(
 ):
     "Writing scripts with different fold-trainings for medico-sam evaluation"
     batch_script = f"""#!/bin/bash
-#SBATCH -c 16
-#SBATCH --mem 64G
+#SBATCH -c 4
+#SBATCH --mem 32G
 #SBATCH -t 2-00:00:00
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
-#SBATCH --constraint=80gb
 #SBATCH --job-name={inference_setup}
 
 source ~/.bashrc

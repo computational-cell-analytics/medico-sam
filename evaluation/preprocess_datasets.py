@@ -100,8 +100,6 @@ def _get_val_test_splits(save_dir, val_fraction, fname_ext=None):
     image_paths = sorted(glob(os.path.join(save_dir, "images", f"{fname_ext}*.tif")))
     gt_paths = sorted(glob(os.path.join(save_dir, "ground_truth", f"{fname_ext}*.tif")))
 
-    breakpoint()
-
     assert len(image_paths) == len(gt_paths)
 
     if val_fraction < 1:  # means a percentage of images
@@ -597,15 +595,77 @@ def for_cholecseg8k(save_dir):
 
 
 def for_piccolo(save_dir):
-    ...
+    """Task: Polyp segmentation in Narrow Band Imaging.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.piccolo._get_piccolo_paths(
+        path=os.path.join(ROOT, "piccolo"), split="test", download=False
+    )
+
+    fext = "piccolo_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
 def for_duke_liver(save_dir):
-    ...
+    """Liver segmentation in MRI scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.duke_liver._get_duke_liver_paths(
+        path=os.path.join(ROOT, "duke_liver"), download=False
+    )
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image_id = Path(image_path).stem
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"duke_liver_{image_id}",
+            save_dir=save_dir,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="duke_liver_")
 
 
 def for_toothfairy(save_dir):
-    ...
+    """Canal segmentation in oral CBCT scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.toothfairy._get_toothfairy_paths(
+        path=os.path.join(ROOT, "toothfairy"), download=False
+    )
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        # NOTE: the volumes above are already channels first
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image_id = Path(image_path).stem
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"toothfairy_{image_id}",
+            save_dir=save_dir,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="toothfairy_")
 
 
 def _preprocess_datasets(save_dir):
@@ -629,6 +689,9 @@ def _preprocess_datasets(save_dir):
     for_jnu_fim(save_dir=os.path.join(save_dir, "jnu-ifm", "slices"))
     for_microusp(save_dir=os.path.join(save_dir, "microusp", "slices"))
     for_cbis_ddsm(save_dir=os.path.join(save_dir, "cbis_ddsm", "slices"))
+    for_piccolo(save_dir=os.path.join(save_dir, "piccolo", "slices"))
+    # for_toothfairy(save_dir=os.path.join(save_dir, "toothfairy", "slices"))
+    for_duke_liver(save_dir=os.path.join(save_dir, "duke_liver", "slices"))
 
 
 def main():

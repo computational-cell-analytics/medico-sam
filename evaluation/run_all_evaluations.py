@@ -5,7 +5,9 @@ import itertools
 
 CMD = "python submit_all_evaluations.py "
 DATASETS = [
-    "idrid", "camus", "uwaterloo_skin", "montgomery", "sega"
+    # "idrid", "camus", "uwaterloo_skin", "montgomery", "sega", "piccolo",
+    "cbis_ddsm",
+    "btcv", "m2caiseg", "isic", "dca1", "papila", "siim_acr", "jnu_ifm",
 ]
 EXPERIMENTS = [
     "vanilla", "generalist_1", "generalist_8", "simplesam_1", "simplesam_8",
@@ -39,6 +41,7 @@ def run_specific_experiment(dataset_name, model_type, experiment_set):
 def run_one_setup(model_choice, all_dataset_list, all_experiment_set_list):
     for (dataset_name, experiment_set) in itertools.product(all_dataset_list, all_experiment_set_list):
         run_specific_experiment(dataset_name, model_choice, experiment_set)
+        breakpoint()
 
 
 def for_medical_generalist(dataset, experiment):
