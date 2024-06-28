@@ -5,10 +5,10 @@ import subprocess
 from datetime import datetime
 
 
-DATASETS = ["oimhs", "isic", "dca1", "cbis_ddsm", "m2caiseg", "btcv", "osic_pulmofib"]
+DATASETS = ["oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo", "btcv", "osic_pulmofib"]
 
 
-def write_batch_script(out_path, _name, save_root, checkpoint, ckpt_name):
+def write_batch_script(out_path, _name, save_root, checkpoint, ckpt_name, use_lora, dry):
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 14-00:00:00
@@ -38,6 +38,10 @@ source activate sam \n"""
     if checkpoint is not None:
         python_script += f"-c {checkpoint} "
 
+    # whether to use lora for finetuning for semantic segmentation
+    if use_lora:
+        python_script += "--use_lora "
+
     # let's add the python script to the bash script
     batch_script += python_script
 
@@ -46,7 +50,9 @@ source activate sam \n"""
         f.write(batch_script)
 
     cmd = ["sbatch", _op]
-    subprocess.run(cmd)
+
+    if not dry:
+        subprocess.run(cmd)
 
 
 def get_batch_script_names(tmp_folder):
@@ -68,11 +74,12 @@ def submit_slurm(args):
 
     script_combinations = {
         # 2d datasets
-        "oimhs": "train_oimhs",
         "isic": "train_isic",
+        "oimhs": "train_oimhs",
         "dca1": "train_dca1",
         "cbis_ddsm": "train_cbis_ddsm",
-        "m2caiseg": "train_m2caiseg",
+        "piccolo": "train_piccolo",
+        "drive": "train_drive",
         # 3d datasets
         "btcv": "train_btcv",
         "osic_pulmofib": "train_osic_pulmofib",
@@ -87,23 +94,39 @@ def submit_slurm(args):
         checkpoints = {"experiment": args.checkpoint}
     else:
         checkpoints = {
+            # default SAM model
             "sam": None,
+            # our finetuned models
             "medico-sam": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",
             "simplesam": "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
-            "medsam": "medsam/multi_gpu/checkpoints/vit_b/medical_generalist_medsam_multi_gpu/best_exported.pt",
+            # MedSAM's original model
+            "medsam": "/scratch/projects/nim00007/sam/models/medsam/medsam_vit_b.pth",
         }
 
-    for (per_dataset, ckpt_name) in itertools.product(datasets, checkpoints.keys()):
+    lora_choices = [True, False]
+
+    for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):
         script_name = script_combinations[per_dataset]
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(args.save_root, checkpoints[ckpt_name])
+
+        _use_lora_now = False
+        if use_lora:
+            if ckpt_name in ["sam", "medico-sam"]:
+                _use_lora_now = True
+            else:
+                continue
 
         print(f"Running for {script_name} for experiment name '{ckpt_name}'...")
         write_batch_script(
             out_path=get_batch_script_names(tmp_folder),
             _name=script_name,
-            save_root=os.path.join(args.save_root, "semantic_sam"),
+            save_root=os.path.join(
+                args.save_root, "semantic_sam", "lora_finetuning" if _use_lora_now else "full_finetuning"
+            ),
             checkpoint=checkpoint,
             ckpt_name=ckpt_name,
+            use_lora=_use_lora_now,
+            dry=args.dry,
         )
 
 
@@ -122,5 +145,6 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models")
+    parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)

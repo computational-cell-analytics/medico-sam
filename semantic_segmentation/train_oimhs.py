@@ -62,6 +62,8 @@ def finetune_oimhs(args):
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
     num_classes = 5  # 1 background class and 4 semantic foreground classes
+    use_lora = args.use_lora  # whether to use LoRA for finetuning
+    rank = 4 if use_lora else None  # the rank used for LoRA
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
@@ -71,12 +73,14 @@ def finetune_oimhs(args):
         freeze=freeze_parts,
         flexible_load_checkpoint=True,
         num_multimask_outputs=num_classes,
+        use_lora=use_lora,
+        rank=rank,
     )
     model.to(device)
 
     # all the stuff we need for training
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     train_loader.dataset.max_sampling_attempts = 10000
@@ -97,7 +101,7 @@ def finetune_oimhs(args):
         optimizer=optimizer,
         device=device,
         lr_scheduler=scheduler,
-        log_image_interval=10,
+        log_image_interval=50,
         mixed_precision=True,
         convert_inputs=convert_inputs,
         num_classes=num_classes,
@@ -147,6 +151,9 @@ def main():
     )
     parser.add_argument(
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
+    )
+    parser.add_argument(
+        "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
     finetune_oimhs(args)

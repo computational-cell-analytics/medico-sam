@@ -10,11 +10,7 @@ import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-
-class LabelTrafoToBinary:
-    def __call__(self, labels):
-        labels = (labels == 255).astype(labels.dtype)
-        return labels
+from common import LabelTrafoToBinary
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -71,6 +67,8 @@ def finetune_isic(args):
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
     num_classes = 2  # 1 background class and 1 semantic foreground classes
+    use_lora = args.use_lora  # whether to use LoRA for finetuning
+    rank = 4 if use_lora else None  # the rank used for LoRA
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
@@ -80,12 +78,14 @@ def finetune_isic(args):
         freeze=freeze_parts,
         flexible_load_checkpoint=True,
         num_multimask_outputs=num_classes,
+        use_lora=use_lora,
+        rank=rank,
     )
     model.to(device)
 
     # all the stuff we need for training
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
@@ -103,7 +103,7 @@ def finetune_isic(args):
         optimizer=optimizer,
         device=device,
         lr_scheduler=scheduler,
-        log_image_interval=10,
+        log_image_interval=50,
         mixed_precision=True,
         convert_inputs=convert_inputs,
         num_classes=num_classes,
@@ -153,6 +153,9 @@ def main():
     )
     parser.add_argument(
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
+    )
+    parser.add_argument(
+        "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
     finetune_isic(args)
