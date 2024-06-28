@@ -28,7 +28,7 @@ def run_inference_with_iterative_prompting_per_semantic_class(
     batch_size: int = 32,
     n_iterations: int = 8,
     use_masks: bool = False,
-    min_size: int = 10,
+    min_size: int = 0,
 ) -> None:
     """Run segment anything inference for multiple images using prompts iteratively
     derived from model outputs and groundtruth (per semantic class)
@@ -91,7 +91,7 @@ def run_inference_with_iterative_prompting_per_semantic_class(
 
             # Check whether there are objects or it's not relevant for interactive segmentation
             if not len(np.unique(gt)) > 1:
-                continue
+                breakpoint()
 
             if embedding_dir is None:
                 embedding_path = None

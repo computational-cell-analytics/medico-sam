@@ -9,7 +9,7 @@ import torch
 
 VALID_DATASETS = [
     "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1",
-    "papila", "m2caiseg", "siim_acr", "jnu_ifm", "cbis_ddsm", "piccolo", "duke_liver",
+    "papila", "m2caiseg", "siim_acr", "jnu-ifm", "cbis_ddsm", "piccolo", "duke_liver",
 ]
 
 DEXT = {
@@ -34,17 +34,17 @@ SEMANTIC_CLASS_MAPS = {
     "btcv_3d": {"aorta": 8},
     "isic": {"skin_lesion": 255},
     "dca1": {"vessel": 255},
-    "papila": {"oc_or_od": 255},
+    "papila": {"oc_or_od": 1},
     "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "m2caiseg": {},
     "siim_acr": {"pneumothorax": 1},
-    "jnu_ifm": {"pubic_symphysis": 1, "fetal_head": 2},
+    "jnu-ifm": {"pubic_symphysis": 1, "fetal_head": 2},
     "cbis_ddsm": {"mass": 255},
     "piccolo": {"polyp": 255},
     "duke_liver": {"liver": 1},
 }
 
-MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu_ifm", "osic_pulmofib"]
+MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib"]
 
 ROOT = "/scratch/share/cidas/cca/data"
 

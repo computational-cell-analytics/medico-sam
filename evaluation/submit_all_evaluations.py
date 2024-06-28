@@ -204,6 +204,9 @@ def submit_slurm(args):
             **extra_params
             )
 
+    if args.dry:
+        return
+
     # the logic below automates the process of first running the precomputation of embeddings, and only then inference.
     job_id = []
     for i, my_script in enumerate(sorted(glob(tmp_folder + "/*"))):
@@ -238,5 +241,6 @@ if __name__ == "__main__":
     parser.add_argument("--gpus", default=None)
     parser.add_argument("--checkpoint_path", type=str, default=None)
     parser.add_argument("--experiment_path", type=str, default=None)
+    parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)
