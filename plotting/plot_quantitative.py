@@ -149,8 +149,8 @@ def _make_plots(dataframes, datasets):
     plt.text(x=-5.1, y=1.675, s="Dice Score", rotation=90, fontweight="bold", fontsize=16)
 
     plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.225, wspace=0.225)
-    plt.savefig("./test.png")
-    plt.savefig("./test.svg")
+    plt.savefig("./interactive_segmentation_all.png")
+    plt.savefig("./interactive_segmentation_all.svg")
 
 
 def main():
