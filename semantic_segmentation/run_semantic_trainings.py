@@ -84,7 +84,7 @@ def submit_slurm(args):
         datasets = DATASETS
 
     if args.checkpoint is not None:
-        checkpoints = [args.checkpoint]
+        checkpoints = {"experiment": args.checkpoint}
     else:
         checkpoints = {
             "sam": None,
@@ -97,7 +97,7 @@ def submit_slurm(args):
         script_name = script_combinations[per_dataset]
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(args.save_root, checkpoints[ckpt_name])
 
-        print(f"Running for {script_name}")
+        print(f"Running for {script_name} for experiment name '{ckpt_name}'...")
         write_batch_script(
             out_path=get_batch_script_names(tmp_folder),
             _name=script_name,

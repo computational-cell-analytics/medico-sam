@@ -11,6 +11,12 @@ from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
 
+class LabelTrafoToBinary:
+    def __call__(self, labels):
+        labels = (labels == 255).astype(labels.dtype)
+        return labels
+
+
 def get_dataloaders(patch_shape, data_path):
     """This returns the isic data loaders implemented in torch_em:
     https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/isic.py
@@ -22,13 +28,9 @@ def get_dataloaders(patch_shape, data_path):
     I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
-    def _convert_to_binary(labels):
-        labels = (labels == 255).astype(labels.dtype)
-        return labels
-
     raw_transform = sam_training.identity
     sampler = MinInstanceSampler()
-    label_transform = _convert_to_binary
+    label_transform = LabelTrafoToBinary()
 
     train_loader = get_isic_loader(
         path=data_path,

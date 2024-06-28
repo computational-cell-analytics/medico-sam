@@ -8,11 +8,16 @@ import torch
 import torch_em
 from torch_em.data.datasets import util
 from torch_em.data import MinInstanceSampler
-from torch_em.transform.label import OneHotTransform
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
+
+
+class LabelTrafoToBinary:
+    def __call__(self, labels):
+        labels = (labels == 255).astype(labels.dtype)
+        return labels
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -31,7 +36,7 @@ def get_dataloaders(patch_shape, data_path):
     kwargs = {}
     kwargs["raw_transform"] = sam_training.identity
     kwargs["sampler"] = MinInstanceSampler()
-    kwargs["label_transform"] = OneHotTransform(class_ids=[0, 255])
+    kwargs["label_transform"] = LabelTrafoToBinary()
 
     resize_inputs = True
     if resize_inputs:
@@ -52,7 +57,6 @@ def get_dataloaders(patch_shape, data_path):
         label_key=None,
         patch_shape=patch_shape,
         is_seg_dataset=False,
-        n_samples=400,
         **kwargs
     )
     val_dataset = torch_em.default_segmentation_dataset(
@@ -99,7 +103,7 @@ def finetune_cbis_ddsm(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
@@ -151,7 +155,7 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e4),
+        "--iterations", type=int, default=int(1e5),
         help="For how many iterations should the model be trained?"
     )
     parser.add_argument(

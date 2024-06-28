@@ -4,12 +4,17 @@ import argparse
 import torch
 
 from torch_em.data import MinInstanceSampler
-from torch_em.transform.label import OneHotTransform
 from torch_em.data.datasets.medical import get_m2caiseg_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
+
+
+class LabelTrafoToBinary:
+    def __call__(self, labels):
+        labels = (labels == 255).astype(labels.dtype)
+        return labels
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -25,7 +30,7 @@ def get_dataloaders(patch_shape, data_path):
     """
     raw_transform = sam_training.identity
     sampler = MinInstanceSampler(min_num_instances=5)
-    label_transform = OneHotTransform(class_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    label_transform = LabelTrafoToBinary()
 
     train_loader = get_m2caiseg_loader(
         path=data_path,
@@ -39,6 +44,7 @@ def get_dataloaders(patch_shape, data_path):
         sampler=sampler,
         pin_memory=True,
         label_transform=label_transform,
+        n_samples=400,
     )
     val_loader = get_m2caiseg_loader(
         path=data_path,
@@ -79,7 +85,7 @@ def finetune_m2caiseg(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
@@ -131,7 +137,7 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e4),
+        "--iterations", type=int, default=int(1e5),
         help="For how many iterations should the model be trained?"
     )
     parser.add_argument(
