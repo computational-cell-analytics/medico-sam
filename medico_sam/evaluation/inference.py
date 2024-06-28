@@ -79,7 +79,8 @@ def run_inference_with_iterative_prompting_per_semantic_class(
             for i in range(n_iterations):
                 os.makedirs(os.path.join(prediction_dir, f"iteration{i:02}", semantic_class_name), exist_ok=True)
 
-            gt = (gt == semantic_class_id).astype("uint32")
+            if isinstance(semantic_class_id, int):
+                gt = (gt == semantic_class_id).astype("uint32")
 
             # Once we have the class labels, let's run connected components to label dissociated components, if any.
             # - As an example, this is relevant for aortic structures (etc.), where the aorta could have multiple
@@ -91,7 +92,7 @@ def run_inference_with_iterative_prompting_per_semantic_class(
 
             # Check whether there are objects or it's not relevant for interactive segmentation
             if not len(np.unique(gt)) > 1:
-                breakpoint()
+                continue
 
             if embedding_dir is None:
                 embedding_path = None

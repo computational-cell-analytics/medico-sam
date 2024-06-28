@@ -20,12 +20,15 @@ def calculate_dice_score(input_, target, eps=1e-7):
 def _run_evaluation_per_semantic_class(
     gt_paths, prediction_paths, semantic_class_id, verbose=True, is_multiclass=False
 ):
-    assert len(gt_paths) == len(prediction_paths)
+    first_gt_path = gt_paths[0]
+    gt_dir = os.path.split(first_gt_path)[0]
+
     dice_scores = []
 
-    for gt_path, pred_path in tqdm(
-        zip(gt_paths, prediction_paths), desc="Evaluate predictions", total=len(gt_paths), disable=not verbose
-    ):
+    for pred_path in tqdm(prediction_paths, desc="Evaluate predictions", disable=not verbose):
+        image_id = os.path.split(pred_path)[-1]
+        gt_path = os.path.join(gt_dir, image_id)
+
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
@@ -69,7 +72,6 @@ def run_evaluation_per_semantic_class(
     Returns:
         A DataFrame that contains the evaluation results.
     """
-    assert len(gt_paths) == len(prediction_paths)
     # if a save_path is given and it already exists then just load it instead of running the eval
     if save_path is not None and os.path.exists(save_path):
         return pd.read_csv(save_path)

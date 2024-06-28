@@ -5,9 +5,9 @@ import itertools
 
 CMD = "python submit_all_evaluations.py "
 DATASETS = [
-    # "idrid", "camus", "uwaterloo_skin", "montgomery", "sega", "piccolo", "cbis_ddsm", "dca1",
-    "papila", "jnu-ifm",
-    "btcv", "m2caiseg", "isic",  "siim_acr",
+    # "idrid", "camus", "uwaterloo_skin", "montgomery", "sega",
+    "piccolo", "cbis_ddsm", "dca1", "papila", "jnu-ifm", "siim_acr",
+    "isic", "m2caiseg", "btcv",
 ]
 EXPERIMENTS = [
     "vanilla", "generalist_1", "generalist_8", "simplesam_1", "simplesam_8",
