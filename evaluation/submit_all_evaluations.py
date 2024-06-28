@@ -25,13 +25,12 @@ def write_batch_script(
 ):
     "Writing scripts with different fold-trainings for medico-sam evaluation"
     batch_script = f"""#!/bin/bash
-#SBATCH -c 16
-#SBATCH --mem 64G
+#SBATCH -c 4
+#SBATCH --mem 32G
 #SBATCH -t 2-00:00:00
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
-#SBATCH --constraint=80gb
 #SBATCH --job-name={inference_setup}
 
 source ~/.bashrc
@@ -205,6 +204,9 @@ def submit_slurm(args):
             **extra_params
             )
 
+    if args.dry:
+        return
+
     # the logic below automates the process of first running the precomputation of embeddings, and only then inference.
     job_id = []
     for i, my_script in enumerate(sorted(glob(tmp_folder + "/*"))):
@@ -239,5 +241,6 @@ if __name__ == "__main__":
     parser.add_argument("--gpus", default=None)
     parser.add_argument("--checkpoint_path", type=str, default=None)
     parser.add_argument("--experiment_path", type=str, default=None)
+    parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)

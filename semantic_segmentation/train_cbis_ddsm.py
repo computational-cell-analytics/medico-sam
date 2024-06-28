@@ -16,7 +16,7 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 
 class LabelTrafoToBinary:
     def __call__(self, labels):
-        labels = (labels == 255).astype(labels.dtype)
+        labels = (labels > 0).astype(labels.dtype)
         return labels
 
 

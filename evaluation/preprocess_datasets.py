@@ -400,7 +400,7 @@ def for_osic_pulmofib(save_dir):
             min_num_instances=4,
         )
 
-    _get_val_test_splits(save_dir=save_dir, val_fraction=50, fname_ext="osic_pulmofib_")
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="osic_pulmofib_")
 
 
 def for_m2caiseg(save_dir):
@@ -416,7 +416,7 @@ def for_m2caiseg(save_dir):
 
     fext = "m2caiseg_"
     convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
-    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
 def for_siim_acr(save_dir):
@@ -432,7 +432,7 @@ def for_siim_acr(save_dir):
 
     fext = "siim_acr_"
     convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
-    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
 def for_jnu_fim(save_dir):
@@ -442,7 +442,7 @@ def for_jnu_fim(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.jnuifm._get_jnuifm_paths(path=os.path.join(ROOT, "jnuifm"), download=True)
+    image_paths, gt_paths = medical.jnuifm._get_jnuifm_paths(path=os.path.join(ROOT, "jnu-ifm"), download=False)
 
     for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
         image = read_image(image_path, extension=".mha")
@@ -450,18 +450,30 @@ def for_jnu_fim(save_dir):
 
         image_id = Path(image_path).stem
 
-        # make channels first
-        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+        # as this is an rgb image with channels first, we need to take care of that first.
+        image = image.transpose(1, 2, 0)
 
-        get_valid_slices_per_volume(
-            image=image,
-            gt=gt,
-            fname=f"jnuifm_{image_id}",
-            save_dir=save_dir,
-            min_num_instances=4,
-        )
+        # let's store the images in the desired format now
+        image_dir = os.path.join(save_dir, "images")
+        gt_dir = os.path.join(save_dir, "ground_truth")
+        os.makedirs(image_dir, exist_ok=True)
+        os.makedirs(gt_dir, exist_ok=True)
 
-    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext="jnuifm_")
+        fname_ext = f"jnuifm_{image_id}"
+        trg_image_path = os.path.join(image_dir, f"{fname_ext}{image_id}.tif")
+        trg_gt_path = os.path.join(gt_dir, f"{fname_ext}{image_id}.tif")
+
+        if has_foreground(gt, min_num_instances=3):
+            image = resize_inputs(image)
+            gt = resize_inputs(gt, is_label=True)
+
+            if gt.dtype == "bool":  # for uwaterloo
+                gt = gt.astype("uint8")
+
+            imageio.imwrite(trg_image_path, image, compression="zlib")
+            imageio.imwrite(trg_gt_path, gt, compression="zlib")
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="jnuifm_")
 
 
 def for_microusp(save_dir):
@@ -472,12 +484,12 @@ def for_microusp(save_dir):
         return
 
     image_paths, gt_paths = medical.micro_usp._get_micro_usp_paths(
-        path=os.path.jon(ROOT, "microusp"), split="test", download=True
+        path=os.path.join(ROOT, "microusp"), split="test", download=True
     )
 
     for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
-        image = read_image(image_path, extension=".mha")
-        gt = read_image(gt_path, extension=".mha")
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
 
         image_id = Path(image_path).stem
 
@@ -489,10 +501,9 @@ def for_microusp(save_dir):
             gt=gt,
             fname=f"microusp_{image_id}",
             save_dir=save_dir,
-            min_num_instances=4,
         )
 
-    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext="microusp_")
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="microusp_")
 
 
 def for_cbis_ddsm(save_dir):
@@ -508,7 +519,7 @@ def for_cbis_ddsm(save_dir):
 
     fext = "cbis_ddsm_"
     convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
-    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
 def for_dca1(save_dir):
@@ -530,7 +541,7 @@ def for_dca1(save_dir):
 def for_btcv(save_dir):
     """Task: Organ segmentation in abdominal CT scans.
     """
-    if _check_preprocessing(save_dir=save_dir) and _check_preprocessing(save_dir=f"{save_dir}_3d"):
+    if _check_preprocessing(save_dir=save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
@@ -584,15 +595,77 @@ def for_cholecseg8k(save_dir):
 
 
 def for_piccolo(save_dir):
-    ...
+    """Task: Polyp segmentation in Narrow Band Imaging.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.piccolo._get_piccolo_paths(
+        path=os.path.join(ROOT, "piccolo"), split="test", download=False
+    )
+
+    fext = "piccolo_"
+    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
 def for_duke_liver(save_dir):
-    ...
+    """Liver segmentation in MRI scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.duke_liver._get_duke_liver_paths(
+        path=os.path.join(ROOT, "duke_liver"), download=False
+    )
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image_id = Path(image_path).stem
+
+        # make channels first
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"duke_liver_{image_id}",
+            save_dir=save_dir,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="duke_liver_")
 
 
 def for_toothfairy(save_dir):
-    ...
+    """Canal segmentation in oral CBCT scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.toothfairy._get_toothfairy_paths(
+        path=os.path.join(ROOT, "toothfairy"), download=False
+    )
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        # NOTE: the volumes above are already channels first
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image_id = Path(image_path).stem
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"toothfairy_{image_id}",
+            save_dir=save_dir,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="toothfairy_")
 
 
 def _preprocess_datasets(save_dir):
@@ -608,12 +681,17 @@ def _preprocess_datasets(save_dir):
     for_dca1(save_dir=os.path.join(save_dir, "dca1", "slices"))
     for_btcv(save_dir=os.path.join(save_dir, "btcv", "slices"))
     for_isic(save_dir=os.path.join(save_dir, "isic", "slices"))
-
-    # for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "cup"), task="cup")
-    # for_papila(save_dir=os.path.join(save_dir, "isic", "slices", "disc"), task="disc")
-    # for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
-    # for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
-    # for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
+    for_papila(save_dir=os.path.join(save_dir, "papila", "slices", "cup"), task="cup")
+    for_papila(save_dir=os.path.join(save_dir, "papila", "slices", "disc"), task="disc")
+    for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
+    for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
+    for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
+    for_jnu_fim(save_dir=os.path.join(save_dir, "jnu-ifm", "slices"))
+    for_microusp(save_dir=os.path.join(save_dir, "microusp", "slices"))
+    for_cbis_ddsm(save_dir=os.path.join(save_dir, "cbis_ddsm", "slices"))
+    for_piccolo(save_dir=os.path.join(save_dir, "piccolo", "slices"))
+    # for_toothfairy(save_dir=os.path.join(save_dir, "toothfairy", "slices"))
+    for_duke_liver(save_dir=os.path.join(save_dir, "duke_liver", "slices"))
 
 
 def main():

@@ -8,13 +8,15 @@ import torch
 
 
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1"
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1",
+    "papila", "m2caiseg", "siim_acr", "jnu-ifm", "cbis_ddsm", "piccolo", "duke_liver",
 ]
 
 DEXT = {
     "sega": ["slices/kits", "slices/rider", "slices/dongyang"],
     "camus": ["slices/2ch", "slices/4ch"],
     "btcv_3d": ["slices_3d"],
+    "papila": ["slices/cup", "slices/disc"],
 }
 
 SEMANTIC_CLASS_MAPS = {
@@ -32,9 +34,21 @@ SEMANTIC_CLASS_MAPS = {
     "btcv_3d": {"aorta": 8},
     "isic": {"skin_lesion": 255},
     "dca1": {"vessel": 255},
+    "papila": {"oc_or_od": 1},
+    "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
+    "m2caiseg": {
+        "grasper": 1, "bipolar": 2, "hook": 3, "scissors": 4, "clipper": 5, "irrigator": 6,
+        "specimen_bag": 7, "trocars": 8, "clip": 9, "liver": 10, "gall_bladder": 11, "fat": 12,
+        "upper_wall": 13, "artery": 14, "intestine": 15, "bile": 16, "blood": 17, "unknown": 18,
+    },
+    "siim_acr": {"pneumothorax": 255},
+    "jnu-ifm": {"pubic_symphysis": 1, "fetal_head": 2},
+    "cbis_ddsm": {"mass": 255},
+    "piccolo": {"polyp": 255},
+    "duke_liver": {"liver": 1},
 }
 
-MULTICLASS_SEMANTIC = ["oimhs", "btcv"]
+MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib"]
 
 ROOT = "/scratch/share/cidas/cca/data"
 

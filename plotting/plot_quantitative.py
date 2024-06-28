@@ -7,14 +7,43 @@ import matplotlib.pyplot as plt
 
 
 ROOT = "/scratch/share/cidas/cca/experiments/v1/"
-DATASETS = [
-    "idrid", "camus", "uwaterloo_skin", "montgomery", "sega"
-]
+
 EXPERIMENTS = [
     "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter"
     # "generalist_1", "simplesam_1", "medsam-self_1",
 ]
+
 MODEL = "vit_b"
+
+DATASET_MAPS = {
+    "idrid": "IDRiD (Optic Disc in Fundus)",
+    "camus": "CAMUS (Cardiac Structures in Echocardipgraphy)",
+    "uwaterloo_skin": "UWaterloo Skin (Skin Lesion in Dermoscopy)",
+    "montgomery": "Montgomery (Lungs in Chest X-Ray)",
+    "sega": "SegA (Aorta in CT)",
+    "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
+    "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
+    "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
+    "papila": "Papila (Optic Disc & Optic Cup in Fundus)",
+    "jnu-ifm": "JNU IFM (Pubic Symphysis & Fetal Head in US)",
+    "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
+    "isic": "ISIC (Skin Lesion in Dermoscopy)",
+    "m2caiseg": "m2caiseg (Tools and Organs in Laparoscopy)",
+    "btcv": "BTCV (Abdominal Organs in CT)",
+}
+
+MODEL_MAPS = {
+    "vanilla": "Default",
+    "generalist_8": r"$\bf{MedicoSAM}$",
+    "simplesam_8": "Simple FT*",
+    "medsam-self_8": "MedSAM*",
+    "medsam": "MedSAM",
+    "sam-med2d": "FT-SAM",
+    "sam-med2d-adapter": "SAM-Med2D"
+    # "generalist_1": "Generalist (Single GPU)",
+    # "simplesam_1": "Simple Generalist* (Single GPU)",
+    # "medsam-self_1": "MedSAM* (Single GPU)",
+}
 
 
 def _get_results_per_dataset_per_class(dataset_name, experiment_name):
@@ -37,8 +66,23 @@ def _get_results_per_dataset_per_class(dataset_name, experiment_name):
 
         res_per_class.append(pd.DataFrame.from_dict([res]))
 
-    res_per_class = pd.concat(res_per_class, ignore_index=True)
-    return res_per_class
+    _multiclass = True if len(res_per_class) > 1 else False
+
+    if _multiclass:
+        res_per_class = pd.concat(res_per_class, ignore_index=True)
+        mean_values = res_per_class.mean(numeric_only=True).to_dict()
+
+        mean_df = pd.DataFrame([{
+            'semantic_class': "all",
+            'experiment':  res_per_class['experiment'].iloc[0],
+            'dataset': res_per_class['dataset'].iloc[0],
+            **mean_values
+        }])
+
+    else:
+        mean_df = pd.concat(res_per_class, ignore_index=True)
+
+    return mean_df
 
 
 def _get_results_per_dataset(dataset_name):
@@ -51,62 +95,72 @@ def _get_results_per_dataset(dataset_name):
 
 
 def _make_plots(dataframes, datasets):
-    # Create subplots in a 3x3 grid
-    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(20, 20))
+    fig, axes = plt.subplots(nrows=3, ncols=5, figsize=(30, 30))
     axes = axes.flatten()
 
-    # Calculate the differences relative to the "vanilla" experiment
-    bar_width = 0.2  # Width of the bars
+    bar_width = 0.2
     for i, df in enumerate(dataframes):
-        # Reference row (vanilla experiment)
         ref = df[df['experiment'] == 'vanilla'].iloc[0]
 
         df = df[df['experiment'] != 'vanilla']
 
-        # Calculate differences
         df_diff = df.copy()
         df_diff['point_diff'] = df['point'] - ref['point']
         df_diff['box_diff'] = df['box'] - ref['box']
         df_diff['ip_diff'] = df['ip'] - ref['ip']
         df_diff['ib_diff'] = df['ib'] - ref['ib']
 
-        # Positions for bars
-        r1 = np.arange(len(df))  # Positions for point_diff bars
-        r2 = [x + bar_width for x in r1]  # Positions for box_diff bars
-        r3 = [x + 2*bar_width for x in r1]  # Positions for ip_diff bars
-        r4 = [x + 3*bar_width for x in r1]  # Positions for ib_diff bars
+        r1 = np.arange(len(df))
+        r2 = [x + bar_width for x in r1]
+        r3 = [x + 2 * bar_width for x in r1]
+        r4 = [x + 3 * bar_width for x in r1]
 
-        # Plot bars for point_diff, box_diff, ip_diff, and ib_diff
-        axes[i].bar(r1, df_diff['point_diff'], color='b', width=bar_width, edgecolor='grey', label='point_diff')
-        axes[i].bar(r2, df_diff['box_diff'], color='lightblue', width=bar_width, edgecolor='grey', label='box_diff')
-        axes[i].bar(r3, df_diff['ip_diff'], color='g', width=bar_width, edgecolor='grey', label='ip_diff')
-        axes[i].bar(r4, df_diff['ib_diff'], color='lightgreen', width=bar_width, edgecolor='grey', label='ib_diff')
+        axes[i].bar(r1, df_diff['point_diff'], color='#045275', width=bar_width, edgecolor='grey', label='Point')
+        axes[i].bar(r2, df_diff['box_diff'], color='#FCDE9C', width=bar_width, edgecolor='grey', label='Box')
+        axes[i].bar(r3, df_diff['ip_diff'], color='#7CCBA2', width=bar_width, edgecolor='grey', label=r"I$_{P}$")
+        axes[i].bar(r4, df_diff['ib_diff'], color='#90477F', width=bar_width, edgecolor='grey', label=r"I$_{B}$")
 
-        # Adjust x-axis ticks and labels
-        axes[i].set_xticks([r + 1.5 * bar_width for r in range(len(df))])
-        axes[i].set_xticklabels(df['experiment'], rotation=45, ha='right')
+        max_val = max(df_diff[['point_diff', 'box_diff', 'ip_diff', 'ib_diff']].values.flatten())
+        min_val = min(df_diff[['point_diff', 'box_diff', 'ip_diff', 'ib_diff']].values.flatten())
 
-        # Set labels and title
-        axes[i].set_xlabel('Experiment', fontweight='bold')
-        axes[i].set_ylabel('Difference from Vanilla', fontweight='bold')
-        axes[i].set_title(f'{datasets[i]}')
+        axes[i].axhspan(0, max_val, facecolor='lightgreen', alpha=0.2)  # Positive region
+        axes[i].axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)  # Negative region
 
-        # Add legend
+        _xticklabels = [MODEL_MAPS[_exp] for _exp in df["experiment"]]
+        tick_positions = [r + 1.5 * bar_width for r in range(len(df))]
+        axes[i].set_xticks(tick_positions)
+        axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=16)
+        axes[i].tick_params(axis='y', labelsize=14)
+
+        axes[i].set_title(f'{DATASET_MAPS[datasets[i]]}', fontsize=16)
         axes[i].legend()
 
-    # Adjust layout
-    plt.tight_layout()
-    plt.savefig("./test.png")
+    all_lines, all_labels = [], []
+    for ax in fig.axes:
+        lines, labels = ax.get_legend_handles_labels()
+        for line, label in zip(lines, labels):
+            if label not in all_labels:
+                all_lines.append(line)
+                all_labels.append(label)
+        ax.legend().remove()
+
+    fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=16)
+
+    plt.text(x=-5.1, y=1.675, s="Dice Score", rotation=90, fontweight="bold", fontsize=16)
+
+    plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.225, wspace=0.225)
+    plt.savefig("./interactive_segmentation_all.png")
+    plt.savefig("./interactive_segmentation_all.svg")
 
 
 def main():
     results = []
-    for dataset_name in DATASETS:
+    for dataset_name in list(DATASET_MAPS.keys()):
         res = _get_results_per_dataset(dataset_name=dataset_name)
         results.append(res)
 
-    _make_plots(results, DATASETS)
-    breakpoint()
+    _make_plots(results, list(DATASET_MAPS.keys()))
 
 
-main()
+if __name__ == "__main__":
+    main()
