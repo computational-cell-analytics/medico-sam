@@ -5,7 +5,7 @@ import itertools
 
 CMD = "python submit_all_evaluations.py "
 DATASETS = [
-    # "idrid", "camus", "uwaterloo_skin", "montgomery", "sega",
+    "idrid", "camus", "uwaterloo_skin", "montgomery", "sega",
     "piccolo", "cbis_ddsm", "dca1", "papila", "jnu-ifm", "siim_acr",
     "isic", "m2caiseg", "btcv",
 ]
