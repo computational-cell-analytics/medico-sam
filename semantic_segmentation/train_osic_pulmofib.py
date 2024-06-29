@@ -60,11 +60,12 @@ def get_dataloaders(patch_shape, data_path):
     )
 
     batch_size = 1
+    num_workers = 16
     train_loader = torch_em.get_data_loader(
-        dataset=train_dataset, batch_size=batch_size, num_workers=16, shuffle=True, pin_memory=True,
+        dataset=train_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=True,
     )
     val_loader = torch_em.get_data_loader(
-        dataset=val_dataset, batch_size=batch_size, num_workers=16, shuffle=True, pin_memory=True,
+        dataset=val_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=True,
     )
 
     return train_loader, val_loader
@@ -96,7 +97,7 @@ def finetune_osic_pulmofib(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=3, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 

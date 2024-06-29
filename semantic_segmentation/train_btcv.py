@@ -59,11 +59,12 @@ def get_dataloaders(patch_shape, data_path):
         **kwargs
     )
 
+    batch_size = 1
     train_loader = torch_em.get_data_loader(
-        dataset=train_dataset, batch_size=1, num_workers=16, shuffle=True, pin_memory=True,
+        dataset=train_dataset, batch_size=batch_size, num_workers=16, shuffle=True, pin_memory=True,
     )
     val_loader = torch_em.get_data_loader(
-        dataset=val_dataset, batch_size=1, num_workers=16, shuffle=True, pin_memory=True,
+        dataset=val_dataset, batch_size=batch_size, num_workers=16, shuffle=True, pin_memory=True,
     )
 
     return train_loader, val_loader
@@ -80,19 +81,30 @@ def finetune_btcv(args):
     patch_shape = (32, 512, 512)  # the patch shape for training
     num_classes = 14  # 1 background class and 13 semantic foreground classes
 
+    lora_rank = 4 if args.use_lora else None
+    freeze_encoder = True if lora_rank is None else False
+
     # get the trainable segment anything model
-    model = get_3d_sam_model(device, n_classes=num_classes, image_size=512, checkpoint_path=checkpoint_path)
+    model = get_3d_sam_model(
+        device=device,
+        n_classes=num_classes,
+        image_size=512,
+        checkpoint_path=checkpoint_path,
+        freeze_encoder=freeze_encoder,
+        lora_rank=lora_rank,
+    )
     model.to(device)
 
     # all the stuff we need for training
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=10, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=3, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
-    checkpoint_name = f"{args.model_type}/btcv_semanticsam"
+    lora_str = "frozen" if lora_rank is None else f"lora{lora_rank}"
+    checkpoint_name = f"{args.model_type}_3d_{lora_str}/btcv_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer3D(
@@ -104,7 +116,7 @@ def finetune_btcv(args):
         optimizer=optimizer,
         device=device,
         lr_scheduler=scheduler,
-        log_image_interval=10,
+        log_image_interval=50,
         mixed_precision=True,
         convert_inputs=convert_inputs,
         num_classes=num_classes,
@@ -150,6 +162,9 @@ def main():
     )
     parser.add_argument(
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
+    )
+    parser.add_argument(
+        "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
     finetune_btcv(args)

@@ -32,12 +32,13 @@ def get_dataloaders(patch_shape, data_path):
     kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
     kwargs["sampler"] = MinInstanceSampler()
 
+    num_workers = 16
     train_loader = get_duke_liver_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=1,
         split="train",
-        num_workers=16,
+        num_workers=num_workers,
         shuffle=True,
         pin_memory=True,
         **kwargs
@@ -47,7 +48,7 @@ def get_dataloaders(patch_shape, data_path):
         patch_shape=patch_shape,
         batch_size=1,
         split="val",
-        num_workers=16,
+        num_workers=num_workers,
         shuffle=True,
         pin_memory=True,
         **kwargs
@@ -82,7 +83,7 @@ def finetune_duke_liver(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=3, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
