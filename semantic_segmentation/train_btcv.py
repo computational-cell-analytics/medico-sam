@@ -3,12 +3,9 @@ import argparse
 from glob import glob
 from natsort import natsorted
 
-import numpy as np
-
 import torch
 
 import torch_em
-from torch_em.transform.raw import normalize
 from torch_em.data import MinInstanceSampler
 
 import micro_sam.training as sam_training
@@ -16,13 +13,7 @@ from micro_sam.util import export_custom_sam_model
 from micro_sam.sam_3d_wrapper import get_3d_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-
-class RawTrafoFor3dInputs:
-    def __call__(self, raw):
-        raw = normalize(raw)
-        raw = raw * 255
-        raw = np.stack([raw] * 3, axis=1)
-        return raw
+from common import RawTrafoFor3dInputs
 
 
 def get_dataloaders(patch_shape, data_path):

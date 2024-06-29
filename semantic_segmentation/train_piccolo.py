@@ -1,13 +1,10 @@
 import os
 import argparse
-from glob import glob
-from natsort import natsorted
 
 import torch
 
-import torch_em
-from torch_em.data.datasets import util
 from torch_em.data import MinInstanceSampler
+from torch_em.data.datasets.medical import get_piccolo_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
@@ -17,11 +14,9 @@ from common import LabelTrafoToBinary
 
 
 def get_dataloaders(patch_shape, data_path):
-    """This returns the cbis ddsm data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/cbis_ddsm.py
-    It will not automatically download the CBIS DDSM data. Take a look at `get_cbis_ddsm_dataset`.
-
-    NOTE: The step below is done to obtain the CBIS-DDSM in a desired split format.
+    """This returns the piccolo data loaders implemented in torch_em:
+    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/piccolo.py
+    It will not automatically download the PICCOLO data. Take a look at `get_piccolo_dataset`.
 
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
@@ -29,54 +24,40 @@ def get_dataloaders(patch_shape, data_path):
     I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
-    kwargs = {}
-    kwargs["raw_transform"] = sam_training.identity
-    kwargs["sampler"] = MinInstanceSampler()
-    kwargs["label_transform"] = LabelTrafoToBinary()
+    raw_transform = sam_training.identity
+    sampler = MinInstanceSampler()
+    label_transform = LabelTrafoToBinary()
 
-    resize_inputs = True
-    if resize_inputs:
-        resize_kwargs = {"patch_shape": patch_shape, "is_rgb": False}
-        kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
-            kwargs=kwargs, patch_shape=patch_shape, resize_inputs=resize_inputs, resize_kwargs=resize_kwargs
-        )
-
-    train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.tif")))
-    train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.tif")))
-    val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.tif")))
-    val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.tif")))
-
-    train_dataset = torch_em.default_segmentation_dataset(
-        raw_paths=train_image_paths,
-        raw_key=None,
-        label_paths=train_gt_paths,
-        label_key=None,
+    train_loader = get_piccolo_loader(
+        path=data_path,
         patch_shape=patch_shape,
-        is_seg_dataset=False,
-        **kwargs
+        batch_size=8,
+        split="train",
+        resize_inputs=True,
+        raw_transform=raw_transform,
+        label_transform=label_transform,
+        num_workers=16,
+        shuffle=True,
+        sampler=sampler,
+        pin_memory=True,
     )
-    val_dataset = torch_em.default_segmentation_dataset(
-        raw_paths=val_image_paths,
-        raw_key=None,
-        label_paths=val_gt_paths,
-        label_key=None,
+    val_loader = get_piccolo_loader(
+        path=data_path,
         patch_shape=patch_shape,
-        is_seg_dataset=False,
-        **kwargs
+        batch_size=1,
+        split="validation",
+        resize_inputs=True,
+        raw_transform=raw_transform,
+        label_transform=label_transform,
+        num_workers=16,
+        sampler=sampler,
+        pin_memory=True,
     )
-
-    train_loader = torch_em.get_data_loader(
-        dataset=train_dataset, batch_size=8, num_workers=16, shuffle=True, pin_memory=True
-    )
-    val_loader = torch_em.get_data_loader(
-        dataset=val_dataset, batch_size=1, num_workers=16, shuffle=True, pin_memory=True
-    )
-
     return train_loader, val_loader
 
 
-def finetune_cbis_ddsm(args):
-    """Code for finetuning SAM on CBIS DDSM for semantic segmentation."""
+def finetune_piccolo(args):
+    """Code for finetuning SAM on PICCOLO for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -110,7 +91,7 @@ def finetune_cbis_ddsm(args):
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
-    checkpoint_name = f"{args.model_type}/cbis_ddsm_semanticsam"
+    checkpoint_name = f"{args.model_type}/piccolo_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.SemanticSamTrainer(
@@ -141,10 +122,10 @@ def finetune_cbis_ddsm(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the CBIS DDSM dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the PICCOLO dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset206_CBISDDSM/",
-        help="The filepath to the CBIS DDSM data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/data/piccolo/",
+        help="The filepath to the PICCOLO data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -177,7 +158,7 @@ def main():
         "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
-    finetune_cbis_ddsm(args)
+    finetune_piccolo(args)
 
 
 if __name__ == "__main__":

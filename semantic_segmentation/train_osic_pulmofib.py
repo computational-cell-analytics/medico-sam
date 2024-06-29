@@ -3,12 +3,9 @@ import argparse
 from glob import glob
 from natsort import natsorted
 
-import numpy as np
-
 import torch
 
 import torch_em
-from torch_em.transform.raw import normalize
 from torch_em.data import MinInstanceSampler
 
 import micro_sam.training as sam_training
@@ -16,13 +13,7 @@ from micro_sam.util import export_custom_sam_model
 from micro_sam.sam_3d_wrapper import get_3d_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-
-class RawTrafoFor3dInputs:
-    def __call__(self, raw):
-        raw = normalize(raw)
-        raw = raw * 255
-        raw = np.stack([raw] * 3, axis=1)
-        return raw
+from common import RawTrafoFor3dInputs
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -90,13 +81,17 @@ def finetune_osic_pulmofib(args):
     patch_shape = (32, 512, 512)  # the patch shape for training
     num_classes = 4  # 1 background class and 3 semantic foreground classes
 
-    lora_rank = args.lora_rank
+    lora_rank = 4 if args.use_lora else None
     freeze_encoder = True if lora_rank is None else False
 
     # get the trainable segment anything model
     model = get_3d_sam_model(
-        device, n_classes=num_classes, image_size=512,
-        checkpoint_path=checkpoint_path, freeze_encoder=freeze_encoder, lora_rank=lora_rank,
+        device=device,
+        n_classes=num_classes,
+        image_size=512,
+        checkpoint_path=checkpoint_path,
+        freeze_encoder=freeze_encoder,
+        lora_rank=lora_rank,
     )
     model.to(device)
 
@@ -121,7 +116,7 @@ def finetune_osic_pulmofib(args):
         optimizer=optimizer,
         device=device,
         lr_scheduler=scheduler,
-        log_image_interval=25,
+        log_image_interval=50,
         mixed_precision=True,
         convert_inputs=convert_inputs,
         num_classes=num_classes,
@@ -169,8 +164,7 @@ def main():
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     parser.add_argument(
-        "-l", "--lora_rank", type=int, default=None,
-        help="The lora rank. If none is given the image encoder will be frozen."
+        "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
     finetune_osic_pulmofib(args)

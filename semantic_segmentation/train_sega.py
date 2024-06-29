@@ -1,27 +1,25 @@
 import os
 import argparse
-from glob import glob
-from natsort import natsorted
 
 import torch
 
-import torch_em
-from torch_em.data.datasets import util
 from torch_em.data import MinInstanceSampler
+from torch_em.data.datasets.medical import get_sega_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
+from micro_sam.sam_3d_wrapper import get_3d_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import LabelTrafoToBinary
+from common import RawResizeTrafoFor3dInputs, LabelResizeTrafoFor3dInputs
 
 
 def get_dataloaders(patch_shape, data_path):
-    """This returns the cbis ddsm data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/cbis_ddsm.py
-    It will not automatically download the CBIS DDSM data. Take a look at `get_cbis_ddsm_dataset`.
+    """This returns the sega data loaders implemented in torch_em:
+    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/sega.py
+    It will not automatically download the SegA data. Take a look at `get_sega_dataset`.
 
-    NOTE: The step below is done to obtain the CBIS-DDSM in a desired split format.
+    NOTE: The step below is done to obtain the SegA dataset in splits.
 
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
@@ -30,90 +28,72 @@ def get_dataloaders(patch_shape, data_path):
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
     kwargs = {}
-    kwargs["raw_transform"] = sam_training.identity
+    kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
+    kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
     kwargs["sampler"] = MinInstanceSampler()
-    kwargs["label_transform"] = LabelTrafoToBinary()
 
-    resize_inputs = True
-    if resize_inputs:
-        resize_kwargs = {"patch_shape": patch_shape, "is_rgb": False}
-        kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
-            kwargs=kwargs, patch_shape=patch_shape, resize_inputs=resize_inputs, resize_kwargs=resize_kwargs
-        )
-
-    train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.tif")))
-    train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.tif")))
-    val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.tif")))
-    val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.tif")))
-
-    train_dataset = torch_em.default_segmentation_dataset(
-        raw_paths=train_image_paths,
-        raw_key=None,
-        label_paths=train_gt_paths,
-        label_key=None,
+    train_loader = get_sega_loader(
+        path=data_path,
         patch_shape=patch_shape,
-        is_seg_dataset=False,
+        batch_size=1,
+        data_choice="Rider",
+        num_workers=16,
+        shuffle=True,
+        pin_memory=True,
         **kwargs
     )
-    val_dataset = torch_em.default_segmentation_dataset(
-        raw_paths=val_image_paths,
-        raw_key=None,
-        label_paths=val_gt_paths,
-        label_key=None,
+    val_loader = get_sega_loader(
+        path=data_path,
         patch_shape=patch_shape,
-        is_seg_dataset=False,
+        batch_size=1,
+        data_choice="Dongyang",
+        num_workers=16,
+        shuffle=True,
+        pin_memory=True,
         **kwargs
-    )
-
-    train_loader = torch_em.get_data_loader(
-        dataset=train_dataset, batch_size=8, num_workers=16, shuffle=True, pin_memory=True
-    )
-    val_loader = torch_em.get_data_loader(
-        dataset=val_dataset, batch_size=1, num_workers=16, shuffle=True, pin_memory=True
     )
 
     return train_loader, val_loader
 
 
-def finetune_cbis_ddsm(args):
-    """Code for finetuning SAM on CBIS DDSM for semantic segmentation."""
+def finetune_sega(args):
+    """Code for finetuning SAM on SegA for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # training settings:
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
-    patch_shape = (1024, 1024)  # the patch shape for training
-    freeze_parts = args.freeze  # override this to freeze different parts of the model
+    patch_shape = (32, 512, 512)  # the patch shape for training
     num_classes = 2  # 1 background class and 1 semantic foreground classes
-    use_lora = args.use_lora  # whether to use LoRA for finetuning
-    rank = 4 if use_lora else None  # the rank used for LoRA
+
+    lora_rank = 4 if args.use_lora else None
+    freeze_encoder = True if lora_rank is None else False
 
     # get the trainable segment anything model
-    model = sam_training.get_trainable_sam_model(
-        model_type=model_type,
+    model = get_3d_sam_model(
         device=device,
+        n_classes=num_classes,
+        image_size=512,
         checkpoint_path=checkpoint_path,
-        freeze=freeze_parts,
-        flexible_load_checkpoint=True,
-        num_multimask_outputs=num_classes,
-        use_lora=use_lora,
-        rank=rank,
+        freeze_encoder=freeze_encoder,
+        lora_rank=lora_rank,
     )
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=3, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
-    checkpoint_name = f"{args.model_type}/cbis_ddsm_semanticsam"
+    lora_str = "frozen" if lora_rank is None else f"lora{lora_rank}"
+    checkpoint_name = f"{args.model_type}_3d_{lora_str}/sega_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
-    trainer = sam_training.SemanticSamTrainer(
+    trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer3D(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
@@ -141,10 +121,10 @@ def finetune_cbis_ddsm(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the CBIS DDSM dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the SegA dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset206_CBISDDSM/",
-        help="The filepath to the CBIS DDSM data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/data/sega",
+        help="The filepath to the SegA data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -163,10 +143,6 @@ def main():
         help="Where to export the finetuned model to. The exported model can be used in the annotation tools."
     )
     parser.add_argument(
-        "--freeze", type=str, nargs="+", default=None,
-        help="Which parts of the model to freeze for finetuning."
-    )
-    parser.add_argument(
         "--save_every_kth_epoch", type=int, default=None,
         help="To save every kth epoch while fine-tuning. Expects an integer value."
     )
@@ -177,7 +153,7 @@ def main():
         "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
-    finetune_cbis_ddsm(args)
+    finetune_sega(args)
 
 
 if __name__ == "__main__":
