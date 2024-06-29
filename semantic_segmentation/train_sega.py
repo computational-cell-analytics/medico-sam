@@ -32,12 +32,13 @@ def get_dataloaders(patch_shape, data_path):
     kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
     kwargs["sampler"] = MinInstanceSampler()
 
+    num_workers = 16
     train_loader = get_sega_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=1,
         data_choice="Rider",
-        num_workers=16,
+        num_workers=num_workers,
         shuffle=True,
         pin_memory=True,
         **kwargs
@@ -47,7 +48,7 @@ def get_dataloaders(patch_shape, data_path):
         patch_shape=patch_shape,
         batch_size=1,
         data_choice="Dongyang",
-        num_workers=16,
+        num_workers=num_workers,
         shuffle=True,
         pin_memory=True,
         **kwargs

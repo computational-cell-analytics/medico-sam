@@ -17,7 +17,7 @@ class RawTrafoFor3dInputs:
         return raw
 
     def _set_channels_for_inputs(self, raw):
-        raw = np.stack([raw] * 3, axis=1)
+        raw = np.stack([raw] * 3, axis=0)
         return raw
 
     def __call__(self, raw):
@@ -64,7 +64,7 @@ class LabelResizeTrafoFor3dInputs:
 
     def __call__(self, labels):
         # binarize the samples
-        labels = (labels > 0).astype(labels.dtype)
+        labels = (labels > 0).astype("float32")
 
         # let's pad the labels
         tmp_ddim = (
