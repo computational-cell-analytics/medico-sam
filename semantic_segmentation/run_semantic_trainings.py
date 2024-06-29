@@ -16,15 +16,14 @@ DATASETS = [
 def write_batch_script(out_path, _name, save_root, checkpoint, ckpt_name, use_lora, dry):
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
-#SBATCH -t 14-00:00:00
+#SBATCH -t 2-00:00:00
 #SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
-#SBATCH -A gzz0001
+#SBATCH -A nim00007
 #SBATCH -c 16
-#SBATCH --qos=14d
 #SBATCH --constraint=80gb
 #SBATCH --job-name={os.path.split(_name)[-1]}
 
