@@ -5,7 +5,12 @@ import subprocess
 from datetime import datetime
 
 
-DATASETS = ["oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo", "btcv", "osic_pulmofib"]
+DATASETS = [
+    # 2d datasets
+    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo",
+    # 3d datasets
+    "btcv", "osic_pulmofib", "sega", "duke_liver"
+]
 
 
 def write_batch_script(out_path, _name, save_root, checkpoint, ckpt_name, use_lora, dry):
@@ -83,6 +88,8 @@ def submit_slurm(args):
         # 3d datasets
         "btcv": "train_btcv",
         "osic_pulmofib": "train_osic_pulmofib",
+        "sega": "train_sega",
+        "duke_liver": "train_duke_liver",
     }
     if args.dataset is not None:
         assert args.dataset in DATASETS
@@ -112,6 +119,8 @@ def submit_slurm(args):
         _use_lora_now = False
         if use_lora:
             if ckpt_name in ["sam", "medico-sam"]:
+                _use_lora_now = True
+            elif per_dataset in ["osic_pulmofib", "btcv", "sega", "duke_liver"]:
                 _use_lora_now = True
             else:
                 continue

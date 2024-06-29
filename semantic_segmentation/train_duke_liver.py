@@ -1,27 +1,25 @@
 import os
 import argparse
-from glob import glob
-from natsort import natsorted
 
 import torch
 
-import torch_em
 from torch_em.data import MinInstanceSampler
+from torch_em.data.datasets.medical import get_duke_liver_loader
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.sam_3d_wrapper import get_3d_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import RawTrafoFor3dInputs
+from common import RawResizeTrafoFor3dInputs, LabelResizeTrafoFor3dInputs
 
 
 def get_dataloaders(patch_shape, data_path):
-    """This returns the osic pulmofib data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/osic_pulmofib.py
-    It will not automatically download the OSIC PulmoFib data. Take a look at `get_osic_pulmofib_dataset`.
+    """This returns the duke liver data loaders implemented in torch_em:
+    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/duke_liver.py
+    It will not automatically download the Duke Liver data. Take a look at `get_duke_liver_dataset`.
 
-    NOTE: The step below is done to obtain the OSIC PulmoFib dataset in splits.
+    NOTE: The step below is done to obtain the Duke Liver dataset in splits.
 
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
@@ -30,48 +28,36 @@ def get_dataloaders(patch_shape, data_path):
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
     """
     kwargs = {}
-    kwargs["raw_transform"] = RawTrafoFor3dInputs()
+    kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
+    kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
     kwargs["sampler"] = MinInstanceSampler()
 
-    train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.nii.gz")))
-    train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.nii.gz")))
-    val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.nii.gz")))
-    val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.nii.gz")))
-
-    train_dataset = torch_em.default_segmentation_dataset(
-        raw_paths=train_image_paths,
-        raw_key="data",
-        label_paths=train_gt_paths,
-        label_key="data",
-        is_seg_dataset=True,
-        ndim=3,
+    train_loader = get_duke_liver_loader(
+        path=data_path,
         patch_shape=patch_shape,
+        batch_size=1,
+        split="train",
+        num_workers=16,
+        shuffle=True,
+        pin_memory=True,
         **kwargs
     )
-    val_dataset = torch_em.default_segmentation_dataset(
-        raw_paths=val_image_paths,
-        raw_key="data",
-        label_paths=val_gt_paths,
-        label_key="data",
-        is_seg_dataset=True,
-        ndim=3,
+    val_loader = get_duke_liver_loader(
+        path=data_path,
         patch_shape=patch_shape,
+        batch_size=1,
+        split="val",
+        num_workers=16,
+        shuffle=True,
+        pin_memory=True,
         **kwargs
-    )
-
-    batch_size = 1
-    train_loader = torch_em.get_data_loader(
-        dataset=train_dataset, batch_size=batch_size, num_workers=16, shuffle=True, pin_memory=True,
-    )
-    val_loader = torch_em.get_data_loader(
-        dataset=val_dataset, batch_size=batch_size, num_workers=16, shuffle=True, pin_memory=True,
     )
 
     return train_loader, val_loader
 
 
-def finetune_osic_pulmofib(args):
-    """Code for finetuning SAM on OSIC PulmoFib for semantic segmentation."""
+def finetune_duke_liver(args):
+    """Code for finetuning SAM on Duke Liver for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -79,7 +65,7 @@ def finetune_osic_pulmofib(args):
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     patch_shape = (32, 512, 512)  # the patch shape for training
-    num_classes = 4  # 1 background class and 3 semantic foreground classes
+    num_classes = 2  # 1 background class and 1 semantic foreground class
 
     lora_rank = 4 if args.use_lora else None
     freeze_encoder = True if lora_rank is None else False
@@ -104,7 +90,7 @@ def finetune_osic_pulmofib(args):
     convert_inputs = ConvertToSemanticSamInputs()
 
     lora_str = "frozen" if lora_rank is None else f"lora{lora_rank}"
-    checkpoint_name = f"{args.model_type}_3d_{lora_str}/osic_pulmofib_semanticsam"
+    checkpoint_name = f"{args.model_type}_3d_{lora_str}/duke_liver_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer3D(
@@ -135,10 +121,10 @@ def finetune_osic_pulmofib(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the OSIC PulmoFib dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the Duke Liver dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset303_OSICPulmoFib/",
-        help="The filepath to the OSIC PulmoFib data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/data/duke_liver",
+        help="The filepath to the Duke Liver data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -167,7 +153,7 @@ def main():
         "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
-    finetune_osic_pulmofib(args)
+    finetune_duke_liver(args)
 
 
 if __name__ == "__main__":
