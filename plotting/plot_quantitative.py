@@ -227,17 +227,13 @@ def _make_per_model_average_plots(dataframes):
 
 
 def _make_full_iterative_prompting_average_plots(dataframes):
-    # Combine dataframes
     combined_df = pd.concat(dataframes, ignore_index=True)
 
-    # Select numeric columns
     numeric_columns = combined_df.select_dtypes(include=[np.number]).columns
     numeric_columns = numeric_columns.insert(0, 'experiment')
 
-    # Calculate average values for each experiment
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
-    # Define plot data
     experiments = avg_df['experiment']
     point_values = avg_df['point']
     box_values = avg_df['box'] - avg_df['point']
@@ -266,7 +262,6 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     ax.bar(index, point_values, bar_width, color=pcolors[0], label='Point', edgecolor="grey")
     ax.bar(index, box_values, bar_width, bottom=point_values, color=bcolors[0], label='Box', edgecolor="grey")
 
-    # Plot the 'ip' and 'ib' values correctly
     for i in range(num_colors):
         ip_i = ip_values.iloc[:, i]
         ib_i = ib_values[:, i]
