@@ -4,6 +4,7 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 
 ROOT = "/scratch/share/cidas/cca/experiments/v1/"
@@ -36,7 +37,7 @@ DATASET_MAPS = {
 }
 
 MODEL_MAPS = {
-    "vanilla": "Default",
+    "vanilla": "SAM",
     "generalist_8": r"$\bf{MedicoSAM}$",
     "simplesam_8": "Simple FT*",
     "medsam-self_8": "MedSAM*",
@@ -262,8 +263,11 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     index = np.arange(len(experiments))
 
     num_colors = len(ip_columns)
-    bcolors = ["#FCDE9C", "#ECC89A", "#DDB28F", "#CD9C8B", "#BD867F", "#AD7067", "#9D5A52", "#90477F"]
-    pcolors = ["#7CCBA2", "#6ABCB9", "#59AB95", "#48998E", "#378786", "#267581", "#15637B", "#045275"]
+
+    bcolors = [mcolors.to_rgba('#FCDE9C', alpha=(i + 2) / (num_colors + 1)) for i in range(num_colors - 1)][::-1]
+    bcolors += ["#90477F"]
+    pcolors = [mcolors.to_rgba('#7CCBA2', alpha=(i + 2) / (num_colors + 1)) for i in range(num_colors - 1)][::-1]
+    pcolors += ["#045275"]
 
     ax.bar(index, point_values, bar_width, color=pcolors[0], label='Point', edgecolor="grey")
     ax.bar(index, box_values, bar_width, bottom=point_values, color=bcolors[0], label='Box', edgecolor="grey")
@@ -271,10 +275,13 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     for i in range(num_colors):
         ip_i = ip_values.iloc[:, i]
         ib_i = ib_values[:, i]
-        ax.bar(index + bar_width * (i + 1), ip_i, bar_width, color=pcolors[i], label=f'ip{i+1}', edgecolor="grey")
+        ax.bar(
+            index + bar_width * (i + 1), ip_i, bar_width,
+            color=pcolors[i], label=r"I$_{P}$", edgecolor="grey",
+        )
         ax.bar(
             index + bar_width * (i + 1), ib_i, bar_width, bottom=ip_i,
-            color=bcolors[i], label=f'ib{i+1}', edgecolor="grey"
+            color=bcolors[i], label=r"I$_{B}$", edgecolor="grey"
         )
 
     ax.set_ylabel('Dice Similarity Coefficient', fontsize=16, fontweight="bold")
@@ -284,8 +291,8 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     ax.tick_params(axis='y', labelsize=16)
 
     handles, labels = ax.get_legend_handles_labels()
-    simplified_handles = [handles[0], handles[1]]
-    simplified_labels = [labels[0], labels[1]]
+    simplified_handles = [handles[0], handles[1], handles[-2], handles[-1]]
+    simplified_labels = [labels[0], labels[1], labels[-2], labels[-1]]
     fig.legend(
         simplified_handles, simplified_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.5, 0.875), fontsize=16
     )
