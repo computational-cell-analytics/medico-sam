@@ -74,7 +74,7 @@ def convert_sega_for_training(path, trg_dir, dataset_name):
 
 def main():
     path = os.path.join(DATA_ROOT, "sega")
-    dataset_name = "Dataset304_sega"
+    dataset_name = "Dataset304_SegA"
 
     # space to store your top-level nnUNet files
     trg_root = NNUNET_ROOT
