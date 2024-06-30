@@ -33,7 +33,6 @@ DATASET_MAPS = {
     "spider": "SPIDER (Lumbar Spine & Vertebrae Segmentation in MRI)",
     "han-seg": "HanSeg (Head & Neck Organ Segmentation in CT)",
     "microusp": "MicroUSP (Prostate Segmentation in Micro-Ultrasound)",
-
 }
 
 MODEL_MAPS = {
@@ -154,8 +153,8 @@ def _make_per_experiment_plots(dataframes, datasets):
         max_val = max(df_diff[['point_diff', 'box_diff', 'ip_diff', 'ib_diff']].values.flatten())
         min_val = min(df_diff[['point_diff', 'box_diff', 'ip_diff', 'ib_diff']].values.flatten())
 
-        axes[i].axhspan(0, max_val, facecolor='lightgreen', alpha=0.2)  # Positive region
-        axes[i].axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)  # Negative region
+        axes[i].axhspan(0, max_val, facecolor='lightgreen', alpha=0.2)
+        axes[i].axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)
 
         _xticklabels = [MODEL_MAPS[_exp] for _exp in df["experiment"]]
         tick_positions = [r + 1.5 * bar_width for r in range(len(df))]
