@@ -13,9 +13,6 @@ def _get_paths(path, dataset, split):
     if dataset == "oimhs":
         image_paths, gt_paths = medical.oimhs._get_oimhs_paths(path=path, split=split, download=False)
 
-    elif dataset == "m2caiseg":
-        image_paths, gt_paths = medical.m2caiseg._get_m2caiseg_paths(path=path, split=split, download=True)
-
     elif dataset == "cbis_ddsm":
         if split == "val":
             chosen_split = "Train"
@@ -37,6 +34,14 @@ def _get_paths(path, dataset, split):
     elif dataset == "dca1":
         image_paths, gt_paths = medical.dca1._get_dca1_paths(path=path, split=split, download=False)
 
+    elif dataset == "drive":
+        image_paths, gt_paths = medical.drive._get_drive_paths(path=path, split=split, download=False)
+
+    elif dataset == "piccolo":
+        if split == "val":
+            split = "validation"
+        image_paths, gt_paths = medical.piccolo._get_piccolo_paths(path=path, split=split, download=False)
+
     elif dataset == "btcv":
         image_paths, gt_paths = medical.btcv._get_raw_and_label_paths(path=path, anatomy=["Abdomen"])
         image_paths, gt_paths = image_paths["Abdomen"], gt_paths["Abdomen"]
@@ -51,11 +56,6 @@ def _get_paths(path, dataset, split):
     elif dataset == "amos":
         image_paths, gt_paths = medical.amos._get_amos_paths(path=path, split=split, modality="MRI", download=False)
 
-    elif dataset == "camus":
-        image_paths, gt_paths = medical.camus._get_camus_paths(
-            path=path, chamber="2", download=False,
-        )
-
     elif dataset == "osic_pulmofib":
         image_paths, gt_paths = medical.osic_pulmofib._get_osic_pulmofib_paths(path=path, download=False)
 
@@ -65,6 +65,21 @@ def _get_paths(path, dataset, split):
             image_paths, gt_paths = image_paths[75:85], gt_paths[75:85]
         elif split == "test":
             image_paths, gt_paths = image_paths[85:], gt_paths[85:]
+
+    elif dataset == "sega":
+        if split == "train":
+            dchoice = "Rider"
+        elif split == "val":
+            dchoice = "Dongyang"
+        elif split == "test":
+            dchoice = "KiTS"
+        else:
+            raise ValueError(split)
+
+        image_paths, gt_paths = medical.sega._get_sega_paths(path=path, data_choice=dchoice, download=False)
+
+    elif dataset == "duke_liver":
+        image_paths, gt_paths = medical.duke_liver._get_duke_liver_paths(path=path, split=split, download=False)
 
     else:
         raise ValueError(dataset)
