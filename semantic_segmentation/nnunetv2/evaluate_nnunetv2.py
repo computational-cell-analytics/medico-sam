@@ -13,7 +13,11 @@ from train_nnunetv2 import DATASET_MAPPING_2D, DATASET_MAPPING_3D, NNUNET_ROOT
 # These class maps originate from the logic create at  "convert_<DATASET>.py"
 CLASS_MAPS = {
     "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
-    "isic": {"skin_lesion": 1}
+    "isic": {"skin_lesion": 1},
+    "dca1": {"vessel": 1},
+    "cbis_ddsm": {"mass": 1},
+    "piccolo": {"polyp": 1},
+    "drive": {"vessel": 1},
 }
 
 
