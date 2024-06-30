@@ -11,14 +11,17 @@ DATASET_MAPPING_2D = {
     "oimhs": [201, "Dataset201_OIMHS"],
     "isic": [203, "Dataset203_ISIC"],
     "dca1": [204, "Dataset204_DCA1"],
-    "m2caiseg": [205, "Dataset205_m2caiseg"],
     "cbis_ddsm": [206, "Dataset206_CBISDDSM"],
+    "drive": [207, "Dataset207_DRIVE"],
+    "piccolo": [208, "Dataset208_PICCOLO"],
 }
 
 DATASET_MAPPING_3D = {
     "btcv": [301, "Dataset301_BTCV"],
-    "amos": [302, "Dataset302_AMOS"],
+    # "amos": [302, "Dataset302_AMOS"],
     "osic_pulmofib": [303, "Dataset303_OSICPulmoFib"],
+    "sega": [304, "Dataset304_SegA"],
+    "duke_liver": [305, "Dataset305_DukeLiver"],
 }
 
 

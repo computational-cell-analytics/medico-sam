@@ -590,10 +590,6 @@ def for_btcv(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext="btcv_")
 
 
-def for_cholecseg8k(save_dir):
-    ...
-
-
 def for_piccolo(save_dir):
     """Task: Polyp segmentation in Narrow Band Imaging.
     """
@@ -668,6 +664,60 @@ def for_toothfairy(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="toothfairy_")
 
 
+def for_spider(save_dir):
+    """Spine and vertebrae segmentation in MRI scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.spider._get_spider_paths(path=os.path.join(ROOT, "spider"), download=False)
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".mha")
+        gt = read_image(gt_path, extension=".mha")
+
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        image_id = Path(image_path).stem
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"spider_{image_id}",
+            save_dir=save_dir,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="spider_")
+
+
+def for_han_seg(save_dir):
+    """Head and neck orgnas at risk segmentation in CT scans.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.han_seg._get_han_seg_paths(path=os.path.join(ROOT, "han-seg"), download=False)
+
+    for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
+        image = read_image(image_path, extension=".nii.gz")
+        gt = read_image(gt_path, extension=".nii.gz")
+
+        image, gt = image.transpose(2, 0, 1), gt.transpose(2, 0, 1)
+
+        image_id = Path(image_path).stem
+
+        get_valid_slices_per_volume(
+            image=image,
+            gt=gt,
+            fname=f"han_seg_{image_id}",
+            save_dir=save_dir,
+        )
+
+    _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext="han_seg_")
+
+
 def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
@@ -690,8 +740,10 @@ def _preprocess_datasets(save_dir):
     for_microusp(save_dir=os.path.join(save_dir, "microusp", "slices"))
     for_cbis_ddsm(save_dir=os.path.join(save_dir, "cbis_ddsm", "slices"))
     for_piccolo(save_dir=os.path.join(save_dir, "piccolo", "slices"))
-    # for_toothfairy(save_dir=os.path.join(save_dir, "toothfairy", "slices"))
+    for_toothfairy(save_dir=os.path.join(save_dir, "toothfairy", "slices"))
     for_duke_liver(save_dir=os.path.join(save_dir, "duke_liver", "slices"))
+    for_spider(save_dir=os.path.join(save_dir, "spider", "slices"))
+    for_han_seg(save_dir=os.path.join(save_dir, "han-seg", "slices"))
 
 
 def main():

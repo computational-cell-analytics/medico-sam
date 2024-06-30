@@ -28,7 +28,7 @@ def run_inference_with_iterative_prompting_per_semantic_class(
     batch_size: int = 32,
     n_iterations: int = 8,
     use_masks: bool = False,
-    min_size: int = 0,
+    min_size: int = 20,
 ) -> None:
     """Run segment anything inference for multiple images using prompts iteratively
     derived from model outputs and groundtruth (per semantic class)
