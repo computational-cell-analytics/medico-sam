@@ -10,7 +10,7 @@ import torch
 VALID_DATASETS = [
     "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1",
     "papila", "m2caiseg", "siim_acr", "jnu-ifm", "cbis_ddsm", "piccolo", "duke_liver", "spider", "microusp",
-    "han-seg", "toothfairy",
+    "han-seg", "toothfairy", "drive",
 ]
 
 DEXT = {
@@ -56,7 +56,8 @@ SEMANTIC_CLASS_MAPS = {
         "Glnd_Submand_R": 19, "Glnd_Thyroid": 20, "Glottis": 21, "Larynx_SG": 22, "Lips": 23, "OpticChiasm": 24,
         "OpticNrv_L": 25, "OpticNrv_R": 26, "Parotid_L": 27, "Parotid_R": 28, "Pituitary": 29, "SpinalCord": 30,
     },
-    "toothfairy": {"mandibular_canal": 1}
+    "toothfairy": {"mandibular_canal": 1},
+    "drive": {"vessel": 1}
 }
 
 MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib", "spider", "han-seg"]
@@ -136,6 +137,9 @@ def get_default_arguments():
     # for SAM-Med2d models
     parser.add_argument("--use_sam_med2d", action="store_true", help="Whether to use the SAM-Med2d model.")
     parser.add_argument("--adapter", action="store_true", help="Whether the model has the adapter blocks or not.")
+
+    # use lora
+    parser.add_argument("--use_lora", action="store_true")
     args = parser.parse_args()
 
     if args.adapter:

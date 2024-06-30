@@ -6,6 +6,8 @@ from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segment
 
 from util import get_dataset_paths, get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
 
+from common import LabelTrafoToBinary  # noqa
+
 
 def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, predictor, is_multiclass):
     prediction_root = os.path.join(exp_folder, "semantic_segmentation")
@@ -32,10 +34,8 @@ def main():
         checkpoint_path=args.checkpoint,
         flexible_load_checkpoint=True,
         num_multimask_outputs=(len(semantic_class_maps.keys()) + 1),
+        use_lora=args.use_lora,
     )
-
-    # HACK: testing it on first 200 (or fewer) samples
-    image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
     prediction_root = _run_semantic_segmentation(
         image_paths=image_paths,
