@@ -4,7 +4,6 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
 
 ROOT = "/scratch/share/cidas/cca/experiments/v1/"
@@ -127,6 +126,10 @@ def _make_per_experiment_plots(dataframes, datasets):
 
     bar_width = 0.2
     for i, df in enumerate(dataframes):
+        _order = ["vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"]
+        df['experiment'] = pd.Categorical(df['experiment'], categories=_order, ordered=True)
+        df = df.sort_values('experiment')
+
         ref = df[df['experiment'] == 'vanilla'].iloc[0]
 
         df = df[df['experiment'] != 'vanilla']
@@ -142,9 +145,9 @@ def _make_per_experiment_plots(dataframes, datasets):
         r3 = [x + 2 * bar_width for x in r1]
         r4 = [x + 3 * bar_width for x in r1]
 
-        axes[i].bar(r1, df_diff['point_diff'], color='#045275', width=bar_width, edgecolor='grey', label='Point')
+        axes[i].bar(r1, df_diff['point_diff'], color='#7CCBA2', width=bar_width, edgecolor='grey', label='Point')
         axes[i].bar(r2, df_diff['box_diff'], color='#FCDE9C', width=bar_width, edgecolor='grey', label='Box')
-        axes[i].bar(r3, df_diff['ip_diff'], color='#7CCBA2', width=bar_width, edgecolor='grey', label=r"I$_{P}$")
+        axes[i].bar(r3, df_diff['ip_diff'], color='#045275', width=bar_width, edgecolor='grey', label=r"I$_{P}$")
         axes[i].bar(r4, df_diff['ib_diff'], color='#90477F', width=bar_width, edgecolor='grey', label=r"I$_{B}$")
 
         max_val = max(df_diff[['point_diff', 'box_diff', 'ip_diff', 'ib_diff']].values.flatten())
@@ -190,10 +193,15 @@ def _make_per_model_average_plots(dataframes):
     filtered_data = all_data[all_data['experiment'].isin(desired_experiments)]
 
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
+
+    _order = ["vanilla", "medsam", "generalist_8"]
+    grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
+    grouped_data = grouped_data.sort_values('experiment')
+
     experiments = grouped_data['experiment']
 
     metrics = ['point', 'box', 'ip', 'ib']
-    color_map = ['#045275', '#FCDE9C', '#7CCBA2', '#90477F']
+    color_map = ['#7CCBA2', '#FCDE9C', '#045275', '#90477F']
     label_map = ["Point", "Box", r"I$_{P}$", r"I$_{B}$"]
 
     x = np.arange(len(experiments))
@@ -219,7 +227,7 @@ def _make_per_model_average_plots(dataframes):
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.71, 0.875), fontsize=16)
+    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.315, 0.875), fontsize=16)
 
     plt.savefig("./fig_1_interactive_segmentation_average.png", bbox_inches="tight")
     plt.savefig("./fig_1_interactive_segmentation_average.svg", bbox_inches="tight")
@@ -233,6 +241,10 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     numeric_columns = numeric_columns.insert(0, 'experiment')
 
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
+
+    _order = ["vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"]
+    avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
+    avg_df = avg_df.sort_values('experiment')
 
     experiments = avg_df['experiment']
     point_values = avg_df['point']
@@ -250,14 +262,8 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     index = np.arange(len(experiments))
 
     num_colors = len(ip_columns)
-    bcolors = [
-        mcolors.to_rgba('#F0746E', alpha=(i + 1) / (num_colors + 1)) for i in range(num_colors)
-    ]
-    pcolors = [
-        mcolors.to_rgba('#089099', alpha=(i + 1) / (num_colors + 1)) for i in range(num_colors)
-    ]
-    bcolors.reverse()
-    pcolors.reverse()
+    bcolors = ["#FCDE9C", "#ECC89A", "#DDB28F", "#CD9C8B", "#BD867F", "#AD7067", "#9D5A52", "#90477F"]
+    pcolors = ["#7CCBA2", "#6ABCB9", "#59AB95", "#48998E", "#378786", "#267581", "#15637B", "#045275"]
 
     ax.bar(index, point_values, bar_width, color=pcolors[0], label='Point', edgecolor="grey")
     ax.bar(index, box_values, bar_width, bottom=point_values, color=bcolors[0], label='Box', edgecolor="grey")
@@ -289,7 +295,7 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     plt.close()
 
 
-def main():
+def _figure_3a():
     # for all iterations in iterative prompting
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
@@ -298,6 +304,8 @@ def main():
 
     _make_full_iterative_prompting_average_plots(results)
 
+
+def _figure_3b():
     # for point, box, ip and ib
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
@@ -305,7 +313,22 @@ def main():
         results.append(res)
 
     _make_per_experiment_plots(results, list(DATASET_MAPS.keys()))
+
+
+def _figure_1():
+    # for point, box, ip and ib
+    results = []
+    for dataset_name in list(DATASET_MAPS.keys()):
+        res = _get_results_per_dataset(dataset_name=dataset_name)
+        results.append(res)
+
     _make_per_model_average_plots(results)
+
+
+def main():
+    _figure_1()
+    _figure_3a()
+    _figure_3b()
 
 
 if __name__ == "__main__":
