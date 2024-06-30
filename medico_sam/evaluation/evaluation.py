@@ -33,7 +33,11 @@ def _run_evaluation_per_semantic_class(
         assert os.path.exists(pred_path), pred_path
 
         gt = imageio.imread(gt_path)
-        gt = (gt == semantic_class_id).astype("uint8")
+
+        if semantic_class_id is not None:
+            gt = (gt == semantic_class_id).astype("uint8")
+        else:
+            gt = (gt > 0).astype("uint8")
 
         # Check whether the image has a valid foreground in the ground truth
         _, counts = np.unique(gt, return_counts=True)
@@ -42,7 +46,10 @@ def _run_evaluation_per_semantic_class(
 
         pred = imageio.imread(pred_path)
         if is_multiclass:
-            pred = (pred == semantic_class_id).astype("uint8")
+            if semantic_class_id is None:  # for SPIDER: if None, we return instance segmentation and binarise them.
+                pred = (pred > 0).astype("uint8")
+            else:
+                pred = (pred == semantic_class_id).astype("uint8")
         else:
             pred = (pred > 0).astype("uint8")
 

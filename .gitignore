@@ -9,3 +9,6 @@ logs/
 *.egg-info/
 
 gpu_jobs/
+
+figures/
+*.svg

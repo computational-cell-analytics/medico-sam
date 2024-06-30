@@ -16,20 +16,23 @@ EXPERIMENTS = [
 MODEL = "vit_b"
 
 DATASET_MAPS = {
-    "idrid": "IDRiD (Optic Disc in Fundus)",
     "camus": "CAMUS (Cardiac Structures in Echocardipgraphy)",
     "uwaterloo_skin": "UWaterloo Skin (Skin Lesion in Dermoscopy)",
     "montgomery": "Montgomery (Lungs in Chest X-Ray)",
     "sega": "SegA (Aorta in CT)",
+    "duke_liver": "Duke Liver (Liver Segmentation in MRI)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
     "papila": "Papila (Optic Disc & Optic Cup in Fundus)",
     "jnu-ifm": "JNU IFM (Pubic Symphysis & Fetal Head in US)",
     "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
-    "isic": "ISIC (Skin Lesion in Dermoscopy)",
-    "m2caiseg": "m2caiseg (Tools and Organs in Laparoscopy)",
-    "btcv": "BTCV (Abdominal Organs in CT)",
+    "m2caiseg": "m2caiseg (Tools and Organs in Endoscopy)",
+    "toothfairy": "ToothFairy (Mandibular Canal Segmentation in CBCT)",
+    "spider": "SPIDER (Lumbar Spine & Vertebrae Segmentation in MRI)",
+    "han-seg": "HanSeg (Head & Neck Organ Segmentation in CT)",
+    "microusp": "MicroUSP (Prostate Segmentation in Micro-Ultrasound)",
+
 }
 
 MODEL_MAPS = {
@@ -87,6 +90,7 @@ def _get_results_per_dataset_per_class(dataset_name, experiment_name):
 
 def _get_results_per_dataset(dataset_name):
     res_per_dataset = []
+    print(dataset_name)
     for experiment_name in EXPERIMENTS:
         res_per_dataset.append(_get_results_per_dataset_per_class(dataset_name, experiment_name))
 
@@ -94,8 +98,8 @@ def _get_results_per_dataset(dataset_name):
     return res_per_dataset
 
 
-def _make_plots(dataframes, datasets):
-    fig, axes = plt.subplots(nrows=3, ncols=5, figsize=(30, 30))
+def _make_per_experiment_plots(dataframes, datasets):
+    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(30, 30))
     axes = axes.flatten()
 
     bar_width = 0.2
@@ -144,13 +148,56 @@ def _make_plots(dataframes, datasets):
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=16)
+    fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
 
-    plt.text(x=-5.1, y=1.675, s="Dice Score", rotation=90, fontweight="bold", fontsize=16)
+    plt.text(
+        x=-24.5, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        rotation=90, fontweight="bold", fontsize=24
+    )
 
-    plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.225, wspace=0.225)
+    plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.3, wspace=0.2)
     plt.savefig("./interactive_segmentation_all.png")
     plt.savefig("./interactive_segmentation_all.svg")
+    plt.close()
+
+
+def _make_per_model_average_plots(dataframes):
+    all_data = pd.concat(dataframes, ignore_index=True)
+    grouped_data = all_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
+
+    experiments = grouped_data['experiment']
+    metrics = ['point', 'box', 'ip', 'ib']
+    color_map = ['#045275', '#FCDE9C', '#7CCBA2', '#90477F']
+    label_map = ["Point", "Box", r"I$_{P}$", r"I$_{B}$"]
+
+    x = np.arange(len(experiments))
+    width = 0.2
+
+    fig, ax = plt.subplots(figsize=(20, 15))
+    for i, (metric, color, label) in enumerate(zip(metrics, color_map, label_map)):
+        ax.bar(x + i * width, grouped_data[metric], width, label=label, color=color, edgecolor='grey')
+
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=24, fontweight="bold")
+    ax.set_xticks(x + width * (len(metrics) - 1) / 2)
+    _xticklabels = [MODEL_MAPS[_exp] for _exp in experiments]
+    ax.set_xticklabels(_xticklabels, rotation=45, ha="right", fontsize=16)
+    ax.tick_params(axis='y', labelsize=14)
+    ax.legend()
+
+    all_lines, all_labels = [], []
+    for ax in fig.axes:
+        lines, labels = ax.get_legend_handles_labels()
+        for line, label in zip(lines, labels):
+            if label not in all_labels:
+                all_lines.append(line)
+                all_labels.append(label)
+        ax.legend().remove()
+
+    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.5, 0.875), fontsize=24)
+
+    plt.savefig("./interactive_segmentation_average.png", bbox_inches="tight")
+    plt.savefig("./interactive_segmentation_average.svg", bbox_inches="tight")
+    plt.close()
 
 
 def main():
@@ -159,7 +206,8 @@ def main():
         res = _get_results_per_dataset(dataset_name=dataset_name)
         results.append(res)
 
-    _make_plots(results, list(DATASET_MAPS.keys()))
+    _make_per_experiment_plots(results, list(DATASET_MAPS.keys()))
+    _make_per_model_average_plots(results)
 
 
 if __name__ == "__main__":
