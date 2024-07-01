@@ -16,8 +16,8 @@ def get_medico_sam_model(
 
     else:
         if use_sam3d:
-            from micro_sam.sam_3d_wrapper import get_3d_sam_model
-            _fetch_model = get_3d_sam_model
+            from micro_sam.sam_3d_wrapper import get_sam_3d_model
+            _fetch_model = get_sam_3d_model
 
         else:
             from micro_sam.util import get_sam_model

@@ -27,7 +27,8 @@ def write_batch_script(out_path, _name, save_root, checkpoint, ckpt_name, use_lo
 #SBATCH --constraint=80gb
 #SBATCH --job-name={os.path.split(_name)[-1]}
 
-source activate sam \n"""
+source /home/nimcpape/.bashrc
+micromamba activate main \n"""
 
     # python script
     python_script = f"python {_name}.py "
@@ -109,7 +110,8 @@ def submit_slurm(args):
             "medsam": "/scratch/projects/nim00007/sam/models/medsam/medsam_vit_b.pth",
         }
 
-    lora_choices = [True, False]
+    # lora_choices = [True, False]
+    lora_choices = [True]
 
     for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):
         script_name = script_combinations[per_dataset]

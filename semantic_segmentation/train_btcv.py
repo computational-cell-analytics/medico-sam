@@ -46,6 +46,7 @@ def get_dataloaders(patch_shape, data_path):
         is_seg_dataset=True,
         ndim=3,
         patch_shape=patch_shape,
+        n_samples=200,
         **kwargs
     )
     val_dataset = torch_em.default_segmentation_dataset(
@@ -96,7 +97,7 @@ def finetune_btcv(args):
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=3, verbose=True)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
