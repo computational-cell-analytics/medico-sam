@@ -1,14 +1,17 @@
 import os
 from tqdm import tqdm
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
 import imageio.v3 as imageio
+from elf.io import open_file
 from skimage.measure import label as connected_components
 
 import torch
 
 from torch_em.util.segmentation import size_filter
+from torch_em.transform.raw import normalize
+from torch_em.util.prediction import predict_with_halo
 
 from micro_sam import util
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
@@ -180,8 +183,6 @@ def run_semantic_segmentation(
             _run_semantic_segmentation_for_image(
                 predictor=predictor, image=image, embedding_path=embedding_path, prediction_path=prediction_path,
             )
-<<<<<<< Updated upstream
-=======
 
 
 def _run_semantic_segmentation_for_image_3d(
@@ -261,4 +262,3 @@ def run_semantic_segmentation_3d(
                 model=model, image=image, prediction_path=prediction_path,
                 patch_shape=patch_shape, halo=halo,
             )
->>>>>>> Stashed changes
