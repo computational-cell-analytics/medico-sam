@@ -201,12 +201,16 @@ def _run_semantic_segmentation_for_image_3d(
         return x
 
     def prediction_function(net, inp):
-        masks = net(inp[0], multimask_output=True, image_size=image_size)[0]["masks"]
+        # Note: we have two singleton axis in front here, I am not quite sure why.
+        # Both need to be removed to be compatible with the SAM network.
+        batched_input = [{
+            "image": inp[0, 0], "original_size": inp.shape[-2:]
+        }]
+        masks = net(batched_input, multimask_output=True)[0]["masks"]
         masks = torch.argmax(masks, dim=1)
         return masks
 
     # num_classes = model.sam_model.mask_decoder.num_multimask_outputs
-    image_size = patch_shape[-1]
     output = np.zeros(image.shape, dtype="float32")
     predict_with_halo(
         image, model, gpu_ids=[device],
