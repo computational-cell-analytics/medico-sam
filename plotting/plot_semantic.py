@@ -45,7 +45,7 @@ RESULTS = {
         "simplesam-fft": [0.781],
         "sam-lora": [0.733],
         "medicosam-lora": [0.669],
-        "nnunet": [0.5],  # TODO
+        "nnunet": [0.814],
     },
     "cbis_ddsm": {
         "sam-fft": [0.316],
@@ -150,7 +150,7 @@ def _plot_absolute_mean_per_experimet():
 
     fig, ax = plt.subplots(figsize=(15, 10))
 
-    ax.bar(methods, means, color="#F0746E")
+    ax.bar(methods, means, color="#F0746E", edgecolor="grey")
 
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
@@ -164,8 +164,8 @@ def _plot_absolute_mean_per_experimet():
 
 
 def main():
-    # _make_per_dataset_plot()
-    _plot_absolute_mean_per_experimet()
+    _make_per_dataset_plot()
+    # _plot_absolute_mean_per_experimet()
 
 
 main()

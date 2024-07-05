@@ -126,7 +126,7 @@ def _clear_files(experiment_folder, semantic_class_maps):
 def get_default_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-m", "--model", type=str, required=True, help="Provide the model type to initialize the predictor"
+        "-m", "--model", type=str, default="vit_b", help="Provide the model type to initialize the predictor"
     )
     parser.add_argument("-c", "--checkpoint", type=none_or_str, required=True, default=None)
     parser.add_argument("-e", "--experiment_folder", type=str, required=True)

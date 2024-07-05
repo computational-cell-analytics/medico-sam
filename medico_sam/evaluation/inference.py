@@ -228,6 +228,7 @@ def run_semantic_segmentation_3d(
     halo: Tuple[int, int, int] = (6, 64, 64),
     image_key: Optional[str] = None,
     is_multiclass: bool = False,
+    make_channels_first: bool = False,
 ):
     """
     """
@@ -252,8 +253,11 @@ def run_semantic_segmentation_3d(
             if image_key is None:
                 image = imageio.imread(image_path)
             else:
-                with open_file(image_path, "r") as f:
-                    image = f[image_key][:]
+                from tukra.utils import read_image
+                image = read_image(image_path, ".nii.gz")
+
+            if make_channels_first:
+                image = image.transpose(2, 0, 1)
 
             # create the prediction folder
             os.makedirs(os.path.join(prediction_dir, semantic_class_name), exist_ok=True)
