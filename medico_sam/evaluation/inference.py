@@ -1,6 +1,6 @@
 import os
 from tqdm import tqdm
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
 import imageio.v3 as imageio
@@ -8,7 +8,10 @@ from skimage.measure import label as connected_components
 
 import torch
 
+from elf.io import open_file
+from torch_em.transform.raw import normalize
 from torch_em.util.segmentation import size_filter
+from torch_em.util.prediction import predict_with_halo
 
 from micro_sam import util
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
@@ -179,4 +182,87 @@ def run_semantic_segmentation(
 
             _run_semantic_segmentation_for_image(
                 predictor=predictor, image=image, embedding_path=embedding_path, prediction_path=prediction_path,
+            )
+
+
+def _run_semantic_segmentation_for_image_3d(
+    model: torch.nn.Module,
+    image: np.ndarray,
+    prediction_path: Union[os.PathLike, str],
+    patch_shape: Tuple[int, int, int],
+    halo: Tuple[int, int, int],
+):
+    device = next(model.parameters()).device
+    block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
+
+    def preprocess(x):
+        x = 255 * normalize(x)
+        x = np.stack([x] * 3)
+        return x
+
+    def prediction_function(net, inp):
+        masks = net(inp[0], multimask_output=True, image_size=image_size)["masks"]
+        masks = torch.argmax(masks, dim=1)
+        return masks
+
+    # num_classes = model.sam_model.mask_decoder.num_multimask_outputs
+    image_size = patch_shape[-1]
+    output = np.zeros(image.shape, dtype="float32")
+    predict_with_halo(
+        image, model, gpu_ids=[device],
+        block_shape=block_shape, halo=halo,
+        preprocess=preprocess, output=output,
+        prediction_function=prediction_function
+    )
+
+    # save the segmentations
+    imageio.imwrite(prediction_path, output, compression="zlib")
+
+
+def run_semantic_segmentation_3d(
+    model: torch.nn.Module,
+    image_paths: List[Union[str, os.PathLike]],
+    prediction_dir: Union[str, os.PathLike],
+    semantic_class_map: Dict[str, int],
+    patch_shape: Tuple[int, int, int] = (32, 512, 512),
+    halo: Tuple[int, int, int] = (6, 64, 64),
+    image_key: Optional[str] = None,
+    is_multiclass: bool = False,
+    make_channels_first: bool = False,
+):
+    """
+    """
+    for image_path in tqdm(image_paths, desc="Run inference for semantic segmentation with all images"):
+        image_name = os.path.basename(image_path)
+
+        assert os.path.exists(image_path), image_path
+
+        # Perform segmentation only on the semantic class
+        for i, (semantic_class_name, _) in enumerate(semantic_class_map.items()):
+            if is_multiclass:
+                semantic_class_name = "all"
+                if i > 0:  # We only perform segmentation for multiclass once.
+                    continue
+
+            # We skip the images that already have been segmented
+            image_name = os.path.splitext(image_name)[0] + ".tif"
+            prediction_path = os.path.join(prediction_dir, semantic_class_name, image_name)
+            if os.path.exists(prediction_path):
+                continue
+
+            if image_key is None:
+                image = imageio.imread(image_path)
+            else:
+                from tukra.utils import read_image
+                image = read_image(image_path, ".nii.gz")
+
+            if make_channels_first:
+                image = image.transpose(2, 0, 1)
+
+            # create the prediction folder
+            os.makedirs(os.path.join(prediction_dir, semantic_class_name), exist_ok=True)
+
+            _run_semantic_segmentation_for_image_3d(
+                model=model, image=image, prediction_path=prediction_path,
+                patch_shape=patch_shape, halo=halo,
             )

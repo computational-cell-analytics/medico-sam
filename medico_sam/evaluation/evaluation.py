@@ -18,7 +18,7 @@ def calculate_dice_score(input_, target, eps=1e-7):
 
 
 def _run_evaluation_per_semantic_class(
-    gt_paths, prediction_paths, semantic_class_id, verbose=True, is_multiclass=False
+    gt_paths, prediction_paths, semantic_class_id, verbose=True, is_multiclass=False, for_3d=False,
 ):
     first_gt_path = gt_paths[0]
     gt_dir = os.path.split(first_gt_path)[0]
@@ -27,12 +27,21 @@ def _run_evaluation_per_semantic_class(
 
     for pred_path in tqdm(prediction_paths, desc="Evaluate predictions", disable=not verbose):
         image_id = os.path.split(pred_path)[-1]
-        gt_path = os.path.join(gt_dir, image_id)
+        if for_3d:
+            image_id = image_id.split(".")[0][:-5]  # done to follow with the nnunet format
+            gt_path = os.path.join(gt_dir, f"{image_id}.nii.gz")
+        else:
+            gt_path = os.path.join(gt_dir, image_id)
 
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
-        gt = imageio.imread(gt_path)
+        if for_3d:
+            from tukra.utils import read_image
+            gt = read_image(gt_path, ".nii.gz")
+            gt = gt.transpose(2, 0, 1)
+        else:
+            gt = imageio.imread(gt_path)
 
         if semantic_class_id is not None:
             gt = (gt == semantic_class_id).astype("uint8")
@@ -45,6 +54,7 @@ def _run_evaluation_per_semantic_class(
             continue
 
         pred = imageio.imread(pred_path)
+
         if is_multiclass:
             if semantic_class_id is None:  # for SPIDER: if None, we return instance segmentation and binarise them.
                 pred = (pred > 0).astype("uint8")
@@ -66,6 +76,7 @@ def run_evaluation_per_semantic_class(
     save_path: Optional[Union[os.PathLike, str]] = None,
     verbose: bool = True,
     is_multiclass: bool = False,
+    for_3d: bool = False,
 ) -> pd.DataFrame:
     """Run evaluation for semantic segmentation predictions.
 
@@ -84,7 +95,9 @@ def run_evaluation_per_semantic_class(
         return pd.read_csv(save_path)
 
     dice_scores = _run_evaluation_per_semantic_class(
-        gt_paths, prediction_paths, semantic_class_id, verbose=verbose, is_multiclass=is_multiclass,
+        gt_paths, prediction_paths, semantic_class_id,
+        verbose=verbose, is_multiclass=is_multiclass, for_3d=for_3d,
+
     )
 
     results = pd.DataFrame.from_dict({"dice": [np.mean(dice_scores)]})
@@ -103,6 +116,7 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
     semantic_class_map: Dict[str, int],
     start_with_box_prompt: bool = False,
     overwrite_results: bool = False,
+    for_3d: bool = False,
 ) -> pd.DataFrame:
     """Run evaluation for iterative prompt-based segmentation predictions per semantic class.
 
@@ -144,7 +158,11 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
             print("Evaluating", os.path.split(pred_folder)[-1])
             pred_paths = natsorted(glob(os.path.join(pred_folder, semantic_class_name, "*")))
             result = run_evaluation_per_semantic_class(
-                gt_paths=gt_paths, prediction_paths=pred_paths, semantic_class_id=semantic_class_id, save_path=None
+                gt_paths=gt_paths,
+                prediction_paths=pred_paths,
+                semantic_class_id=semantic_class_id,
+                save_path=None,
+                for_3d=for_3d,
             )
             list_of_results.append(result)
             print(result)
@@ -160,6 +178,7 @@ def run_evaluation_for_semantic_segmentation(
     semantic_class_map: Dict[str, int],
     is_multiclass: bool = False,
     overwrite_results: bool = False,
+    for_3d: bool = False,
 ) -> pd.DataFrame:
     """Run evaluation for semantic segmentation predictions per semantic class.
 
@@ -200,6 +219,7 @@ def run_evaluation_for_semantic_segmentation(
             semantic_class_id=semantic_class_id,
             save_path=None,
             is_multiclass=is_multiclass,
+            for_3d=for_3d,
         )
         print(result)
         result.to_csv(csv_path)
