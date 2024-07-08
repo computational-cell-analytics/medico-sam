@@ -88,9 +88,14 @@ class LabelResizeTrafoFor3dInputs:
 
 # learning rate scheduler using warmup
 class LinearWarmUpScheduler(_LRScheduler):
-    """
+    """Wrapper for custom learning rate scheduler that applied linear warmup,
+    followed by a primary scheduler (eg. ReduceLROnPlateau) after the warmup.
+
     Args:
-        warmup_steps: Equivalent to the number of epochs.
+        optimizer: The optimizer
+        warmup_epochs (int): Equivalent to the number of epochs for linear warmup.
+        main_scheduler: The scheduler.
+        last_epoch (int): The index of the last epoch.
     """
     def __init__(self, optimizer, warmup_epochs, main_scheduler, last_epoch=-1):
         self.warmup_epochs = warmup_epochs
