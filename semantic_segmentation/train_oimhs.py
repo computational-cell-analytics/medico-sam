@@ -10,6 +10,8 @@ import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
+from common import LinearWarmUpScheduler
+
 
 def get_dataloaders(patch_shape, data_path):
     """This returns the oimhs data loaders implemented in torch_em:
@@ -62,8 +64,7 @@ def finetune_oimhs(args):
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
     num_classes = 5  # 1 background class and 4 semantic foreground classes
-    use_lora = args.use_lora  # whether to use LoRA for finetuning
-    rank = 4 if use_lora else None  # the rank used for LoRA
+    lora_rank = args.lora_rank  # whether to use LoRA for finetuning and the rank used for LoRA
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
@@ -73,14 +74,15 @@ def finetune_oimhs(args):
         freeze=freeze_parts,
         flexible_load_checkpoint=True,
         num_multimask_outputs=num_classes,
-        use_lora=use_lora,
-        rank=rank,
+        lora_rank=lora_rank,
     )
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-3)
+    mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
+    scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=50, main_scheduler=mscheduler)
+
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     train_loader.dataset.max_sampling_attempts = 10000
@@ -153,7 +155,8 @@ def main():
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     parser.add_argument(
-        "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
+        "--lora_rank", type=float, default=None,
+        help="Whether to use LoRA with provided rank for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
     finetune_oimhs(args)

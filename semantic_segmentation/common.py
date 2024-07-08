@@ -1,6 +1,8 @@
 import numpy as np
 from math import ceil, floor
 
+from torch.optim.lr_scheduler import _LRScheduler
+
 from torch_em.transform.raw import normalize
 
 
@@ -82,3 +84,33 @@ class LabelResizeTrafoFor3dInputs:
         )
 
         return labels
+
+
+# learning rate scheduler using warmup
+class LinearWarmUpScheduler(_LRScheduler):
+    """
+    Args:
+        warmup_steps: Equivalent to the number of epochs.
+    """
+    def __init__(self, optimizer, warmup_epochs, main_scheduler, last_epoch=-1):
+        self.warmup_epochs = warmup_epochs
+        self.main_scheduler = main_scheduler
+        self.is_warmup_finished = False
+
+        super().__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch < self.warmup_epochs:
+            return [base_lr * (self.last_epoch + 1) / self.warmup_epochs for base_lr in self.base_lrs]
+        else:
+            self.is_warmup_finished = True
+            return self.main_scheduler.optimizer.param_groups[0]['lr']
+
+    def step(self, metrics=None, epoch=None):
+        if not self.is_warmup_finished:
+            super().step()
+        else:
+            self.main_scheduler.step(metrics, epoch)
+
+    def _get_closed_form_lr(self):
+        return self.get_lr()
