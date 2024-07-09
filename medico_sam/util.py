@@ -62,10 +62,10 @@ class LinearWarmUpScheduler(_LRScheduler):
             return [group['lr'] for group in self.optimizer.param_groups]
 
     def step(self, metrics=None, epoch=None):
-        if not self.is_warmup_finished:
-            super().step()
-        else:
+        if self.is_warmup_finished:
             self.main_scheduler.step(metrics, epoch)
+        else:
+            super().step()
 
     def _get_closed_form_lr(self):
         return self.get_lr()

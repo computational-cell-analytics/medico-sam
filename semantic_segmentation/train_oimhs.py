@@ -10,7 +10,7 @@ import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import LinearWarmUpScheduler
+from medico_sam.util import LinearWarmUpScheduler
 
 
 def get_dataloaders(patch_shape, data_path):
