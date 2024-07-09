@@ -109,7 +109,7 @@ class LinearWarmUpScheduler(_LRScheduler):
             return [base_lr * (self.last_epoch + 1) / self.warmup_epochs for base_lr in self.base_lrs]
         else:
             self.is_warmup_finished = True
-            return self.main_scheduler.optimizer.param_groups[0]['lr']
+            return [group['lr'] for group in self.optimizer.param_groups]
 
     def step(self, metrics=None, epoch=None):
         if not self.is_warmup_finished:
