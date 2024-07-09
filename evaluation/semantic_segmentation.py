@@ -6,8 +6,6 @@ from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segment
 
 from util import get_dataset_paths, get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
 
-from common import LabelTrafoToBinary  # noqa
-
 
 def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, predictor, is_multiclass):
     prediction_root = os.path.join(exp_folder, "semantic_segmentation")
