@@ -139,7 +139,7 @@ def get_default_arguments():
     parser.add_argument("--adapter", action="store_true", help="Whether the model has the adapter blocks or not.")
 
     # use lora
-    parser.add_argument("--use_lora", action="store_true")
+    parser.add_argument("--lora_rank", default=None, type=int, help="The rank for LoRA.")
     args = parser.parse_args()
 
     if args.adapter:

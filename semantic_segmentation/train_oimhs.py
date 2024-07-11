@@ -108,6 +108,7 @@ def finetune_oimhs(args):
         convert_inputs=convert_inputs,
         num_classes=num_classes,
         compile_model=False,
+        dice_weight=0.8,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
@@ -155,7 +156,7 @@ def main():
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     parser.add_argument(
-        "--lora_rank", type=float, default=None,
+        "--lora_rank", type=int, default=None,
         help="Whether to use LoRA with provided rank for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()

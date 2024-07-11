@@ -32,7 +32,7 @@ def main():
         checkpoint_path=args.checkpoint,
         flexible_load_checkpoint=True,
         num_multimask_outputs=(len(semantic_class_maps.keys()) + 1),
-        use_lora=args.use_lora,
+        lora_rank=args.lora_rank,
     )
 
     prediction_root = _run_semantic_segmentation(
