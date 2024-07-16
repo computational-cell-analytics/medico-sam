@@ -10,10 +10,10 @@ from torch_em.data import MinInstanceSampler
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
-from micro_sam.sam_3d_wrapper import get_3d_sam_model
+from micro_sam.models.sam_3d_wrapper import get_sam_3d_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import RawTrafoFor3dInputs
+from medico_sam.transform.raw import RawTrafoFor3dInputs
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -85,7 +85,7 @@ def finetune_btcv(args):
     freeze_encoder = True if lora_rank is None else False
 
     # get the trainable segment anything model
-    model = get_3d_sam_model(
+    model = get_sam_3d_model(
         device=device,
         n_classes=num_classes,
         image_size=512,
@@ -107,7 +107,7 @@ def finetune_btcv(args):
     checkpoint_name = f"{args.model_type}_3d_{lora_str}/btcv_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
-    trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer3D(
+    trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
