@@ -11,7 +11,8 @@ from micro_sam.util import export_custom_sam_model
 from micro_sam.models.sam_3d_wrapper import get_sam_3d_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import RawResizeTrafoFor3dInputs, LabelResizeTrafoFor3dInputs
+from medico_sam.transform.raw import RawResizeTrafoFor3dInputs
+from medico_sam.transform.label import LabelResizeTrafoFor3dInputs
 
 
 def get_dataloaders(patch_shape, data_path):
