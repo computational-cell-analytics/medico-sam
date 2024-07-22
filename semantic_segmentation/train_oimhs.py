@@ -82,7 +82,6 @@ def finetune_oimhs(args):
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.1)
     mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
     scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
-
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     train_loader.dataset.max_sampling_attempts = 10000

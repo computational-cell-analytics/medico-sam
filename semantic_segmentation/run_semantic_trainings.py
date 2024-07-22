@@ -13,18 +13,19 @@ DATASETS = [
 ]
 
 
-def write_batch_script(out_path, _name, save_root, checkpoint, ckpt_name, use_lora, dry):
+def write_batch_script(
+    out_path, _name, save_root, checkpoint, ckpt_name, use_lora, dry, iterations,
+):
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 2-00:00:00
 #SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH -p grete:shared
-#SBATCH -G A100:1
-#SBATCH -A nim00007
+#SBATCH -p grete-h100:shared
+#SBATCH -G H100:1
+#SBATCH -A gzz0001
 #SBATCH -c 16
-#SBATCH --constraint=80gb
 #SBATCH --job-name={os.path.split(_name)[-1]}
 
 source activate sam \n"""
@@ -42,9 +43,13 @@ source activate sam \n"""
     if checkpoint is not None:
         python_script += f"-c {checkpoint} "
 
+    # number of iterations to train the model for
+    if iterations is not None:
+        python_script += f"--iterations {iterations} "
+
     # whether to use lora for finetuning for semantic segmentation
     if use_lora:
-        python_script += "--use_lora "
+        python_script += "--lora_rank 4 "
 
     # let's add the python script to the bash script
     batch_script += python_script
@@ -103,7 +108,8 @@ def submit_slurm(args):
             # default SAM model
             "sam": None,
             # our finetuned models
-            "medico-sam": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",
+            "medico-sam-8g": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",
+            "medico-sam-1g": "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt",
             "simplesam": "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
             # MedSAM's original model
             "medsam": "/scratch/projects/nim00007/sam/models/medsam/medsam_vit_b.pth",
@@ -115,26 +121,18 @@ def submit_slurm(args):
         script_name = script_combinations[per_dataset]
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(args.save_root, checkpoints[ckpt_name])
 
-        _use_lora_now = False
-        if use_lora:
-            if ckpt_name in ["sam", "medico-sam"]:
-                _use_lora_now = True
-            elif per_dataset in ["osic_pulmofib", "btcv", "sega", "duke_liver"]:
-                _use_lora_now = True
-            else:
-                continue
-
-        print(f"Running for {script_name} for experiment name '{ckpt_name}'...")
+        print(f"Running for {script_name} for experiment name '{ckpt_name}':")
         write_batch_script(
             out_path=get_batch_script_names(tmp_folder),
             _name=script_name,
             save_root=os.path.join(
-                args.save_root, "semantic_sam", "lora_finetuning" if _use_lora_now else "full_finetuning"
+                args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
             ),
             checkpoint=checkpoint,
             ckpt_name=ckpt_name,
-            use_lora=_use_lora_now,
+            use_lora=use_lora,
             dry=args.dry,
+            iterations=args.iterations,
         )
 
 
@@ -153,6 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models")
+    parser.add_argument("--iterations", default=None, type=int)
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)

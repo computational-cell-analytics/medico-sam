@@ -10,7 +10,8 @@ import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import LabelTrafoToBinary
+from medico_sam.util import LinearWarmUpScheduler
+from medico_sam.transform.label import LabelTrafoToBinary
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -67,8 +68,7 @@ def finetune_isic(args):
     patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
     num_classes = 2  # 1 background class and 1 semantic foreground classes
-    use_lora = args.use_lora  # whether to use LoRA for finetuning
-    rank = 4 if use_lora else None  # the rank used for LoRA
+    lora_rank = args.lora_rank  # whether to use LoRA for finetuning and the rank used for LoRA
 
     # get the trainable segment anything model
     model = sam_training.get_trainable_sam_model(
@@ -78,14 +78,14 @@ def finetune_isic(args):
         freeze=freeze_parts,
         flexible_load_checkpoint=True,
         num_multimask_outputs=num_classes,
-        use_lora=use_lora,
-        rank=rank,
+        lora_rank=lora_rank,
     )
     model.to(device)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.1)
+    mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
+    scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
@@ -108,6 +108,7 @@ def finetune_isic(args):
         convert_inputs=convert_inputs,
         num_classes=num_classes,
         compile_model=False,
+        dice_weight=0.8,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
@@ -155,7 +156,8 @@ def main():
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     parser.add_argument(
-        "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
+        "--lora_rank", type=int, default=None,
+        help="Whether to use LoRA with provided rank for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
     finetune_isic(args)
