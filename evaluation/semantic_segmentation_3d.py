@@ -19,10 +19,6 @@ DATASET_MAPPING_3D = {
 }
 
 
-def transform_labels(y):
-    return (y > 0).astype("float32")
-
-
 def check_lucchi():
     ckpt = "/home/nimcpape/Work/my_projects/medico-sam/semantic_segmentation/checkpoints/lucchi_3d_adapter_lora4"
     model = get_medico_sam_model("vit_b", device="cuda", use_sam3d=True, lora_rank=4, n_classes=2, image_size=512)
@@ -96,8 +92,6 @@ def main():
         is_multiclass=True,
         for_3d=True,
     )
-
-    # TODO: evaluation scripts
 
 
 if __name__ == "__main__":

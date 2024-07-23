@@ -1,23 +1,30 @@
+# duke_liver: {'liver': 0.914965613366452}
+
+
 import os
 from glob import glob
 from tqdm import tqdm
 
 import numpy as np
-import imageio.v3 as imageio
 
 from medico_sam.evaluation.evaluation import calculate_dice_score
 
 from train_nnunetv2 import DATASET_MAPPING_2D, DATASET_MAPPING_3D, NNUNET_ROOT
 
+from tukra.io import read_image
+
 
 # These class maps originate from the logic create at  "convert_<DATASET>.py"
 CLASS_MAPS = {
+    # 2d datasets
     "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
     "isic": {"skin_lesion": 1},
     "dca1": {"vessel": 1},
     "cbis_ddsm": {"mass": 1},
     "piccolo": {"polyp": 1},
     "drive": {"vessel": 1},
+    # 3d datasets
+    "duke_liver": {"liver": 1}
 }
 
 
@@ -40,16 +47,16 @@ def _evaluate_per_class_dice(gt, prediction, class_maps):
     return all_scores
 
 
-def evaluate_predictions(root_dir, dataset_name):
-    all_predictions = sorted(glob(os.path.join(root_dir, "predictionTs", "*.tif")))
-    all_gt = sorted(glob(os.path.join(root_dir, "labelsTs", "*.tif")))
+def evaluate_predictions(root_dir, dataset_name, is_3d=False):
+    all_predictions = sorted(glob(os.path.join(root_dir, "predictionTs", "*.nii.gz" if is_3d else "*.tif")))
+    all_gt = sorted(glob(os.path.join(root_dir, "labelsTs", "*.nii.gz" if is_3d else "*.tif")))
 
     assert len(all_predictions) == len(all_gt)
 
     dice_scores = []
     for prediction_path, gt_path in tqdm(zip(all_predictions, all_gt), total=len(all_gt)):
-        gt = imageio.imread(gt_path)
-        prediction = imageio.imread(prediction_path)
+        gt = read_image(gt_path, extension=".nii.gz" if is_3d else ".tif")
+        prediction = read_image(prediction_path, extension=".nii.gz" if is_3d else ".tif")
 
         assert gt.shape == prediction.shape
 
@@ -70,7 +77,9 @@ def evaluate_predictions(root_dir, dataset_name):
 def main(args):
     if args.dataset in DATASET_MAPPING_2D:
         dmap_base = DATASET_MAPPING_2D
+        is_3d = False
     elif args.dataset in DATASET_MAPPING_3D:
+        is_3d = True
         dmap_base = DATASET_MAPPING_3D
     else:
         raise ValueError(args.dataset)
@@ -78,7 +87,7 @@ def main(args):
     _, dataset_name = dmap_base[args.dataset]
 
     root_dir = os.path.join(NNUNET_ROOT, "test", dataset_name)
-    evaluate_predictions(root_dir, args.dataset)
+    evaluate_predictions(root_dir, args.dataset, is_3d)
 
 
 if __name__ == "__main__":

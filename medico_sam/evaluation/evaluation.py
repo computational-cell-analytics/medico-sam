@@ -37,7 +37,7 @@ def _run_evaluation_per_semantic_class(
         assert os.path.exists(pred_path), pred_path
 
         if for_3d:
-            from tukra.utils import read_image
+            from tukra.io import read_image
             gt = read_image(gt_path, ".nii.gz")
             gt = gt.transpose(2, 0, 1)
         else:

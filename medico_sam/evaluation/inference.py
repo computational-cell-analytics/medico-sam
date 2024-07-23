@@ -8,12 +8,12 @@ from skimage.measure import label as connected_components
 
 import torch
 
-from elf.io import open_file
 from torch_em.transform.raw import normalize
 from torch_em.util.segmentation import size_filter
 from torch_em.util.prediction import predict_with_halo
 
 from micro_sam import util
+from micro_sam.training.util import ConvertToSemanticSamInputs
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
 
 from segment_anything import SamPredictor
@@ -201,12 +201,13 @@ def _run_semantic_segmentation_for_image_3d(
         return x
 
     def prediction_function(net, inp):
-        masks = net(inp[0], multimask_output=True, image_size=image_size)["masks"]
+        convert_inputs = ConvertToSemanticSamInputs()
+        batched_inputs = convert_inputs(inp[0], torch.zeros_like(inp[0]))
+        batched_outputs = net(batched_inputs, multimask_output=True)
+        masks = torch.stack([out["masks"][0] for out in batched_outputs])
         masks = torch.argmax(masks, dim=1)
         return masks
 
-    # num_classes = model.sam_model.mask_decoder.num_multimask_outputs
-    image_size = patch_shape[-1]
     output = np.zeros(image.shape, dtype="float32")
     predict_with_halo(
         image, model, gpu_ids=[device],
@@ -253,7 +254,7 @@ def run_semantic_segmentation_3d(
             if image_key is None:
                 image = imageio.imread(image_path)
             else:
-                from tukra.utils import read_image
+                from tukra.io import read_image
                 image = read_image(image_path, ".nii.gz")
 
             if make_channels_first:
