@@ -1,10 +1,13 @@
 import os
 import argparse
+from glob import glob
 
 import torch
 
 from torch_em.data import MinInstanceSampler
-from torch_em.data.datasets.medical import get_duke_liver_loader
+from torch_em.data.datasets.util import update_kwargs_for_resize_trafo
+from torch_em import default_segmentation_dataset
+from torch_em.transform.label import BoundaryTransform, NoToBackgroundBoundaryTransform
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
@@ -13,6 +16,45 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 
 from medico_sam.transform.raw import RawResizeTrafoFor3dInputs
 from medico_sam.transform.label import LabelResizeTrafoFor3dInputs
+
+
+def get_mito_dataset(
+    paths,
+    patch_shape,
+    resize_inputs=False,
+    download=False,
+    raw_key="raw",
+    label_key="labels/mitochondria",
+    **kwargs,
+):
+    # image_paths, gt_paths = _get_duke_liver_paths(path=path, split=split, download=download)
+
+    if resize_inputs:
+        resize_kwargs = {"patch_shape": patch_shape, "is_rgb": False}
+        kwargs, patch_shape = update_kwargs_for_resize_trafo(
+            kwargs=kwargs, patch_shape=patch_shape, resize_inputs=resize_inputs, resize_kwargs=resize_kwargs
+        )
+
+    #kwargs["label_transform2"] = BoundaryTransform(add_binary_target=True)
+
+    dataset = default_segmentation_dataset(
+        raw_paths=paths,
+        raw_key=raw_key,
+        label_paths=paths,
+        label_key=label_key,
+        is_seg_dataset=True,
+        patch_shape=patch_shape,
+        **kwargs
+    )
+
+    return dataset
+
+
+def get_mito_loader(dataset: torch.utils.data.Dataset, batch_size, **loader_kwargs) -> torch.utils.data.DataLoader:
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, **loader_kwargs)
+    # monkey patch shuffle attribute to the loader
+    loader.shuffle = loader_kwargs.get("shuffle", False)
+    return loader
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -30,35 +72,54 @@ def get_dataloaders(patch_shape, data_path):
     """
     kwargs = {}
     kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
-    kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
+    kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape) #BoundaryTransform(add_binary_target=True) 
     kwargs["sampler"] = MinInstanceSampler()
-
-    num_workers = 16
-    train_loader = get_duke_liver_loader(
-        path=data_path,
+    data_paths = glob(os.path.join(data_path, "**", "*.h5"), recursive=True)
+    # filter out all combined - only needed for cristae
+    substring = "_combined.h5"
+    data_paths = [s for s in data_paths if substring not in s]
+    num_data = len(data_paths)
+    train_size = int(num_data * .8)
+    val_size = int(num_data * .2)  # Optional validation set
+    test_size = num_data - train_size - val_size
+    remaining = num_data - (train_size + val_size + test_size)
+    if remaining > 0:
+        val_size += remaining
+    data_split = {
+        "train": data_paths[:train_size],
+        "val": data_paths[train_size:train_size+val_size],
+        "test": data_paths[train_size+val_size:]
+    }
+    train_ds = get_mito_dataset(
+        paths=data_split["train"],
         patch_shape=patch_shape,
-        batch_size=2,
-        split="train",
-        num_workers=num_workers,
-        shuffle=True,
-        pin_memory=True,
         **kwargs
     )
-    val_loader = get_duke_liver_loader(
-        path=data_path,
+    val_ds = get_mito_dataset(
+        paths=data_split["val"],
         patch_shape=patch_shape,
-        batch_size=2,
-        split="val",
+        **kwargs
+    )
+    num_workers = 16
+    train_loader = get_mito_loader(
+        dataset=train_ds,
+        batch_size=1,
         num_workers=num_workers,
         shuffle=True,
         pin_memory=True,
-        **kwargs
+    )
+    val_loader = get_mito_loader(
+        dataset=val_ds,
+        batch_size=1,
+        num_workers=num_workers,
+        shuffle=True,
+        pin_memory=True,
     )
 
     return train_loader, val_loader
 
 
-def finetune_duke_liver(args):
+def finetune_mito(args):
     """Code for finetuning SAM on Duke Liver for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -66,8 +127,8 @@ def finetune_duke_liver(args):
     # training settings:
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
-    patch_shape = (32, 512, 512)  # the patch shape for training
-    num_classes = 2  # 1 background class and 1 semantic foreground class
+    patch_shape = (64, 512, 512)  # the patch shape for training
+    num_classes = 2  # 1 background class, 1 semantic foreground class
 
     lora_rank = 4 if args.use_lora else None
     freeze_encoder = True if lora_rank is None else False
@@ -92,8 +153,8 @@ def finetune_duke_liver(args):
     convert_inputs = ConvertToSemanticSamInputs()
 
     lora_str = "frozen" if lora_rank is None else f"lora{lora_rank}"
-    checkpoint_name = f"{args.model_type}_3d_{lora_str}_bs2_lr1e-4/duke_liver_semanticsam"
-    print(checkpoint_name)
+    checkpoint_name = f"{args.model_type}_3d_{lora_str}/bs1_ps64"
+    print(f"\n{args.save_root}/{checkpoint_name}\n")
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer(
@@ -124,9 +185,9 @@ def finetune_duke_liver(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the Duke Liver dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the Cryo EM dataset (mitochondria and cristae).")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/data/duke_liver",
+        "--input_path", "-i", default="/scratch-grete/projects/nim00007/data/mitochondria/cooper/fidi/",
         help="The filepath to the Duke Liver data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
@@ -156,10 +217,10 @@ def main():
         "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     parser.add_argument(
-        "--learning_rate", type=float, default=float(1e-4), help="Learning rate"
+        "--learning_rate", type=float, default=float(5e-4), help="Learning rate"
     )
     args = parser.parse_args()
-    finetune_duke_liver(args)
+    finetune_mito(args)
 
 
 if __name__ == "__main__":
