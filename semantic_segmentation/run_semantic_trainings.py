@@ -9,7 +9,7 @@ DATASETS = [
     # 2d datasets
     "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo",
     # 3d datasets
-    "btcv", "osic_pulmofib", "sega", "duke_liver"
+    # "btcv", "osic_pulmofib", "sega", "duke_liver"
 ]
 
 
@@ -22,13 +22,15 @@ def write_batch_script(
 #SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH -p grete-h100:shared
-#SBATCH -G H100:1
+#SBATCH -p grete:shared
+#SBATCH -G A100:1
 #SBATCH -A gzz0001
 #SBATCH -c 16
+#SBATCH --constraint=80gb
 #SBATCH --job-name={os.path.split(_name)[-1]}
 
-source activate sam \n"""
+source ~/.bashrc
+micromamba activate sam \n"""
 
     # python script
     python_script = f"python {_name}.py "
@@ -112,7 +114,7 @@ def submit_slurm(args):
             "medico-sam-1g": "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt",
             "simplesam": "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
             # MedSAM's original model
-            "medsam": "/scratch/projects/nim00007/sam/models/medsam/medsam_vit_b.pth",
+            "medsam": "medsam/original/medsam_vit_b.pth",
         }
 
     lora_choices = [True, False]
@@ -121,7 +123,7 @@ def submit_slurm(args):
         script_name = script_combinations[per_dataset]
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(args.save_root, checkpoints[ckpt_name])
 
-        print(f"Running for {script_name} for experiment name '{ckpt_name}':")
+        print(f"Running for {script_name} for experiment name '{ckpt_name}'")
         write_batch_script(
             out_path=get_batch_script_names(tmp_folder),
             _name=script_name,
@@ -152,6 +154,8 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models")
     parser.add_argument("--iterations", default=None, type=int)
+
     parser.add_argument("--dry", action="store_true")
+
     args = parser.parse_args()
     main(args)

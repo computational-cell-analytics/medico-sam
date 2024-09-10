@@ -10,7 +10,6 @@ from torch_em.data.datasets import util
 from torch_em.data import MinInstanceSampler
 
 import micro_sam.training as sam_training
-from micro_sam.util import export_custom_sam_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
 from medico_sam.util import LinearWarmUpScheduler
@@ -130,15 +129,6 @@ def finetune_cbis_ddsm(args):
         dice_weight=0.8,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
-    if args.export_path is not None:
-        checkpoint_path = os.path.join(
-            "" if args.save_root is None else args.save_root, "checkpoints", checkpoint_name, "best.pt"
-        )
-        export_custom_sam_model(
-            checkpoint_path=checkpoint_path,
-            model_type=model_type,
-            save_path=args.export_path,
-        )
 
 
 def main():
@@ -158,10 +148,6 @@ def main():
     parser.add_argument(
         "--iterations", type=int, default=int(1e5),
         help="For how many iterations should the model be trained?"
-    )
-    parser.add_argument(
-        "--export_path", "-e",
-        help="Where to export the finetuned model to. The exported model can be used in the annotation tools."
     )
     parser.add_argument(
         "--freeze", type=str, nargs="+", default=None,
