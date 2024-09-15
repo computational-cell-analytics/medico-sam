@@ -57,7 +57,7 @@ SEMANTIC_CLASS_MAPS = {
         "OpticNrv_L": 25, "OpticNrv_R": 26, "Parotid_L": 27, "Parotid_R": 28, "Pituitary": 29, "SpinalCord": 30,
     },
     "toothfairy": {"mandibular_canal": 1},
-    "drive": {"vessel": 1}
+    "drive": {"retinal_vessel": 1}
 }
 
 MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib", "spider", "han-seg"]
