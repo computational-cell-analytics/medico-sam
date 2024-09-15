@@ -66,7 +66,7 @@ ROOT = "/scratch/share/cidas/cca/data"
 
 
 def get_dataset_paths(dataset_name, split="test"):
-    assert dataset_name in VALID_DATASETS
+    assert dataset_name in VALID_DATASETS, dataset_name
 
     if dataset_name in DEXT:
         dexts = DEXT[dataset_name]
