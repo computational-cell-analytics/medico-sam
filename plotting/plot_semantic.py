@@ -3,57 +3,69 @@ import matplotlib.pyplot as plt
 
 RESULTS = {
     "oimhs": {
-        "sam-fft": [0.972, 0.987, 0.83, 0.87],
-        "medicosam-fft": [0.977, 0.988, 0.843, 0.871],
-        "medsam-fft": [0.976, 0.988, 0.84, 0.875],
-        "simplesam-fft": [0.974, 0.988, 0.847, 0.873],
-        "sam-lora": [0.947, 0.984, 0.802, 0.837],
-        "medicosam-lora": [0.941, 0.979, 0.745, 0.83],
+        "sam-fft": [0.9803, 0.9898, 0.862, 0.8767],
+        "sam-lora": [0.9684, 0.9862, 0.8148, 0.8552],
+        "medicosam-fft": [0.9793, 0.9879, 0.8395, 0.8725],
+        "medicosam-lora": [0.9607, 0.9837, 0.79, 0.8372],
+        "medsam-fft": [0.9742, 0.9871, 0.837, 0.8661],
+        "medsam-lora": [0.9319, 0.9785, 0.7309, 0.8039],
+        "simplesam-fft": [0.9797, 0.9882, 0.8401, 0.8762],
+        "simplesam-lora": [0.9536, 0.9812, 0.7752, 0.8315],
         "nnunet": [0.998, 0.993, 0.912, 0.876]
     },
     "dca1": {
-        "sam-fft": [0.739],
-        "medicosam-fft": [0.775],
-        "medsam-fft": [0.793],
-        "simplesam-fft": [0.782],
-        "sam-lora": [0.747],
-        "medicosam-lora": [0.725],
+        "sam-fft": [0.7982],
+        "sam-lora": [0.7884],
+        "medicosam-fft": [0.7933],
+        "medicosam-lora": [0.7809],
+        "medsam-fft": [0.7762],
+        "medsam-lora": [0.7652],
+        "simplesam-fft": [0.7932],
+        "simplesam-lora": [0.7753],
         "nnunet": [0.802],
     },
     "isic": {
-        "sam-fft": [0.855],
-        "medicosam-fft": [0.87],
-        "medsam-fft": [0.879],
-        "simplesam-fft": [0.885],
-        "sam-lora": [0.885],
-        "medicosam-lora": [0.876],
+        "sam-fft": [0.8817],
+        "sam-lora": [0.8906],
+        "medicosam-fft": [0.9024],
+        "medicosam-lora": [0.8937],
+        "medsam-fft": [0.8985],
+        "medsam-lora": [0.8812],
+        "simplesam-fft": [0.8908],
+        "simplesam-lora": [0.8863],
         "nnunet": [0.833],
     },
-    "piccolo": {
-        "sam-fft": [0.461],
-        "medicosam-fft": [0.59],
-        "medsam-fft": [0.764],
-        "simplesam-fft": [0.755],
-        "sam-lora": [0.601],
-        "medicosam-lora": [0.466],
-        "nnunet": [0.5],  # TODO
-    },
     "drive": {
-        "sam-fft": [0.739],
-        "medicosam-fft": [0.787],
-        "medsam-fft": [0.758],
-        "simplesam-fft": [0.781],
-        "sam-lora": [0.733],
-        "medicosam-lora": [0.669],
+        "sam-fft": [0.7936],
+        "sam-lora": [0.7903],
+        "medicosam-fft": [0.7553],
+        "medicosam-lora": [0.7136],
+        "medsam-fft": [0.6413],
+        "medsam-lora": [0.6799],
+        "simplesam-fft": [0.7315],
+        "simplesam-lora": [0.7146],
         "nnunet": [0.814],
     },
+    "piccolo": {
+        "sam-fft": [0.835],
+        "sam-lora": [0.7185],
+        "medicosam-fft": [0.7505],
+        "medicosam-lora": [0.7561],
+        "medsam-fft": [0.7631],
+        "medsam-lora": [0.6499],
+        "simplesam-fft": [0.7535],
+        "simplesam-lora": [0.7264],
+        "nnunet": [0.6868],
+    },
     "cbis_ddsm": {
-        "sam-fft": [0.316],
-        "medicosam-fft": [0.448],
-        "medsam-fft": [0.477],
-        "simplesam-fft": [0.423],
-        "sam-lora": [0.429],
-        "medicosam-lora": [0.429],
+        "sam-fft": [0.5201],
+        "sam-lora": [0.57],
+        "medicosam-fft": [0.5197],
+        "medicosam-lora": [0.5154],
+        "medsam-fft": [0.5338],
+        "medsam-lora": [0.4755],
+        "simplesam-fft": [0.5431],
+        "simplesam-lora": [0.4745],
         "nnunet": [0.425],
     },
 }
@@ -71,11 +83,13 @@ DATASET_MAPS = {
 
 MODEL_MAPS = {
     "sam-fft": "SAM",
-    "medicosam-fft": "MedicoSAM",
-    "simplesam-fft": "Simple FT*",
-    "medsam-fft": "MedSAM",
     "sam-lora": "SAM\n(LoRA)",
+    "medicosam-fft": "MedicoSAM",
     "medicosam-lora": "MedicoSAM\n(LoRA)",
+    "medsam-fft": "MedSAM",
+    "medsam-lora": "MedSAM\n(LoRA)",
+    "simplesam-fft": "Simple FT",
+    "simplesam-lora": "Simple FT\n(LoRA)",
     "nnunet": "nnU-Net",
 }
 
@@ -96,7 +110,10 @@ def _make_per_dataset_plot():
     axes = axes.flatten()
 
     for ax, (dataset, methods) in zip(axes, percentage_results.items()):
-        methods_list = ["sam-fft", "sam-lora", "medsam-fft", "simplesam-fft", "medicosam-fft", "medicosam-lora"]
+        methods_list = [
+            "sam-fft", "sam-lora", "medsam-fft", "medsam-lora", "simplesam-fft",
+            "simplesam-lora", "medicosam-fft", "medicosam-lora"
+        ]
         percentage_scores = [methods[_method] for _method in methods_list]
 
         ax.bar(methods_list, percentage_scores, color="#F0746E", edgecolor="grey")
@@ -145,12 +162,15 @@ def _plot_absolute_mean_per_experimet():
 
     absolute_means = {method: method_sums[method] / method_counts[method] for method in method_sums}
 
-    methods = ["nnunet", "sam-fft", "sam-lora", "medsam-fft", "simplesam-fft", "medicosam-fft", "medicosam-lora"]
+    methods = [
+        "nnunet", "sam-fft", "sam-lora", "medsam-fft", "medsam-lora",
+        "simplesam-fft", "simplesam-lora", "medicosam-fft", "medicosam-lora"
+    ]
     means = [absolute_means[_method] for _method in methods]
 
-    fig, ax = plt.subplots(figsize=(15, 10))
+    fig, ax = plt.subplots(figsize=(20, 10))
 
-    ax.bar(methods, means, color="#F0746E", edgecolor="grey")
+    bars = ax.bar(methods, means, color="#F0746E", edgecolor="grey")
 
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
@@ -158,14 +178,19 @@ def _plot_absolute_mean_per_experimet():
     ax.tick_params(axis='y', labelsize=16)
     ax.set_ylabel('Dice Similarity Coefficient', fontsize=16, fontweight="bold")
 
+    # NOTE: adds values on top of each bar
+    for bar, mean in zip(bars, means):
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, round(mean, 3), ha='center', va='bottom', fontsize=14)
+
     plt.savefig("./fig_1_semantic_segmentation_average.png")
     plt.savefig("./fig_1_semantic_segmentation_average.svg")
     plt.close()
 
 
 def main():
-    _make_per_dataset_plot()
-    # _plot_absolute_mean_per_experimet()
+    # _make_per_dataset_plot()
+    _plot_absolute_mean_per_experimet()
 
 
 main()
