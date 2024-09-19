@@ -33,7 +33,7 @@ def finetune_semantic_sam_2d(args):
         freeze=freeze_parts,
         flexible_load_checkpoint=True,
         num_multimask_outputs=num_classes,
-        peft_kwargs=peft_kwargs,
+        peft_kwargs=peft_kwargs if args.lora_rank is not None else None,
     )
     model.to(device)
 
@@ -85,7 +85,7 @@ def main():
         "-d", "--dataset", required=True, help="The name of medical dataset for semantic segmentation."
     )
     parser.add_argument(
-        "-i", "--input_path", default=None,
+        "-i", "--input_path", default="/scratch/share/cidas/cca/data",
         help="The filepath to the medical data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
@@ -113,6 +113,9 @@ def main():
     )
     parser.add_argument(
         "--dice_weight", type=float, default=1, help="The weight for dice loss with combined cross entropy loss."
+    )
+    parser.add_argument(
+        "--lr_scheduler", action="store_true", help="Whether to use linear warmup-based learning rate scheduler."
     )
     parser.add_argument
     args = parser.parse_args()

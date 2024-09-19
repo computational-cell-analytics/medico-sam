@@ -16,7 +16,7 @@ DATASETS = [
     # 2d datasets
     "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo",
     # 3d datasets
-    "btcv", "osic_pulmofib", "sega", "duke_liver"
+    # "btcv", "osic_pulmofib", "sega", "duke_liver"
 ]
 
 
@@ -39,6 +39,8 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         "raw_transform": sam_training.identity,
         "sampler": MinInstanceSampler(),
     }
+
+    data_path = os.path.join(data_path, dataset_name)
 
     if dataset_name == "oimhs":
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
