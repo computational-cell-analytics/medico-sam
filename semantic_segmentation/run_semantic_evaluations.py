@@ -4,13 +4,7 @@ import itertools
 import subprocess
 from datetime import datetime
 
-
-DATASETS = [
-    # 2d datasets
-    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo",
-    # 3d datasets
-    # "btcv", "osic_pulmofib", "sega", "duke_liver"
-]
+from common import DATASETS
 
 
 def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lora, dry):
