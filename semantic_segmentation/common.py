@@ -81,26 +81,24 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "sega":
         kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
         kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
-        train_loader = medical.get_sega_loader(path=data_path, batch_size=1, data_choice="Rider", **kwargs)
+        train_loader = medical.get_sega_loader(path=data_path, batch_size=2, data_choice="Rider", **kwargs)
         val_loader = medical.get_sega_loader(path=data_path, batch_size=1, data_choice="Dongyang", **kwargs)
 
     else:
-        train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.nii.gz")))
-        train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.nii.gz")))
-        val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.nii.gz")))
-        val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.nii.gz")))
-
         if dataset_name == "btcv":
-            data_path = ...
-            print("The paths to 'OSIC PulmoFib' dataset has been hard-coded at the moment.")
+            data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset301_BTCV/"
+            print("The paths to 'BTCV' dataset has been hard-coded at the moment.")
 
             kwargs["raw_transform"] = RawTrafoFor3dInputs()
             kwargs["sampler"] = MinInstanceSampler(min_num_instances=8)
-
-            # TODO: check and fix
+            ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
+            ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
+                ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
+            )
+            ds_kwargs = {"raw_key": "data", "label_key": "data", "ndim": 3, "is_seg_dataset": True, **kwargs}
 
         elif dataset_name == "osic_pulmofib":
-            data_path = ...
+            data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset303_OSICPulmoFib/"
             print("The paths to 'OSIC PulmoFib' dataset has been hard-coded at the moment.")
 
             kwargs["raw_transform"] = RawTrafoFor3dInputs()
@@ -108,44 +106,33 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
             ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
                 ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
             )
-
-            # TODO: check and fix
+            ds_kwargs = {"raw_key": "data", "label_key": "data", "ndim": 3, "is_seg_dataset": True, **ds_kwargs}
 
         elif dataset_name == "cbis_ddsm":
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset206_CBISDDSM/"
             print("The paths to 'CBIS-DDSM' dataset has been hard-coded at the moment.")
-
-            train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_train_0000.tif")))
-            train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_train.tif")))
-            val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.tif")))
-            val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.tif")))
 
             kwargs.pop("resize_inputs")
             ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
             ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
                 ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
             )
-
-            # TODO: check and fix
+            ds_kwargs = {"raw_key": None, "label_key": None, "is_seg_dataset": False, **ds_kwargs}
 
         else:
             raise ValueError
 
+        _extension = ".tif" if dataset_name == "cbis_ddsm" else ".nii.gz"
+        train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", f"*_train_0000{_extension}")))
+        train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", f"*_train{_extension}")))
+        val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", f"*_val_0000{_extension}")))
+        val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", f"*_val{_extension}")))
+
         train_dataset = torch_em.default_segmentation_dataset(
-            raw_paths=train_image_paths,
-            raw_key=None,
-            label_paths=train_gt_paths,
-            label_key=None,
-            is_seg_dataset=False,
-            **ds_kwargs
+            raw_paths=train_image_paths, label_paths=train_gt_paths, **ds_kwargs
         )
         val_dataset = torch_em.default_segmentation_dataset(
-            raw_paths=val_image_paths,
-            raw_key=None,
-            label_paths=val_gt_paths,
-            label_key=None,
-            is_seg_dataset=False,
-            **ds_kwargs
+            raw_paths=val_image_paths, label_paths=val_gt_paths, **ds_kwargs
         )
 
         train_loader = torch_em.get_data_loader(dataset=train_dataset, batch_size=8, **loader_kwargs)

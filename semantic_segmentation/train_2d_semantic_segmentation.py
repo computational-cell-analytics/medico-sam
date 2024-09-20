@@ -51,8 +51,6 @@ def finetune_semantic_sam_2d(args):
     train_loader, val_loader = get_dataloaders(
         patch_shape=patch_shape, data_path=args.input_path, dataset_name=args.dataset
     )
-    train_loader.dataset.max_sampling_attempts = 10000
-    val_loader.dataset.max_sampling_attempts = 10000
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
@@ -117,7 +115,6 @@ def main():
     parser.add_argument(
         "--lr_scheduler", action="store_true", help="Whether to use linear warmup-based learning rate scheduler."
     )
-    parser.add_argument
     args = parser.parse_args()
     finetune_semantic_sam_2d(args)
 
