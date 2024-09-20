@@ -3,63 +3,16 @@ import argparse
 
 import torch
 
-from torch_em.data import MinInstanceSampler
-from torch_em.data.datasets.medical import get_sega_loader
-
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
 from micro_sam.models.sam_3d_wrapper import get_sam_3d_model
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from medico_sam.transform.raw import RawResizeTrafoFor3dInputs
-from medico_sam.transform.label import LabelResizeTrafoFor3dInputs
+from common import get_dataloaders, get_num_classes
 
 
-def get_dataloaders(patch_shape, data_path):
-    """This returns the sega data loaders implemented in torch_em:
-    https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/sega.py
-    It will not automatically download the SegA data. Take a look at `get_sega_dataset`.
-
-    NOTE: The step below is done to obtain the SegA dataset in splits.
-
-    Note: to replace this with another data loader you need to return a torch data loader
-    that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
-    The labels have to be in a label mask instance segmentation format.
-    I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
-    Important: the ID 0 is reseved for background, and the IDs must be consecutive
-    """
-    kwargs = {}
-    kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
-    kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
-    kwargs["sampler"] = MinInstanceSampler()
-
-    num_workers = 16
-    train_loader = get_sega_loader(
-        path=data_path,
-        patch_shape=patch_shape,
-        batch_size=1,
-        data_choice="Rider",
-        num_workers=num_workers,
-        shuffle=True,
-        pin_memory=True,
-        **kwargs
-    )
-    val_loader = get_sega_loader(
-        path=data_path,
-        patch_shape=patch_shape,
-        batch_size=1,
-        data_choice="Dongyang",
-        num_workers=num_workers,
-        shuffle=True,
-        pin_memory=True,
-        **kwargs
-    )
-
-    return train_loader, val_loader
-
-
-def finetune_sega(args):
-    """Code for finetuning SAM on SegA for semantic segmentation."""
+def finetune_duke_liver(args):
+    """Code for finetuning SAM on Duke Liver for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -67,7 +20,7 @@ def finetune_sega(args):
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     patch_shape = (32, 512, 512)  # the patch shape for training
-    num_classes = 2  # 1 background class and 1 semantic foreground classes
+    num_classes = get_num_classes(args.dataset)  # 1 background class and 1 semantic foreground class
 
     lora_rank = 4 if args.use_lora else None
     freeze_encoder = True if lora_rank is None else False
@@ -92,10 +45,10 @@ def finetune_sega(args):
     convert_inputs = ConvertToSemanticSamInputs()
 
     lora_str = "frozen" if lora_rank is None else f"lora{lora_rank}"
-    checkpoint_name = f"{args.model_type}_3d_{lora_str}/sega_semanticsam"
+    checkpoint_name = f"{args.model_type}_3d_{lora_str}/duke_liver_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
-    trainer = sam_training.semantic_sam_trainer.SemanticSamTrainer(
+    trainer = sam_training.SemanticSamTrainer(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
@@ -109,6 +62,7 @@ def finetune_sega(args):
         convert_inputs=convert_inputs,
         num_classes=num_classes,
         compile_model=False,
+        dice_weight=args.dice_weight,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:
@@ -123,10 +77,10 @@ def finetune_sega(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the SegA dataset.")
+    parser = argparse.ArgumentParser(description="Finetune Segment Anything for the Duke Liver dataset.")
     parser.add_argument(
-        "--input_path", "-i", default="/scratch/share/cidas/cca/data/sega",
-        help="The filepath to the SegA data. If the data does not exist yet it will be downloaded."
+        "--input_path", "-i", default="/scratch/share/cidas/cca/data/duke_liver",
+        help="The filepath to the Duke Liver data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(
         "--model_type", "-m", default="vit_b",
@@ -155,7 +109,7 @@ def main():
         "--use_lora", action="store_true", help="Whether to use LoRA for finetuning SAM for semantic segmentation."
     )
     args = parser.parse_args()
-    finetune_sega(args)
+    finetune_duke_liver(args)
 
 
 if __name__ == "__main__":
