@@ -76,6 +76,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", "*_val_0000.tif")))
         val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", "*_val.tif")))
 
+        kwargs.pop("resize_inputs")
         ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
         ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
             ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
