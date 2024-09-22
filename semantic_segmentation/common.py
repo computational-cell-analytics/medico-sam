@@ -20,6 +20,8 @@ DATASETS = [
     # "btcv", "osic_pulmofib", "sega", "duke_liver"
 ]
 
+MODELS_ROOT = "/scratch/share/cidas/cca/models"
+
 
 def get_dataloaders(patch_shape, data_path, dataset_name):
     """This returns the medical data loaders implemented in torch_em:

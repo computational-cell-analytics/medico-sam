@@ -4,10 +4,7 @@ import itertools
 import subprocess
 from datetime import datetime
 
-from common import DATASETS
-
-
-MODELS_ROOT = "/scratch/share/cidas/cca/models"
+from common import DATASETS, MODELS_ROOT
 
 
 def write_batch_script(
@@ -69,13 +66,10 @@ micromamba activate sam \n"""
 def get_batch_script_names(tmp_folder):
     tmp_folder = os.path.expanduser(tmp_folder)
     os.makedirs(tmp_folder, exist_ok=True)
-
     script_name = "medico-sam-finetuning"
-
     dt = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
     tmp_name = script_name + dt
     batch_script = os.path.join(tmp_folder, f"{tmp_name}.sh")
-
     return batch_script
 
 
@@ -139,8 +133,6 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models")
     parser.add_argument("--iterations", type=int, default=int(5e4))
-
     parser.add_argument("--dry", action="store_true")
-
     args = parser.parse_args()
     main(args)
