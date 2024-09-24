@@ -38,7 +38,7 @@ def finetune_semantic_sam_2d(args):
     model.to(device)
 
     # all the stuff we need for training
-    learning_rate = 1e-5
+    learning_rate = 1e-4
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
     mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
 
@@ -110,7 +110,7 @@ def main():
         help="Whether to use LoRA with provided rank for finetuning SAM for semantic segmentation."
     )
     parser.add_argument(
-        "--dice_weight", type=float, default=1, help="The weight for dice loss with combined cross entropy loss."
+        "--dice_weight", type=float, default=0.5, help="The weight for dice loss with combined cross entropy loss."
     )
     parser.add_argument(
         "--lr_scheduler", action="store_true", help="Whether to use linear warmup-based learning rate scheduler."

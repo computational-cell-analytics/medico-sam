@@ -46,31 +46,34 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
 
     if dataset_name == "oimhs":
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
-        kwargs["raw_transform"] = sam_training.identity,
+        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_oimhs_loader(path=data_path, batch_size=8, split="train", **kwargs)
         val_loader = medical.get_oimhs_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
+        train_loader.dataset.max_sampling_attempts = 10000
+        val_loader.dataset.max_sampling_attempts = 10000
+
     elif dataset_name == "dca1":
         kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity,
+        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_dca1_loader(path=data_path, batch_size=8, split="train", n_samples=400, **kwargs)
         val_loader = medical.get_dca1_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
     elif dataset_name == "drive":
         kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity,
+        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_drive_loader(path=data_path, batch_size=8, split="train", n_samples=400, **kwargs)
         val_loader = medical.get_drive_loader(path=data_path, batch_size=1, split="val", n_samples=15, **kwargs)
 
     elif dataset_name == "isic":
         kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity,
+        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_isic_loader(path=data_path, batch_size=8, split="train", **kwargs)
         val_loader = medical.get_isic_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
     elif dataset_name == "piccolo":
         kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity,
+        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_piccolo_loader(path=data_path, batch_size=8, split="train", **kwargs)
         val_loader = medical.get_piccolo_loader(path=data_path, batch_size=1, split="validation", **kwargs)
 
@@ -115,6 +118,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
             print("The paths to 'CBIS-DDSM' dataset has been hard-coded at the moment.")
 
             kwargs.pop("resize_inputs")
+            kwargs["label_transform"] = LabelTrafoToBinary()
             ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
             ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
                 ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
