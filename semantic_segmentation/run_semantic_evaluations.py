@@ -4,7 +4,7 @@ import itertools
 import subprocess
 from datetime import datetime
 
-from common import DATASETS, MODELS_ROOT
+from common import DATASETS
 
 
 def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lora, dry):
