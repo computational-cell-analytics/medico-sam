@@ -13,11 +13,11 @@ from medico_sam.transform.raw import RawTrafoFor3dInputs, RawResizeTrafoFor3dInp
 from medico_sam.transform.label import LabelTrafoToBinary, LabelResizeTrafoFor3dInputs
 
 
-DATASETS = [
-    # 2d datasets
-    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo",
-    # 3d datasets
-    # "btcv", "osic_pulmofib", "sega", "duke_liver"
+DATASETS_2D = [
+    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo"
+]
+DATASETS_3D = [
+    "btcv", "osic_pulmofib", "sega", "duke_liver"
 ]
 
 MODELS_ROOT = "/scratch/share/cidas/cca/models"

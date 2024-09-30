@@ -2,40 +2,63 @@ import argparse
 
 import torch
 
-from micro_sam.models import peft_sam
 import micro_sam.training as sam_training
+from micro_sam.models import peft_sam, sam_3d_wrapper
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
-from common import get_dataloaders, get_num_classes
+from common import get_dataloaders, get_num_classes, DATASETS_2D, DATASETS_3D
 
 
 def finetune_semantic_sam_2d(args):
-    """Code for finetuning SAM on medical datasets for 2d semantic segmentation."""
+    """Code for finetuning SAM on medical datasets for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # training settings:
+    dataset = args.dataset
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
-    patch_shape = (1024, 1024)  # the patch shape for training
     freeze_parts = args.freeze  # override this to freeze different parts of the model
-    num_classes = get_num_classes(args.dataset)  # 1 background class and 'n' semantic foreground classes
-    peft_kwargs = {
-        "peft_module": peft_sam.LoRASurgery,  # the chosen PEFT method (LoRA) for finetuning
-        "rank": args.lora_rank,  # whether to use LoRA for finetuning and the rank used for LoRA
-    }
+    num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
 
-    # get the trainable segment anything model
-    model = sam_training.get_trainable_sam_model(
-        model_type=model_type,
-        device=device,
-        checkpoint_path=checkpoint_path,
-        freeze=freeze_parts,
-        flexible_load_checkpoint=True,
-        num_multimask_outputs=num_classes,
-        peft_kwargs=peft_kwargs if args.lora_rank is not None else None,
-    )
-    model.to(device)
+    if dataset in DATASETS_2D:
+        patch_shape = (1024, 1024)  # the patch shape for 2d semantic segmentation training
+        peft_kwargs = {
+            "peft_module": peft_sam.LoRASurgery,  # the chosen PEFT method (LoRA) for finetuning
+            "rank": args.lora_rank,  # whether to use LoRA for finetuning and the rank used for LoRA
+        }
+        # get the trainable segment anything model
+        model = sam_training.get_trainable_sam_model(
+            model_type=model_type,
+            device=device,
+            checkpoint_path=checkpoint_path,
+            freeze=freeze_parts,
+            flexible_load_checkpoint=True,
+            num_multimask_outputs=num_classes,
+            peft_kwargs=peft_kwargs if args.lora_rank is not None else None,
+        )
+        model.to(device)
+        checkpoint_name = f"{args.model_type}/{dataset}_semanticsam"
+
+    elif dataset in DATASETS_3D:
+        patch_shape = (32, 512, 512)  # the patch shape for 3d semantic segmentation training
+        model = sam_3d_wrapper.get_sam_3d_model(
+            device=device,
+            n_classes=num_classes,
+            image_size=patch_shape[-1],
+            checkpoint_path=checkpoint_path,
+            freeze_encoder=args.lora_rank is None and "image_encoder" in freeze_parts,
+            lora_rank=args.lora_rank,
+        )
+        model.to(device)
+        if args.lora_rank is not None:
+            ft_name = f"lora_{args.lora_rank}"
+        else:
+            ft_name = "frozen" if "image_encoder" in freeze_parts else "all"
+        checkpoint_name = f"{model_type}_3d_{ft_name}/{args.dataset}_semanticsam"
+
+    else:
+        raise ValueError(f"'{dataset}' is not a valid dataset name.")
 
     # all the stuff we need for training
     learning_rate = 1e-4
@@ -48,14 +71,10 @@ def finetune_semantic_sam_2d(args):
     else:
         scheduler = mscheduler
 
-    train_loader, val_loader = get_dataloaders(
-        patch_shape=patch_shape, data_path=args.input_path, dataset_name=args.dataset
-    )
+    train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
-
-    checkpoint_name = f"{args.model_type}/{args.dataset}_semanticsam"
 
     # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
     trainer = sam_training.SemanticSamTrainer(
@@ -95,12 +114,10 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e5),
-        help="For how many iterations should the model be trained?"
+        "--iterations", type=int, default=int(1e5), help="For how many iterations should the model be trained?"
     )
     parser.add_argument(
-        "--freeze", type=str, nargs="+", default=None,
-        help="Which parts of the model to freeze for finetuning."
+        "--freeze", type=str, nargs="+", default=None, help="Which parts of the model to freeze for finetuning."
     )
     parser.add_argument(
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."

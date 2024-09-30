@@ -4,7 +4,7 @@ import itertools
 import subprocess
 from datetime import datetime
 
-from common import DATASETS, MODELS_ROOT
+from common import DATASETS_2D, DATASETS_3D, MODELS_ROOT
 
 
 def write_batch_script(
@@ -27,7 +27,7 @@ source ~/.bashrc
 micromamba activate sam \n"""
 
     # python script
-    python_script = "python train_2d_semantic_segmentation.py "
+    python_script = "python train_semantic_segmentation.py "
 
     # name of the dataset
     python_script += f"-d {dataset_name} "
@@ -73,15 +73,13 @@ def get_batch_script_names(tmp_folder):
     return batch_script
 
 
-def submit_slurm(args):
+def submit_slurm(args, tmp_folder):
     "Submit python script that needs gpus with given inputs on a slurm node."
-    tmp_folder = "./gpu_jobs"
-
     if args.dataset is not None:
-        assert args.dataset in DATASETS
+        assert args.dataset in [*DATASETS_2D, *DATASETS_3D]
         datasets = [args.dataset]
     else:
-        datasets = DATASETS
+        datasets = [*DATASETS_2D, *DATASETS_3D]
 
     if args.checkpoint is not None:
         checkpoints = {"experiment": args.checkpoint}
@@ -98,32 +96,44 @@ def submit_slurm(args):
         }
 
     lora_choices = [True, False]
-
     for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(MODELS_ROOT, checkpoints[ckpt_name])
 
         print(f"Running for experiment name '{ckpt_name}'")
-        write_batch_script(
-            out_path=get_batch_script_names(tmp_folder),
-            dataset_name=per_dataset,
-            save_root=os.path.join(
-                args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
-            ),
-            checkpoint=checkpoint,
-            ckpt_name=ckpt_name,
-            use_lora=use_lora,
-            dry=args.dry,
-            iterations=args.iterations,
-        )
+        if per_dataset in DATASETS_2D:
+            write_batch_script(
+                out_path=get_batch_script_names(tmp_folder),
+                dataset_name=per_dataset,
+                save_root=os.path.join(
+                    args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
+                ),
+                checkpoint=checkpoint,
+                ckpt_name=ckpt_name,
+                use_lora=use_lora,
+                dry=args.dry,
+                iterations=args.iterations,
+            )
+        else:  # 3d semantic segmentation
+            write_batch_script(
+                out_path=get_batch_script_names(tmp_folder),
+                dataset_name=per_dataset,
+                save_root=os.path.join(
+                    args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
+                ),
+                checkpoint=checkpoint,
+                ckpt_name=ckpt_name,
+                use_lora=use_lora,
+                dry=args.dry,
+                iterations=args.iterations,
+            )
 
 
 def main(args):
-    try:
-        shutil.rmtree("./gpu_jobs")
-    except FileNotFoundError:
-        pass
+    tmp_folder = "./gpu_jobs"
+    if os.path.exists(tmp_folder):
+        shutil.rmtree(tmp_folder)
 
-    submit_slurm(args)
+    submit_slurm(args, tmp_folder)
 
 
 if __name__ == "__main__":
