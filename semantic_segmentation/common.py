@@ -92,7 +92,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     else:
         if dataset_name == "btcv":
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset301_BTCV/"
-            print("The paths to 'BTCV' dataset has been hard-coded at the moment.")
+            print("The path to 'BTCV' dataset has been hard-coded at the moment.")
 
             kwargs["raw_transform"] = RawTrafoFor3dInputs()
             kwargs["sampler"] = MinInstanceSampler(min_num_instances=8)
@@ -104,7 +104,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
 
         elif dataset_name == "osic_pulmofib":
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset303_OSICPulmoFib/"
-            print("The paths to 'OSIC PulmoFib' dataset has been hard-coded at the moment.")
+            print("The path to 'OSIC PulmoFib' dataset has been hard-coded at the moment.")
 
             kwargs["raw_transform"] = RawTrafoFor3dInputs()
             ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
@@ -115,7 +115,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
 
         elif dataset_name == "cbis_ddsm":
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset206_CBISDDSM/"
-            print("The paths to 'CBIS-DDSM' dataset has been hard-coded at the moment.")
+            print("The path to 'CBIS-DDSM' dataset has been hard-coded at the moment.")
 
             kwargs.pop("resize_inputs")
             kwargs["label_transform"] = LabelTrafoToBinary()
@@ -124,6 +124,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
                 ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
             )
             ds_kwargs = {"raw_key": None, "label_key": None, "is_seg_dataset": False, **ds_kwargs}
+            ds_kwargs["patch_shape"] = patch_shape
 
         else:
             raise ValueError
