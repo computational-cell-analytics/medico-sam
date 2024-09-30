@@ -4,7 +4,6 @@ from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
 import imageio.v3 as imageio
-from skimage.transform import resize
 from skimage.measure import label as connected_components
 
 import torch
@@ -207,6 +206,7 @@ def _run_semantic_segmentation_for_image_3d(
     resize_transform = ResizeLongestSideInputs(target_shape=(512, 512))
     image = resize_transform(image)
 
+    # Custom prepared function to infer per tile.
     def prediction_function(net, inp):
         convert_inputs = ConvertToSemanticSamInputs()
         batched_inputs = convert_inputs(inp[0], torch.zeros_like(inp[0]))
@@ -227,6 +227,7 @@ def _run_semantic_segmentation_for_image_3d(
         prediction_function=prediction_function
     )
 
+    # Lastly, we resize the predictions back to the original shape.
     output = resize_transform._convert_transformed_inputs_to_original_shape(output)
 
     # save the segmentations
