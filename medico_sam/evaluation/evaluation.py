@@ -97,7 +97,6 @@ def run_evaluation_per_semantic_class(
     dice_scores = _run_evaluation_per_semantic_class(
         gt_paths, prediction_paths, semantic_class_id,
         verbose=verbose, is_multiclass=is_multiclass, for_3d=for_3d,
-
     )
 
     results = pd.DataFrame.from_dict({"dice": [np.mean(dice_scores)]})
