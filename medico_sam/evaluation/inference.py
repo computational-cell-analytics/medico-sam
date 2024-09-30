@@ -228,7 +228,7 @@ def _run_semantic_segmentation_for_image_3d(
     )
 
     # Lastly, we resize the predictions back to the original shape.
-    output = resize_transform._convert_transformed_inputs_to_original_shape(output)
+    output = resize_transform.convert_transformed_inputs_to_original_shape(output)
 
     # save the segmentations
     imageio.imwrite(prediction_path, output, compression="zlib")
