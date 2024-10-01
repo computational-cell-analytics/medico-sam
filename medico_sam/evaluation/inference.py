@@ -11,6 +11,7 @@ import torch
 from torch_em.transform.raw import normalize
 from torch_em.util.segmentation import size_filter
 from torch_em.util.prediction import predict_with_halo
+from torch_em.transform.generic import ResizeLongestSideInputs
 
 from micro_sam import util
 from micro_sam.training.util import ConvertToSemanticSamInputs
@@ -192,6 +193,7 @@ def _run_semantic_segmentation_for_image_3d(
     patch_shape: Tuple[int, int, int],
     halo: Tuple[int, int, int],
 ):
+    # (duke_liver) dice: 0.64835
     device = next(model.parameters()).device
     block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
 
@@ -200,6 +202,11 @@ def _run_semantic_segmentation_for_image_3d(
         x = np.stack([x] * 3)
         return x
 
+    # First, we reshape the YX dimension for 3d inputs
+    resize_transform = ResizeLongestSideInputs(target_shape=(512, 512))
+    image = resize_transform(image)
+
+    # Custom prepared function to infer per tile.
     def prediction_function(net, inp):
         convert_inputs = ConvertToSemanticSamInputs()
         batched_inputs = convert_inputs(inp[0], torch.zeros_like(inp[0]))
@@ -210,11 +217,18 @@ def _run_semantic_segmentation_for_image_3d(
 
     output = np.zeros(image.shape, dtype="float32")
     predict_with_halo(
-        image, model, gpu_ids=[device],
-        block_shape=block_shape, halo=halo,
-        preprocess=preprocess, output=output,
+        input_=image,
+        model=model,
+        gpu_ids=[device],
+        block_shape=block_shape,
+        halo=halo,
+        preprocess=preprocess,
+        output=output,
         prediction_function=prediction_function
     )
+
+    # Lastly, we resize the predictions back to the original shape.
+    output = resize_transform.convert_transformed_inputs_to_original_shape(output)
 
     # save the segmentations
     imageio.imwrite(prediction_path, output, compression="zlib")
@@ -226,7 +240,7 @@ def run_semantic_segmentation_3d(
     prediction_dir: Union[str, os.PathLike],
     semantic_class_map: Dict[str, int],
     patch_shape: Tuple[int, int, int] = (32, 512, 512),
-    halo: Tuple[int, int, int] = (6, 64, 64),
+    halo: Tuple[int, int, int] = (8, 0, 0),
     image_key: Optional[str] = None,
     is_multiclass: bool = False,
     make_channels_first: bool = False,
