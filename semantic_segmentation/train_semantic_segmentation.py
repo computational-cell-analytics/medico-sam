@@ -47,14 +47,14 @@ def finetune_semantic_sam_2d(args):
             n_classes=num_classes,
             image_size=patch_shape[-1],
             checkpoint_path=checkpoint_path,
-            freeze_encoder=args.lora_rank is None and "image_encoder" in freeze_parts,
+            freeze_encoder=args.lora_rank is None and (freeze_parts and "image_encoder" in freeze_parts),
             lora_rank=args.lora_rank,
         )
         model.to(device)
         if args.lora_rank is not None:
             ft_name = f"lora_{args.lora_rank}"
         else:
-            ft_name = "frozen" if "image_encoder" in freeze_parts else "all"
+            ft_name = "frozen" if (freeze_parts and "image_encoder" in freeze_parts) else "all"
         checkpoint_name = f"{model_type}_3d_{ft_name}/{args.dataset}_semanticsam"
 
     else:
