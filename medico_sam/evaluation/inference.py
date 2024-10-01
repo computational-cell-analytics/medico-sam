@@ -186,6 +186,7 @@ def run_semantic_segmentation(
             )
 
 
+@torch.no_grad()
 def _run_semantic_segmentation_for_image_3d(
     model: torch.nn.Module,
     image: np.ndarray,
