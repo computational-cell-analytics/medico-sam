@@ -6,6 +6,7 @@ import torch_em
 from torch_em.data.datasets import util
 from torch_em.data import MinInstanceSampler
 from torch_em.data.datasets import medical
+from torch_em.transform.augmentation import get_augmentations
 
 import micro_sam.training as sam_training
 
@@ -78,7 +79,6 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         val_loader = medical.get_piccolo_loader(path=data_path, batch_size=1, split="validation", **kwargs)
 
     elif dataset_name == "duke_liver":
-        from torch_em.transform.augmentation import get_augmentations
         kwargs["transform"] = get_augmentations(
             ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
         )
@@ -94,23 +94,33 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         val_loader = medical.get_sega_loader(path=data_path, batch_size=1, data_choice="Dongyang", **kwargs)
 
     else:
+        kwargs.pop("resize_inputs")
+
         if dataset_name == "btcv":
+            # TODO: the patches look inverted, need to double check what's going on.
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset301_BTCV/"
             print("The path to 'BTCV' dataset has been hard-coded at the moment.")
 
+            kwargs["transform"] = get_augmentations(
+                ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
+            )
             kwargs["raw_transform"] = RawTrafoFor3dInputs()
             kwargs["sampler"] = MinInstanceSampler(min_num_instances=8)
             ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
             ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
                 ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
             )
-            ds_kwargs = {"raw_key": "data", "label_key": "data", "ndim": 3, "is_seg_dataset": True, **kwargs}
+            ds_kwargs = {"raw_key": "data", "label_key": "data", "ndim": 3, "is_seg_dataset": True, **ds_kwargs}
 
         elif dataset_name == "osic_pulmofib":
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset303_OSICPulmoFib/"
             print("The path to 'OSIC PulmoFib' dataset has been hard-coded at the moment.")
 
-            kwargs["raw_transform"] = RawTrafoFor3dInputs()
+            kwargs["transform"] = get_augmentations(
+                ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
+            )
+            kwargs["raw_transform"] = RawTrafoFor3dInputs(switch_last_axes=True)
+            kwargs["label_transform"] = LabelTrafoToBinary(switch_last_axes=True)
             ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
             ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
                 ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
@@ -121,7 +131,6 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
             data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset206_CBISDDSM/"
             print("The path to 'CBIS-DDSM' dataset has been hard-coded at the moment.")
 
-            kwargs.pop("resize_inputs")
             kwargs["label_transform"] = LabelTrafoToBinary()
             ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
             ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(

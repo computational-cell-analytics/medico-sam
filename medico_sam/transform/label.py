@@ -3,12 +3,21 @@ from math import ceil, floor
 
 
 class LabelTrafoToBinary:
+    def __init__(self, switch_last_axes=False):
+        self.switch_last_axes = switch_last_axes
+
     def _binarise_labels(self, labels):
         labels = (labels > 0).astype(labels.dtype)
         return labels
 
+    def _switch_last_axes_for_labels(self, labels):
+        labels = labels.transpose(0, 2, 1)
+        return labels
+
     def __call__(self, labels):
         labels = self._binarise_labels(labels)
+        if self.switch_last_axes:
+            labels = self._switch_last_axes_for_labels(labels)
         return labels
 
 
@@ -39,6 +48,6 @@ class LabelResizeTrafoFor3dInputs(LabelTrafoToBinary):
         )
 
         if self.switch_last_axes:
-            labels = labels.transpose(0, 2, 1)
+            labels = self._switch_last_axes_for_labels(labels)
 
         return labels
