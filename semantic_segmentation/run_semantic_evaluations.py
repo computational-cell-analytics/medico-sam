@@ -4,13 +4,7 @@ import itertools
 import subprocess
 from datetime import datetime
 
-
-DATASETS = [
-    # 2d datasets
-    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo",
-    # 3d datasets
-    # "btcv", "osic_pulmofib", "sega", "duke_liver"
-]
+from common import DATASETS
 
 
 def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lora, dry):
@@ -65,13 +59,10 @@ micromamba activate sam \n"""
 def get_batch_script_names(tmp_folder):
     tmp_folder = os.path.expanduser(tmp_folder)
     os.makedirs(tmp_folder, exist_ok=True)
-
     script_name = "medico-sam-evaluation"
-
     dt = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
     tmp_name = script_name + dt
     batch_script = os.path.join(tmp_folder, f"{tmp_name}.sh")
-
     return batch_script
 
 
@@ -119,8 +110,6 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models/semantic_sam")
-
     parser.add_argument("--dry", action="store_true")
-
     args = parser.parse_args()
     main(args)

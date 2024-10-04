@@ -73,6 +73,7 @@ def main():
         image_size=512
     )
     model = load_model(args.checkpoint, device="cuda", model=model)
+    model.eval()
 
     inference.run_semantic_segmentation_3d(
         model=model,

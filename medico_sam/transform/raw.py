@@ -5,6 +5,9 @@ from torch_em.transform.raw import normalize
 
 
 class RawTrafoFor3dInputs:
+    def __init__(self, switch_last_axes=False):
+        self.switch_last_axes = switch_last_axes
+
     def _normalize_inputs(self, raw):
         raw = normalize(raw)
         raw = raw * 255
@@ -14,18 +17,25 @@ class RawTrafoFor3dInputs:
         raw = np.stack([raw] * 3, axis=0)
         return raw
 
+    def _switch_last_axes_for_inputs(self, raw):
+        raw = raw.transpose(0, 1, 3, 2)
+        return raw
+
     def __call__(self, raw):
         raw = self._normalize_inputs(raw)
         raw = self._set_channels_for_inputs(raw)
+        if self.switch_last_axes:
+            raw = self._switch_last_axes_for_inputs(raw)
         return raw
 
 
 # for 3d volumes like SegA
 class RawResizeTrafoFor3dInputs(RawTrafoFor3dInputs):
-    def __init__(self, desired_shape, padding="constant"):
+    def __init__(self, desired_shape, padding="constant", switch_last_axes=False):
         super().__init__()
         self.desired_shape = desired_shape
         self.padding = padding
+        self.switch_last_axes = switch_last_axes
 
     def __call__(self, raw):
         raw = self._normalize_inputs(raw)
@@ -46,5 +56,8 @@ class RawResizeTrafoFor3dInputs(RawTrafoFor3dInputs):
         )
 
         raw = self._set_channels_for_inputs(raw)
+
+        if self.switch_last_axes:
+            raw = self._switch_last_axes_for_inputs(raw)
 
         return raw
