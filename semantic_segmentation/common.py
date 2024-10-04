@@ -78,8 +78,12 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         val_loader = medical.get_piccolo_loader(path=data_path, batch_size=1, split="validation", **kwargs)
 
     elif dataset_name == "duke_liver":
-        kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
-        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
+        from torch_em.transform.augmentation import get_augmentations
+        kwargs["transform"] = get_augmentations(
+            ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
+        )
+        kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
+        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
         train_loader = medical.get_duke_liver_loader(path=data_path, batch_size=2, split="train", **kwargs)
         val_loader = medical.get_duke_liver_loader(path=data_path, batch_size=1, split="val", **kwargs)
 

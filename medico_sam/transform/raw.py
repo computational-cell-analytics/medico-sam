@@ -22,10 +22,11 @@ class RawTrafoFor3dInputs:
 
 # for 3d volumes like SegA
 class RawResizeTrafoFor3dInputs(RawTrafoFor3dInputs):
-    def __init__(self, desired_shape, padding="constant"):
+    def __init__(self, desired_shape, padding="constant", switch_last_axes=False):
         super().__init__()
         self.desired_shape = desired_shape
         self.padding = padding
+        self.switch_last_axes = switch_last_axes
 
     def __call__(self, raw):
         raw = self._normalize_inputs(raw)
@@ -46,5 +47,8 @@ class RawResizeTrafoFor3dInputs(RawTrafoFor3dInputs):
         )
 
         raw = self._set_channels_for_inputs(raw)
+
+        if self.switch_last_axes:
+            raw = raw.transpose(0, 1, 3, 2)
 
         return raw

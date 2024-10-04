@@ -3,20 +3,25 @@ from math import ceil, floor
 
 
 class LabelTrafoToBinary:
-    def __call__(self, labels):
+    def _binarise_labels(self, labels):
         labels = (labels > 0).astype(labels.dtype)
+        return labels
+
+    def __call__(self, labels):
+        labels = self._binarise_labels(labels)
         return labels
 
 
 # for 3d volumes like SegA
-class LabelResizeTrafoFor3dInputs:
-    def __init__(self, desired_shape, padding="constant"):
+class LabelResizeTrafoFor3dInputs(LabelTrafoToBinary):
+    def __init__(self, desired_shape, padding="constant", switch_last_axes=False):
         self.desired_shape = desired_shape
         self.padding = padding
+        self.switch_last_axes = switch_last_axes
 
     def __call__(self, labels):
         # binarize the samples
-        labels = (labels > 0).astype("float32")
+        labels = self._binarise_labels(labels)
 
         # let's pad the labels
         tmp_ddim = (
@@ -32,5 +37,8 @@ class LabelResizeTrafoFor3dInputs:
             ),
             mode=self.padding
         )
+
+        if self.switch_last_axes:
+            labels = labels.transpose(0, 2, 1)
 
         return labels
