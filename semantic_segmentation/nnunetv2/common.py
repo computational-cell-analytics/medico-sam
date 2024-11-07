@@ -11,7 +11,7 @@ NNUNET_ROOT = "/scratch/share/cidas/cca/nnUNetv2"
 
 def _get_paths(path, dataset, split):
     if dataset == "oimhs":
-        image_paths, gt_paths = medical.oimhs._get_oimhs_paths(path=path, split=split, download=False)
+        image_paths, gt_paths = medical.oimhs.get_oimhs_paths(path=path, split=split, download=False)
 
     elif dataset == "cbis_ddsm":
         if split == "val":
@@ -19,7 +19,7 @@ def _get_paths(path, dataset, split):
         else:
             chosen_split = split.title()
 
-        image_paths, gt_paths = medical.cbis_ddsm._get_cbis_ddsm_paths(
+        image_paths, gt_paths = medical.cbis_ddsm.get_cbis_ddsm_paths(
             path=path, split=chosen_split, task="Mass", tumour_type=None, download=True
         )
 
@@ -29,18 +29,18 @@ def _get_paths(path, dataset, split):
             image_paths, gt_paths = image_paths[:125], gt_paths[:125]
 
     elif dataset == "isic":
-        image_paths, gt_paths = medical.isic._get_isic_paths(path=path, split=split, download=False)
+        image_paths, gt_paths = medical.isic.get_isic_paths(path=path, split=split, download=False)
 
     elif dataset == "dca1":
-        image_paths, gt_paths = medical.dca1._get_dca1_paths(path=path, split=split, download=False)
+        image_paths, gt_paths = medical.dca1.get_dca1_paths(path=path, split=split, download=False)
 
     elif dataset == "drive":
-        image_paths, gt_paths = medical.drive._get_drive_paths(path=path, split=split, download=False)
+        image_paths, gt_paths = medical.drive.get_drive_paths(path=path, split=split, download=False)
 
     elif dataset == "piccolo":
         if split == "val":
             split = "validation"
-        image_paths, gt_paths = medical.piccolo._get_piccolo_paths(path=path, split=split, download=False)
+        image_paths, gt_paths = medical.piccolo.get_piccolo_paths(path=path, split=split, download=False)
 
     elif dataset == "btcv":
         image_paths, gt_paths = medical.btcv._get_raw_and_label_paths(path=path, anatomy=["Abdomen"])
@@ -54,10 +54,10 @@ def _get_paths(path, dataset, split):
             image_paths, gt_paths = image_paths[22:], gt_paths[22:]
 
     elif dataset == "amos":
-        image_paths, gt_paths = medical.amos._get_amos_paths(path=path, split=split, modality="MRI", download=False)
+        image_paths, gt_paths = medical.amos.get_amos_paths(path=path, split=split, modality="MRI", download=False)
 
     elif dataset == "osic_pulmofib":
-        image_paths, gt_paths = medical.osic_pulmofib._get_osic_pulmofib_paths(path=path, download=False)
+        image_paths, gt_paths = medical.osic_pulmofib.get_osic_pulmofib_paths(path=path, download=False)
 
         if split == "train":
             image_paths, gt_paths = image_paths[:75], gt_paths[:75]
@@ -76,10 +76,10 @@ def _get_paths(path, dataset, split):
         else:
             raise ValueError(split)
 
-        image_paths, gt_paths = medical.sega._get_sega_paths(path=path, data_choice=dchoice, download=False)
+        image_paths, gt_paths = medical.sega.get_sega_paths(path=path, data_choice=dchoice, download=False)
 
     elif dataset == "duke_liver":
-        image_paths, gt_paths = medical.duke_liver._get_duke_liver_paths(path=path, split=split, download=False)
+        image_paths, gt_paths = medical.duke_liver.get_duke_liver_paths(path=path, split=split, download=False)
 
     else:
         raise ValueError(dataset)
