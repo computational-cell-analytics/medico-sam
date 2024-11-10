@@ -9,7 +9,7 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 from common import get_dataloaders, get_num_classes, DATASETS_2D, DATASETS_3D
 
 
-def finetune_semantic_sam_2d(args):
+def finetune_semantic_sam(args):
     """Code for finetuning SAM on medical datasets for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -73,6 +73,16 @@ def finetune_semantic_sam_2d(args):
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
+    from torch_em.util.debug import check_loader
+    check_loader(train_loader, 8, plt=True, save_path=f"{dataset}_train.png")
+    check_loader(val_loader, 8, plt=True, save_path=f"{dataset}_val.png")
+
+    for x, y in train_loader:
+        print(torch.unique(x), torch.unique(y))
+        breakpoint()
+
+    breakpoint()
+
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
@@ -133,7 +143,7 @@ def main():
         "--lr_scheduler", action="store_true", help="Whether to use linear warmup-based learning rate scheduler."
     )
     args = parser.parse_args()
-    finetune_semantic_sam_2d(args)
+    finetune_semantic_sam(args)
 
 
 if __name__ == "__main__":
