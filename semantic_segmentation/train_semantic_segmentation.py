@@ -73,16 +73,6 @@ def finetune_semantic_sam(args):
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
-    from torch_em.util.debug import check_loader
-    check_loader(train_loader, 8, plt=True, save_path=f"{dataset}_train.png")
-    check_loader(val_loader, 8, plt=True, save_path=f"{dataset}_val.png")
-
-    for x, y in train_loader:
-        print(torch.unique(x), torch.unique(y))
-        breakpoint()
-
-    breakpoint()
-
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 

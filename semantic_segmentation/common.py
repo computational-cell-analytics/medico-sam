@@ -15,8 +15,7 @@ DATASETS_2D = [
 ]
 
 DATASETS_3D = [
-    "curvas", "osic_pulmofib", "sega", "duke_liver", "toothfairy",
-    "segthy", "oasis", "lgg_mri", "leg_3d_us", "micro_usp"
+    "curvas", "osic_pulmofib", "sega", "duke_liver", "toothfairy", "oasis", "lgg_mri", "leg_3d_us", "micro_usp"
 ]
 
 MODELS_ROOT = "/scratch/share/cidas/cca/models"
