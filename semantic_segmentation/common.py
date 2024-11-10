@@ -1,11 +1,7 @@
 import os
-from glob import glob
-from natsort import natsorted
 
-import torch_em
-from torch_em.data.datasets import util
-from torch_em.data import MinInstanceSampler
 from torch_em.data.datasets import medical
+from torch_em.data import MinInstanceSampler
 from torch_em.transform.augmentation import get_augmentations
 
 import micro_sam.training as sam_training
@@ -15,10 +11,11 @@ from medico_sam.transform.label import LabelTrafoToBinary, LabelResizeTrafoFor3d
 
 
 DATASETS_2D = [
-    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo"
+    "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo", "siim_acr", "hil_toothseg", "covid_qu_ex"
 ]
+
 DATASETS_3D = [
-    "btcv", "osic_pulmofib", "sega", "duke_liver"
+    "curvas", "osic_pulmofib", "sega", "duke_liver", "toothfairy", "oasis", "lgg_mri", "leg_3d_us", "micro_usp"
 ]
 
 MODELS_ROOT = "/scratch/share/cidas/cca/models"
@@ -31,8 +28,8 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     Note: to replace this with another data loader you need to return a torch data loader
     that retuns `x, y` tensors, where `x` is the image data and `y` are the labels.
     The labels have to be in a label mask instance segmentation format.
-    I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
-    Important: the ID 0 is reseved for background, and the IDs must be consecutive
+    i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
+    Important: the ID 0 is reseved for background, and the IDs must be consecutive.
     """
     kwargs = {
         "resize_inputs": True,
@@ -41,136 +38,136 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         "shuffle": True,
         "pin_memory": True,
         "sampler": MinInstanceSampler(),
+        "raw_transform": sam_training.identity,
+        "download": True,
     }
 
     data_path = os.path.join(data_path, dataset_name)
 
+    # 2D DATASETS
     if dataset_name == "oimhs":
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
-        kwargs["raw_transform"] = sam_training.identity
+        kwargs["transform"] = get_augmentations(ndim=2, transforms=["RandomHorizontalFlip"])
         train_loader = medical.get_oimhs_loader(path=data_path, batch_size=8, split="train", **kwargs)
         val_loader = medical.get_oimhs_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
         train_loader.dataset.max_sampling_attempts = 10000
         val_loader.dataset.max_sampling_attempts = 10000
 
-    elif dataset_name == "dca1":
-        kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity
-        train_loader = medical.get_dca1_loader(path=data_path, batch_size=8, split="train", n_samples=400, **kwargs)
-        val_loader = medical.get_dca1_loader(path=data_path, batch_size=1, split="val", **kwargs)
-
-    elif dataset_name == "drive":
-        kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity
-        train_loader = medical.get_drive_loader(path=data_path, batch_size=8, split="train", n_samples=400, **kwargs)
-        val_loader = medical.get_drive_loader(path=data_path, batch_size=1, split="val", n_samples=15, **kwargs)
-
     elif dataset_name == "isic":
         kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_isic_loader(path=data_path, batch_size=8, split="train", **kwargs)
         val_loader = medical.get_isic_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
+    elif dataset_name == "dca1":
+        kwargs["label_transform"] = LabelTrafoToBinary()
+        train_loader = medical.get_dca1_loader(path=data_path, batch_size=8, split="train", n_samples=400, **kwargs)
+        val_loader = medical.get_dca1_loader(path=data_path, batch_size=1, split="val", **kwargs)
+
+    elif dataset_name == "cbis_ddsm":
+        kwargs["label_transform"] = LabelTrafoToBinary()
+        train_loader = medical.get_cbis_ddsm_loader(path=data_path, batch_size=8, split="Train", task="Mass", **kwargs)
+        val_loader = medical.get_cbis_ddsm_loader(path=data_path, batch_size=1, split="Val", task="Mass", **kwargs)
+
+    elif dataset_name == "drive":
+        kwargs["label_transform"] = LabelTrafoToBinary()
+        train_loader = medical.get_drive_loader(path=data_path, batch_size=8, split="train", n_samples=400, **kwargs)
+        val_loader = medical.get_drive_loader(path=data_path, batch_size=1, split="val", n_samples=20, **kwargs)
+
     elif dataset_name == "piccolo":
         kwargs["label_transform"] = LabelTrafoToBinary()
-        kwargs["raw_transform"] = sam_training.identity
         train_loader = medical.get_piccolo_loader(path=data_path, batch_size=8, split="train", **kwargs)
         val_loader = medical.get_piccolo_loader(path=data_path, batch_size=1, split="validation", **kwargs)
 
-    elif dataset_name == "duke_liver":
-        kwargs["transform"] = get_augmentations(
-            ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
-        )
+    elif dataset_name == "siim_acr":
+        kwargs["label_transform"] = LabelTrafoToBinary()
+        kwargs["transform"] = get_augmentations(ndim=2, transforms=["RandomHorizontalFlip"])
+        train_loader = medical.get_siim_acr_loader(path=data_path, batch_size=8, split="train", **kwargs)
+        val_loader = medical.get_siim_acr_loader(path=data_path, batch_size=1, split="val", **kwargs)
+
+    elif dataset_name == "hil_toothseg":
+        kwargs["label_transform"] = LabelTrafoToBinary()
+        train_loader = medical.get_hil_toothseg_loader(path=data_path, batch_size=8, split="train", **kwargs)
+        val_loader = medical.get_hil_toothseg_loader(path=data_path, batch_size=1, split="val", **kwargs)
+
+    elif dataset_name == "covid_qu_ex":
+        kwargs["label_transform"] = LabelTrafoToBinary()
+        kwargs["transform"] = get_augmentations(ndim=2, transforms=["RandomHorizontalFlip"])
+        train_loader = medical.get_covid_qu_ex_loader(data_path, batch_size=8, split="train", task="lung", **kwargs)
+        val_loader = medical.get_covid_qu_ex_loader(data_path, batch_size=1, split="val", task="lung", **kwargs)
+
+    # 3D DATASETS
+    elif dataset_name == "curvas":
+        kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
+        kwargs["raw_transform"] = RawTrafoFor3dInputs()
+        kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
+        train_loader = medical.get_curvas_loader(path=data_path, batch_size=2, split="train", n_samples=20, **kwargs)
+        val_loader = medical.get_curvas_loader(path=data_path, batch_size=1, split="val", n_samples=10, **kwargs)
+
+    elif dataset_name == "osic_pulmofib":
+        kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
         kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
-        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
-        train_loader = medical.get_duke_liver_loader(path=data_path, batch_size=2, split="train", **kwargs)
-        val_loader = medical.get_duke_liver_loader(path=data_path, batch_size=1, split="val", **kwargs)
+        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(patch_shape, switch_last_axes=True, binary=False)
+        train_loader = medical.get_osic_pulmofib_loader(path=data_path, batch_size=2, split="train", **kwargs)
+        val_loader = medical.get_osic_pulmofib_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
     elif dataset_name == "sega":
+        kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
         kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
         kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
         train_loader = medical.get_sega_loader(path=data_path, batch_size=2, data_choice="Rider", **kwargs)
         val_loader = medical.get_sega_loader(path=data_path, batch_size=1, data_choice="Dongyang", **kwargs)
 
+    elif dataset_name == "duke_liver":
+        kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
+        kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
+        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
+        train_loader = medical.get_duke_liver_loader(path=data_path, batch_size=2, split="train", **kwargs)
+        val_loader = medical.get_duke_liver_loader(path=data_path, batch_size=1, split="val", **kwargs)
+
+    elif dataset_name == "toothfairy":
+        kwargs["raw_transform"] = RawTrafoFor3dInputs(switch_last_axes=True)
+        kwargs["label_transform"] = LabelTrafoToBinary(switch_last_axes=True)
+        train_loader = medical.get_toothfairy_loader(data_path, batch_size=2, split="train", version="v1", **kwargs)
+        val_loader = medical.get_toothfairy_loader(data_path, batch_size=1, split="val", version="v1", **kwargs)
+
+    elif dataset_name == "oasis":
+        kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
+        kwargs["raw_transform"] = RawTrafoFor3dInputs()
+        train_loader = medical.get_oasis_loader(path=data_path, batch_size=2, split="train", **kwargs)
+        val_loader = medical.get_oasis_loader(path=data_path, batch_size=1, split="val", **kwargs)
+
+    elif dataset_name == "lgg_mri":
+        kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
+        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
+        train_loader = medical.get_lgg_mri_loader(data_path, batch_size=2, split="train", channels="flair", **kwargs)
+        val_loader = medical.get_lgg_mri_loader(data_path, batch_size=1, split="val", channels="flair", **kwargs)
+
+    elif dataset_name == "leg_3d_us":
+        kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
+        train_loader = medical.get_leg_3d_us_loader(path=data_path, batch_size=2, split="train", **kwargs)
+        val_loader = medical.get_leg_3d_us_loader(path=data_path, batch_size=1, split="val", n_samples=10, **kwargs)
+
+    elif dataset_name == "micro_usp":
+        kwargs["raw_transform"] = RawResizeTrafoFor3dInputs(desired_shape=patch_shape)
+        kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
+        train_loader = medical.get_micro_usp_loader(path=data_path, batch_size=2, split="train", **kwargs)
+        val_loader = medical.get_micro_usp_loader(path=data_path, batch_size=1, split="val", n_samples=10, **kwargs)
+
     else:
-        kwargs.pop("resize_inputs")
-
-        if dataset_name == "btcv":
-            # TODO: the patches look inverted, need to double check what's going on.
-            data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset301_BTCV/"
-            print("The path to 'BTCV' dataset has been hard-coded at the moment.")
-
-            kwargs["transform"] = get_augmentations(
-                ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
-            )
-            kwargs["raw_transform"] = RawTrafoFor3dInputs()
-            kwargs["sampler"] = MinInstanceSampler(min_num_instances=8)
-            ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
-            ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
-                ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
-            )
-            ds_kwargs = {"raw_key": "data", "label_key": "data", "ndim": 3, "is_seg_dataset": True, **ds_kwargs}
-
-        elif dataset_name == "osic_pulmofib":
-            data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset303_OSICPulmoFib/"
-            print("The path to 'OSIC PulmoFib' dataset has been hard-coded at the moment.")
-
-            kwargs["transform"] = get_augmentations(
-                ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"]
-            )
-            kwargs["raw_transform"] = RawTrafoFor3dInputs(switch_last_axes=True)
-            kwargs["label_transform"] = LabelTrafoToBinary(switch_last_axes=True)
-            ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
-            ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
-                ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
-            )
-            ds_kwargs = {"raw_key": "data", "label_key": "data", "ndim": 3, "is_seg_dataset": True, **ds_kwargs}
-
-        elif dataset_name == "cbis_ddsm":
-            data_path = "/scratch/share/cidas/cca/nnUNetv2/nnUNet_raw/Dataset206_CBISDDSM/"
-            print("The path to 'CBIS-DDSM' dataset has been hard-coded at the moment.")
-
-            kwargs["label_transform"] = LabelTrafoToBinary()
-            ds_kwargs, loader_kwargs = util.split_kwargs(torch_em.default_segmentation_dataset, **kwargs)
-            ds_kwargs, patch_shape = util.update_kwargs_for_resize_trafo(
-                ds_kwargs, patch_shape, resize_inputs=True, resize_kwargs={"patch_shape": patch_shape, "is_rgb": False}
-            )
-            ds_kwargs = {"raw_key": None, "label_key": None, "is_seg_dataset": False, **ds_kwargs}
-            ds_kwargs["patch_shape"] = patch_shape
-
-        else:
-            raise ValueError
-
-        _extension = ".tif" if dataset_name == "cbis_ddsm" else ".nii.gz"
-        train_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", f"*_train_0000{_extension}")))
-        train_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", f"*_train{_extension}")))
-        val_image_paths = natsorted(glob(os.path.join(data_path, "imagesTr", f"*_val_0000{_extension}")))
-        val_gt_paths = natsorted(glob(os.path.join(data_path, "labelsTr", f"*_val{_extension}")))
-
-        train_dataset = torch_em.default_segmentation_dataset(
-            raw_paths=train_image_paths, label_paths=train_gt_paths, **ds_kwargs
-        )
-        val_dataset = torch_em.default_segmentation_dataset(
-            raw_paths=val_image_paths, label_paths=val_gt_paths, **ds_kwargs
-        )
-
-        train_loader = torch_em.get_data_loader(dataset=train_dataset, batch_size=8, **loader_kwargs)
-        val_loader = torch_em.get_data_loader(dataset=val_dataset, batch_size=1, **loader_kwargs)
+        raise ValueError(f"'{dataset_name}' is not a valid dataset name.")
 
     return train_loader, val_loader
 
 
 def get_num_classes(dataset_name):
-    if dataset_name == "btcv":
-        num_classes = 14
-    elif dataset_name == "oimhs":
+    if dataset_name in ["oimhs", "oasis"]:
         num_classes = 5
-    elif dataset_name == "osic_pulmofib":
+    elif dataset_name in ["osic_pulmofib", "curvas"]:
         num_classes = 4
     elif dataset_name in [
-        "piccolo", "cbis_ddsm", "dca1", "drive", "isic",  # 2d datasets
-        "duke_liver", "sega",  # 3d datasets
+        "piccolo", "cbis_ddsm", "dca1", "drive", "isic", "siim_acr", "hil_toothseg", "covid_qu_ex",  # 2d datasets
+        "duke_liver", "toothfairy", "sega", "segthy", "lgg_mri", "leg_3d_us", "micro_usp",  # 3d datasets
     ]:
         num_classes = 2
     else:

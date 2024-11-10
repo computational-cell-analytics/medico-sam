@@ -23,14 +23,16 @@ class LabelTrafoToBinary:
 
 # for 3d volumes like SegA
 class LabelResizeTrafoFor3dInputs(LabelTrafoToBinary):
-    def __init__(self, desired_shape, padding="constant", switch_last_axes=False):
+    def __init__(self, desired_shape, padding="constant", switch_last_axes=False, binary=True):
         self.desired_shape = desired_shape
         self.padding = padding
         self.switch_last_axes = switch_last_axes
+        self.binary = binary
 
     def __call__(self, labels):
-        # binarize the samples
-        labels = self._binarise_labels(labels)
+        if self.binary:
+            # binarize the samples
+            labels = self._binarise_labels(labels)
 
         # let's pad the labels
         tmp_ddim = (
