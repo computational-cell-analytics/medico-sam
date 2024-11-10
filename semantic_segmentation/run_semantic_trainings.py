@@ -48,7 +48,7 @@ micromamba activate sam \n"""
 
     # whether to use lora for finetuning for semantic segmentation
     if use_lora:
-        python_script += "--lora_rank 4 "
+        python_script += "--lora_rank 16 "
 
     # let's add the python script to the bash script
     batch_script += python_script
@@ -100,32 +100,18 @@ def submit_slurm(args, tmp_folder):
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(MODELS_ROOT, checkpoints[ckpt_name])
 
         print(f"Running for experiment name '{ckpt_name}'")
-        if per_dataset in DATASETS_2D:
-            write_batch_script(
-                out_path=get_batch_script_names(tmp_folder),
-                dataset_name=per_dataset,
-                save_root=os.path.join(
-                    args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
-                ),
-                checkpoint=checkpoint,
-                ckpt_name=ckpt_name,
-                use_lora=use_lora,
-                dry=args.dry,
-                iterations=args.iterations,
-            )
-        else:  # 3d semantic segmentation
-            write_batch_script(
-                out_path=get_batch_script_names(tmp_folder),
-                dataset_name=per_dataset,
-                save_root=os.path.join(
-                    args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
-                ),
-                checkpoint=checkpoint,
-                ckpt_name=ckpt_name,
-                use_lora=use_lora,
-                dry=args.dry,
-                iterations=args.iterations,
-            )
+        write_batch_script(
+            out_path=get_batch_script_names(tmp_folder),
+            dataset_name=per_dataset,
+            save_root=os.path.join(
+                args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
+            ),
+            checkpoint=checkpoint,
+            ckpt_name=ckpt_name,
+            use_lora=use_lora,
+            dry=args.dry,
+            iterations=args.iterations,
+        )
 
 
 def main(args):
