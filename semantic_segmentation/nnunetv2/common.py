@@ -26,9 +26,7 @@ def _get_paths(path, dataset, split):
         image_paths, gt_paths = medical.drive.get_drive_paths(path=path, split=split)
 
     elif dataset == "piccolo":
-        image_paths, gt_paths = medical.piccolo.get_piccolo_paths(
-            path=path, split="validation" if split == "val" else split,
-        )
+        image_paths, gt_paths = medical.piccolo.get_piccolo_paths(path, split="validation" if split == "val" else split)
 
     elif dataset == "siim_acr":
         image_paths, gt_paths = medical.siim_acr.get_siim_acr_paths(path=path, split=split)
