@@ -90,7 +90,7 @@ def finetune_semantic_sam(args):
         compile_model=False,
         dice_weight=args.dice_weight,
     )
-    trainer.fit(int(args.iterations))
+    trainer.fit(int(args.iterations), overwrite_training=False)
 
 
 def main():
