@@ -1,12 +1,15 @@
 import os
 from tqdm import tqdm
-from pathlib import Path
+from glob import glob
+from natsort import natsorted
 
 import pandas as pd
 
 import torch
 
 from micro_sam.evaluation.multi_dimensional_segmentation import segment_slices_from_ground_truth
+
+from medico_sam.evaluation.evaluation import run_evaluation_per_semantic_class
 
 from _util import _get_data_paths, _load_raw_and_label_volumes
 
@@ -29,15 +32,14 @@ def evaluate_interactive_3d(
     # HACK: testing it on first 200 (or fewer) samples
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
-    results = []
+    prediction_dir = os.path.join(output_folder, "interactive_segmentation_3d", f"{prompt_choice}")
+    os.makedirs(prediction_dir, exist_ok=True)
+
     for image_path, gt_path in tqdm(
         zip(image_paths, gt_paths), total=len(image_paths),
         desc=f"Run interactive segmentation in 3d with '{prompt_choice}'"
     ):
-        prediction_dir = os.path.join(output_folder, "interactive_segmentation_3d", f"{prompt_choice}")
-        os.makedirs(prediction_dir, exist_ok=True)
-
-        prediction_path = os.path.join(prediction_dir, f"{Path(image_path).stem}.tif")
+        prediction_path = os.path.join(prediction_dir, f"{os.path.basename(image_path).split('.')[0]}.tif")
         if os.path.exists(prediction_path):
             continue
 
@@ -51,7 +53,7 @@ def evaluate_interactive_3d(
             napari.run()
 
         # Segment using label propagation.
-        _, segmentation = segment_slices_from_ground_truth(
+        _ = segment_slices_from_ground_truth(
             volume=raw,
             ground_truth=labels,
             model_type=model_type,
@@ -59,17 +61,23 @@ def evaluate_interactive_3d(
             device=device,
             interactive_seg_mode=prompt_choice,
             min_size=10,
-            return_segmentation=True,
-            verbose=True,
+            projection="points_and_mask",  # TODO: should we play around with this parameter?
         )
 
-        breakpoint()
+    results = {}
+    for cname, cid in semantic_maps.items():
+        pred_paths = natsorted(glob(os.path.join(prediction_dir, "*.tif")))
 
-        per_vol_result = {}
-        results.append(per_vol_result)
+        result = run_evaluation_per_semantic_class(
+            gt_paths=gt_paths,
+            prediction_paths=pred_paths,
+            semantic_class_id=cid,
+            save_path=None,
+            for_3d=True,
+        )
+        results[cname] = result['dice'][0]
 
-    results = pd.concat(results)
-    results = results.groupby(results.index).mean()
+    results = pd.DataFrame.from_dict([results])
     results.to_csv(save_path)
 
 
@@ -93,7 +101,7 @@ def main():
         device=device,
         experiment_folder=args.experiment_folder,
         model_type=args.model_type,
-        prompt_choice="box" if args.box else "point",
+        prompt_choice="box" if args.box else "points",
         dataset_name=args.dataset,
         view=args.view,
     )

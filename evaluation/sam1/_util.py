@@ -16,8 +16,11 @@ def _load_raw_and_label_volumes(raw_path, label_path, ensure_8bit=True, channels
         if raw.max() > 255:
             raw = normalize(raw) * 255
 
-    if channels_first:
+    if channels_first:  # Ensure volumes are channels first.
         raw, label = raw.transpose(2, 0, 1), label.transpose(2, 0, 1)
+
+    # Ensure labels are integers.
+    label = label.astype("uint32")
 
     assert raw.shape == label.shape
 
