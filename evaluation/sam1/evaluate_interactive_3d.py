@@ -1,5 +1,4 @@
 import os
-import sys
 from tqdm import tqdm
 from pathlib import Path
 
@@ -9,12 +8,11 @@ import torch
 
 from micro_sam.evaluation.multi_dimensional_segmentation import segment_slices_from_ground_truth
 
-
-sys.path.append("..")
+from _util import _get_data_paths, _load_raw_and_label_volumes
 
 
 def evaluate_interactive_3d(
-    image_paths, gt_paths, device, experiment_folder, model_type, prompt_choice, dataset_name, view
+    input_path, device, experiment_folder, model_type, prompt_choice, dataset_name, view
 ):
     """Interactive segmentation scripts for benchmarking micro-sam.
     """
@@ -25,6 +23,11 @@ def evaluate_interactive_3d(
             f"Results for 3d interactive segmentation with '{prompt_choice}' are already stored at '{save_path}'."
         )
         return
+
+    image_paths, gt_paths, semantic_maps = _get_data_paths(path=input_path, dataset_name=dataset_name)
+
+    # HACK: testing it on first 200 (or fewer) samples
+    image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
     results = []
     for image_path, gt_path in tqdm(
@@ -38,9 +41,7 @@ def evaluate_interactive_3d(
         if os.path.exists(prediction_path):
             continue
 
-        # TODO: use tukra to load images.
-        raw = ...
-        labels = ...
+        raw, labels = _load_raw_and_label_volumes(raw_path=image_path, label_path=gt_path)
 
         if view:
             import napari
@@ -50,7 +51,7 @@ def evaluate_interactive_3d(
             napari.run()
 
         # Segment using label propagation.
-        per_vol_result = segment_slices_from_ground_truth(
+        _, segmentation = segment_slices_from_ground_truth(
             volume=raw,
             ground_truth=labels,
             model_type=model_type,
@@ -58,7 +59,13 @@ def evaluate_interactive_3d(
             device=device,
             interactive_seg_mode=prompt_choice,
             min_size=10,
+            return_segmentation=True,
+            verbose=True,
         )
+
+        breakpoint()
+
+        per_vol_result = {}
         results.append(per_vol_result)
 
     results = pd.concat(results)
@@ -67,25 +74,28 @@ def evaluate_interactive_3d(
 
 
 def main():
-    from util import get_dataset_paths, get_default_arguments
-    args = get_default_arguments()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--dataset", type=str, required=True)
+    parser.add_argument("-i", "--input_path", type=str, default="data")
+    parser.add_argument("-m", "--model_type", type=str, default="vit_b")
+    parser.add_argument("-e", "--experiment_folder", type=str, default="experiments")
 
-    image_paths, gt_paths, _ = get_dataset_paths(dataset_name=args.dataset, split="test")
+    parser.add_argument("--box", action="store_true")
+    parser.add_argument("--view", action="store_true")
+    args = parser.parse_args()
 
-    # HACK: testing it on first 200 (or fewer) samples
-    image_paths, gt_paths = image_paths[:200], gt_paths[:200]
-
+    print("Resource Name:", torch.cuda.get_device_name() if torch.cuda.is_available() else "CPU")
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     evaluate_interactive_3d(
-        image_paths=image_paths,
-        gt_paths=gt_paths,
+        input_path=args.input_path,
         device=device,
         experiment_folder=args.experiment_folder,
-        model_type=args.model,
+        model_type=args.model_type,
         prompt_choice="box" if args.box else "point",
         dataset_name=args.dataset,
-        view=False,
+        view=args.view,
     )
 
 
