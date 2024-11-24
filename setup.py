@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import runpy
 from distutils.core import setup
 
 
