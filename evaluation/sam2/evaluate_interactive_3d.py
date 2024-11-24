@@ -85,7 +85,7 @@ def main():
     parser.add_argument("-e", "--experiment_folder", type=str, default="experiments")
     parser.add_argument("-p", "--prompt_choice", type=str, default="box")
 
-    parser.add_argument("-iter", "--n_iterations", type=int, default=8)
+    parser.add_argument("-iter", "--n_iterations", type=int, default=1)
     parser.add_argument("--use_masks", action="store_true")
     parser.add_argument("--view", action="store_true")
     args = parser.parse_args()
