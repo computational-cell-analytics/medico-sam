@@ -56,9 +56,9 @@ def interactive_segmentation_for_2d_images(
         )
 
         # If the results have been computed already, it's not needed to re-run it again.
-        # if os.path.exists(csv_path):
-        #     print(pd.read_csv(csv_path))
-        #     return
+        if os.path.exists(csv_path):
+            print(pd.read_csv(csv_path))
+            return
 
         list_of_results = []
         prediction_folders = natsorted(glob(os.path.join(prediction_root, "iteration*")))
