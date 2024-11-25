@@ -62,7 +62,7 @@ SEMANTIC_CLASS_MAPS = {
 
 MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib", "spider", "han-seg"]
 
-ROOT = "/scratch/share/cidas/cca/data"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"
 
 
 def get_dataset_paths(dataset_name, split="test"):
@@ -214,7 +214,7 @@ def _export_multi_gpu_models(checkpoint_path, save_path):
 
 
 def _export_all_models():
-    root_dir = "/scratch/share/cidas/cca/models/"
+    root_dir = "/mnt/vast-nhr/projects/cidas/cca/models/"
 
     # generalist
     _export_multi_gpu_models(
