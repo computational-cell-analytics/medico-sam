@@ -11,7 +11,7 @@ from micro_sam.evaluation.multi_dimensional_segmentation import segment_slices_f
 
 from medico_sam.evaluation.evaluation import run_evaluation_per_semantic_class
 
-from _util import _get_data_paths, _load_raw_and_label_volumes
+from data_utils import _get_data_paths, _load_raw_and_label_volumes
 
 
 def evaluate_interactive_3d(

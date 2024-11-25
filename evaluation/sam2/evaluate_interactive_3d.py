@@ -1,5 +1,9 @@
 import os
 import sys
+from glob import glob
+from natsort import natsorted
+
+import pandas as pd
 
 import torch
 
@@ -7,7 +11,9 @@ from micro_sam import util
 
 from micro_sam2.evaluation import inference
 
-# from util import CHECKPOINT_PATHS
+from medico_sam.evaluation.evaluation import run_evaluation_per_semantic_class
+
+from sam2_utils import CHECKPOINT_PATHS
 
 
 sys.path.append("../sam1")
@@ -24,7 +30,7 @@ def interactive_segmentation_for_3d_images(
     view=False,
     use_masks=False,
 ):
-    from _util import _load_raw_and_label_volumes, _get_data_paths
+    from data_utils import _load_raw_and_label_volumes, _get_data_paths
 
     min_size = 10
     device = util.get_device()
@@ -34,7 +40,7 @@ def interactive_segmentation_for_3d_images(
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
     # First stage: Inference
-    for i, (image_path, gt_path) in enumerate(zip(image_paths, gt_paths), start=1):
+    for image_path, gt_path in zip(image_paths, gt_paths):
         raw, labels = _load_raw_and_label_volumes(raw_path=image_path, label_path=gt_path)
 
         if view:
@@ -66,13 +72,37 @@ def interactive_segmentation_for_3d_images(
 
     # Second stage: Evaluate the interactive segmentation for 3d.
     fname_list, label_list = [], []
-    for i, (image_path, gt_path) in enumerate(zip(image_paths, gt_paths), start=1):
+    for image_path, gt_path in zip(image_paths, gt_paths):
         raw, labels = _load_raw_and_label_volumes(raw_path=image_path, label_path=gt_path)
 
         fname_list.append(os.path.basename(image_path).split(".")[0])
         label_list.append(labels)
 
-    ...  # TODO: calculate dice score per semantic class
+    save_dir = os.path.join(
+        experiment_folder, "results", "iterative_prompting_" + ("with" if use_masks else "without") + "_mask"
+    )
+    save_path = os.path.join(save_dir, "start_with_" + ("box.csv" if start_with_box_prompt else "point.csv"))
+    if os.path.exists(save_path):
+        print(f"The results are already stored at '{save_path}'.")
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    results = {}
+    for cname, cid in semantic_maps.items():
+        pred_paths = natsorted(glob(os.path.join(prediction_root, "iteration0", "*.tif")))
+
+        result = run_evaluation_per_semantic_class(
+            gt_paths=gt_paths,
+            prediction_paths=pred_paths,
+            semantic_class_id=cid,
+            save_path=None,
+            for_3d=True,
+        )
+        results[cname] = result['dice'][0]
+
+    results = pd.DataFrame.from_dict([results])
+    results.to_csv(save_path)
+    print(results)
 
 
 def main():
