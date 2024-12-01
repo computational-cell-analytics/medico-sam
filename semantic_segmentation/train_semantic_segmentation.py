@@ -90,7 +90,7 @@ def finetune_semantic_sam(args):
         compile_model=False,
         dice_weight=args.dice_weight,
     )
-    trainer.fit(int(args.iterations))
+    trainer.fit(iterations=int(args.iterations), overwrite_training=False)
 
 
 def main():
@@ -99,7 +99,7 @@ def main():
         "-d", "--dataset", required=True, help="The name of medical dataset for semantic segmentation."
     )
     parser.add_argument(
-        "-i", "--input_path", default="/scratch/share/cidas/cca/data",
+        "-i", "--input_path", default="/mnt/vast-nhr/projects/cidas/cca/data",
         help="The filepath to the medical data. If the data does not exist yet it will be downloaded."
     )
     parser.add_argument(

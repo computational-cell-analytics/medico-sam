@@ -12,7 +12,7 @@ def write_batch_script(
 ):
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
-#SBATCH -t 2-00:00:00
+#SBATCH -t 4-00:00:00
 #SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -21,6 +21,7 @@ def write_batch_script(
 #SBATCH -A gzz0001
 #SBATCH -c 16
 #SBATCH --constraint=80gb
+#SBATCH --qos=96h
 #SBATCH --job-name=semsam_{dataset_name}
 
 source ~/.bashrc
@@ -75,11 +76,13 @@ def get_batch_script_names(tmp_folder):
 
 def submit_slurm(args, tmp_folder):
     "Submit python script that needs gpus with given inputs on a slurm node."
+    all_datasets = [*DATASETS_3D, *DATASETS_2D]
+
     if args.dataset is not None:
-        assert args.dataset in [*DATASETS_2D, *DATASETS_3D]
+        assert args.dataset in all_datasets
         datasets = [args.dataset]
     else:
-        datasets = [*DATASETS_2D, *DATASETS_3D]
+        datasets = all_datasets
 
     if args.checkpoint is not None:
         checkpoints = {"experiment": args.checkpoint}
@@ -127,8 +130,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
-    parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models")
-    parser.add_argument("--iterations", type=int, default=int(5e4))
+    parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models")
+    parser.add_argument("--iterations", type=int, default=int(1e4))
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)
