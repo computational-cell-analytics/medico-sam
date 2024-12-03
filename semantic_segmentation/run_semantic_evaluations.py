@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
-    parser.add_argument("-s", "--save_root", type=str, default="/scratch/share/cidas/cca/models/semantic_sam")
+    parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)

@@ -28,7 +28,7 @@ def _run_evaluation_per_semantic_class(
     for pred_path in tqdm(prediction_paths, desc="Evaluate predictions", disable=not verbose):
         image_id = os.path.split(pred_path)[-1]
         if for_3d:
-            image_id = image_id.split(".")[0][:-5]  # done to follow with the nnunet format
+            image_id = image_id.split(".")[0]
             gt_path = os.path.join(gt_dir, f"{image_id}.nii.gz")
         else:
             gt_path = os.path.join(gt_dir, image_id)
@@ -38,7 +38,7 @@ def _run_evaluation_per_semantic_class(
 
         if for_3d:
             from tukra.io import read_image
-            gt = read_image(gt_path, ".nii.gz")
+            gt = read_image(gt_path)
             gt = gt.transpose(2, 0, 1)
         else:
             gt = imageio.imread(gt_path)

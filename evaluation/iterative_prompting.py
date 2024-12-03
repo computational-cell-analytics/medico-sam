@@ -33,7 +33,7 @@ def main():
 
     start_with_box_prompt = args.box  # overwrite to start first iters' prompt with box instead of single point
 
-    # get the predictor to perform inference
+    # Get the predictor to perform inference
     predictor = get_medico_sam_model(
         model_type=args.model,
         checkpoint_path=args.checkpoint,
