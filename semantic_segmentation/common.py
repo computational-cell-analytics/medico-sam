@@ -178,11 +178,11 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
 def get_num_classes(dataset_name):
     if dataset_name in ["oimhs", "oasis"]:
         num_classes = 5
-    elif dataset_name in ["osic_pulmofib", "curvas"]:
+    elif dataset_name in ["osic_pulmofib", "curvas", "leg_3d_us"]:
         num_classes = 4
     elif dataset_name in [
         "piccolo", "cbis_ddsm", "dca1", "drive", "isic", "siim_acr", "hil_toothseg", "covid_qu_ex",  # 2d datasets
-        "duke_liver", "toothfairy", "sega", "segthy", "lgg_mri", "leg_3d_us", "micro_usp",  # 3d datasets
+        "duke_liver", "toothfairy", "sega", "segthy", "lgg_mri", "micro_usp",  # 3d datasets
     ]:
         num_classes = 2
     else:
