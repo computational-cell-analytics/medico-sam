@@ -46,13 +46,16 @@ def interactive_segmentation_for_2d_images(
     )
 
     # Evaluating the interactive segmentation results using iterative prompting.
-    result_folder = os.path.join(prediction_dir, "results")
-    os.makedirs(result_folder, exist_ok=True)
-
     for semantic_class_name, semantic_class_id in semantic_class_maps.items():
+        result_folder = os.path.join(
+            prediction_dir, "results", semantic_class_name,
+            "iterative_prompting_" + ("with" if use_masks else "without") + "_mask"
+        )
+        os.makedirs(result_folder, exist_ok=True)
+
         # Save the results in the experiment folder
         csv_path = os.path.join(
-            result_folder, "iterative_prompts_start_box.csv" if start_with_box else "iterative_prompts_start_point.csv"
+            result_folder, "iterative_prompts_start_" + ("box.csv" if start_with_box else "point.csv")
         )
 
         # If the results have been computed already, it's not needed to re-run it again.
@@ -100,8 +103,6 @@ def main():
     # HACK: testing it on first 200 (or fewer) samples
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
-    prediction_dir = os.path.join(args.experiment_folder, model_type, dataset_name)
-
     interactive_segmentation_for_2d_images(
         image_paths=image_paths,
         gt_paths=gt_paths,
@@ -111,7 +112,7 @@ def main():
         model_type=model_type,
         backbone=backbone,
         device=device,
-        prediction_dir=prediction_dir,
+        prediction_dir=args.experiment_folder,
         start_with_box=(args.prompt_choice == "box"),
         use_masks=args.use_masks,
     )

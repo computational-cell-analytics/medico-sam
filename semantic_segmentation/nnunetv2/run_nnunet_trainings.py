@@ -12,13 +12,13 @@ def write_batch_script(out_path, dataset_name, fold_choice, mode, dry):
     "Writing scripts with different nnUNet training and inference runs."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 4-00:00:00
-#SBATCH --mem 64G
+#SBATCH --mem 128G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
-#SBATCH -c 16
+#SBATCH -c 32
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
 #SBATCH -x ggpu[150,212]
@@ -32,9 +32,7 @@ micromamba activate nnunet \n"""
     python_script += f"-d {dataset_name} "  # name of the dataset.
     python_script += f"--fold {fold_choice} "  # the choice of nnunet fold to train.
     if mode is not None and isinstance(mode, list):
-        python_script += " ".join(mode) + " "  # choose either '--preprocess' / '--train' / '--predict'.
-
-    breakpoint()
+        python_script += " ".join(mode) + " "  # choose either '--preprocess' / '--train' / '--predict' (or multiple).
 
     # let's add the python script to the bash script
     batch_script += python_script
@@ -104,5 +102,5 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("--fold", type=str, default="0")
     parser.add_argument("--dry", action="store_true")
-    args, unknown_args = parser.parse_known_args()
+    args, unknown_args = parser.parse_known_args()  # we catch nnunet-related actions under 'unknown_args'.
     main(args, unknown_args)
