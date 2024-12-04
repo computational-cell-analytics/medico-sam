@@ -1,73 +1,41 @@
 import os
-import warnings
 import argparse
 
-import torch
+from tukra.training import nnunet
+from tukra.utils import nnunet_utils
+
+from _common import _get_paths, _get_per_dataset_items, DATA_ROOT
 
 
-NNUNET_ROOT = "/scratch/share/cidas/cca/nnUNetv2"
+NNUNET_ROOT = "/mnt/vast-nhr/projects/cidas/cca/nnUNetv2"
 
 DATASET_MAPPING_2D = {
     "oimhs": [201, "Dataset201_OIMHS"],
-    "isic": [203, "Dataset203_ISIC"],
-    "dca1": [204, "Dataset204_DCA1"],
-    "cbis_ddsm": [206, "Dataset206_CBISDDSM"],
-    "drive": [207, "Dataset207_DRIVE"],
-    "piccolo": [208, "Dataset208_PICCOLO"],
+    "isic": [202, "Dataset202_ISIC"],
+    "dca1": [203, "Dataset203_DCA1"],
+    "cbis_ddsm": [204, "Dataset204_CBISDDSM"],
+    "drive": [205, "Dataset205_DRIVE"],
+    "piccolo": [206, "Dataset206_PICCOLO"],
+    "siim_acr": [207, "Dataset207_SIIM_ACR"],
+    "hil_toothseg": [208, "Dataset208_HIL_ToothSeg"],
+    "covid_qu_ex": [209, "Dataset209_Covid_QU_EX"],
 }
 
 DATASET_MAPPING_3D = {
-    "btcv": [301, "Dataset301_BTCV"],
-    "osic_pulmofib": [303, "Dataset303_OSICPulmoFib"],
-    "sega": [304, "Dataset304_SegA"],
-    "duke_liver": [305, "Dataset305_DukeLiver"],
+    "curvas": [301, "Dataset301_Curvas"],
+    "osic_pulmofib": [302, "Dataset302_OSICPulmoFib"],
+    "sega": [303, "Dataset303_SegA"],
+    "duke_liver": [304, "Dataset304_DukeLiver"],
+    "toothfairy": [305, "Dataset305_ToothFairy"],
+    "oasis": [306, "Dataset306_OASIS"],
+    "lgg_mri": [307, "Dataset307_LGG_MRI"],
+    "leg_3d_us": [308, "Dataset308_Leg_3D_US"],
+    "micro_usp": [309, "Dataset309_MicroUSP"],
 }
 
 
-def declare_paths(nnunet_path: str):
-    """To let the system known of the path variables where the respective folders exist (important for all components)
-    """
-    warnings.warn(
-        "Make sure you have created the directories mentioned in this functions (relative to the root directory)"
-    )
-
-    os.environ["nnUNet_raw"] = os.path.join(nnunet_path, "nnUNet_raw")
-    os.environ["nnUNet_preprocessed"] = os.path.join(nnunet_path, "nnUNet_preprocessed")
-    os.environ["nnUNet_results"] = os.path.join(nnunet_path, "nnUNet_results")
-
-
-def preprocess_data(dataset_id):
-    # let's check the preprocessing first
-    cmd = f"nnUNetv2_plan_and_preprocess -d {dataset_id} -pl nnUNetPlannerResEncL --verify_dataset_integrity"
-    os.system(cmd)
-
-
-def train_nnunetv2(fold, dataset_name, dataset_id, dim):
-    _have_splits = os.path.exists(
-        os.path.join(NNUNET_ROOT, "nnUNet_preprocessed", dataset_name, "splits_final.json")
-    )
-    assert _have_splits, "The experiment expects you to create the splits yourself."
-
-    # train 2d / 3d_fullres nnUNet
-    gpus = torch.cuda.device_count()
-    cmd = f"nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train {dataset_id} {dim} {fold} -num_gpus {gpus} --c "
-    cmd += "-p nnUNetResEncUNetLPlans"
-    os.system(cmd)
-
-
-def predict_nnunetv2(fold, dataset_name, dataset_id, dim):
-    input_dir = os.path.join(NNUNET_ROOT, "test", dataset_name, "imagesTs")
-    assert os.path.exists(input_dir)
-
-    output_dir = os.path.join(NNUNET_ROOT, "test", dataset_name, "predictionTs")
-
-    cmd = f"nnUNetv2_predict -i {input_dir} -o {output_dir} -d {dataset_id} -c {dim} -f {fold} "
-    cmd += "-p nnUNetResEncUNetLPlans"
-    os.system(cmd)
-
-
 def main(args):
-    declare_paths(NNUNET_ROOT)
+    nnunet.declare_paths(NNUNET_ROOT)
 
     if args.dataset in DATASET_MAPPING_2D:
         dmap_base = DATASET_MAPPING_2D
@@ -76,18 +44,70 @@ def main(args):
         dmap_base = DATASET_MAPPING_3D
         dim = "3d_fullres"
     else:
-        raise ValueError(args.dataset)
+        raise ValueError(f"{args.dataset} is not a supported dataset.")
 
-    dataset_id, dataset_name = dmap_base[args.dataset]
+    dataset_id, nnunet_dataset_name = dmap_base[args.dataset]
+
+    def _get_paths_per_dataset(split):
+        image_paths, label_paths = _get_paths(
+            path=os.path.join(DATA_ROOT, args.dataset), dataset=args.dataset, split=split
+        )
+        return image_paths, label_paths
 
     if args.preprocess:
-        preprocess_data(dataset_id=dataset_id)
+        train_image_paths, train_label_paths = _get_paths_per_dataset(split="train")
+        val_image_paths, val_label_paths = _get_paths_per_dataset(split="val")
+
+        (
+            file_suffix, transfer_mode, dataset_json_template, preprocess_inputs, preprocess_labels, keys
+        ) = _get_per_dataset_items(
+            dataset=args.dataset,
+            nnunet_dataset_name=nnunet_dataset_name,
+            train_id_count=len(train_image_paths),
+            val_id_count=len(val_image_paths),
+        )
+
+        kwargs = {
+            "dataset_name": nnunet_dataset_name,
+            "file_suffix": file_suffix,
+            "transfer_mode": transfer_mode,
+            "preprocess_inputs": preprocess_inputs,
+            "preprocess_labels": preprocess_labels,
+            "ensure_unique": True if args.dataset in ["curvas", "leg_3d_us", "oasis"] else False,
+            "keys": keys,
+        }
+
+        train_ids = nnunet_utils.convert_dataset_for_nnunet_training(
+            image_paths=train_image_paths, gt_paths=train_label_paths, split="train", **kwargs
+        )
+        val_ids = nnunet_utils.convert_dataset_for_nnunet_training(
+            image_paths=val_image_paths, gt_paths=val_label_paths, split="val", **kwargs
+        )
+
+        nnunet_utils.create_json_files(
+            dataset_name=nnunet_dataset_name,
+            file_suffix=file_suffix,
+            dataset_json_template=dataset_json_template,
+            train_ids=train_ids,
+            val_ids=val_ids,
+        )
+
+        nnunet.preprocess_data(dataset_id=dataset_id)
 
     if args.train:
-        train_nnunetv2(fold=args.fold, dataset_name=dataset_name, dataset_id=dataset_id, dim=dim)
+        # TODO: train 1 fold as a test to see if everything works fine for inference.
+        # once the training run for 1 fold is done, we go ahead for training other folds.
+        nnunet.train_nnunetv2(fold=args.fold, dataset_name=nnunet_dataset_name, dataset_id=dataset_id, dim=dim)
 
     if args.predict:
-        predict_nnunetv2(fold=args.fold, dataset_name=dataset_name, dataset_id=dataset_id, dim=dim)
+        test_image_paths, test_label_paths = _get_paths_per_dataset(split="test")
+        nnunet_utils.convert_dataset_for_nnunet_training(
+            image_paths=test_image_paths, gt_paths=test_label_paths, split="test", **kwargs
+        )
+
+        nnunet.predict_nnunetv2(fold=args.fold, dataset_name=nnunet_dataset_name, dataset_id=dataset_id, dim=dim)
+
+    print("The process has finished.")
 
 
 if __name__ == "__main__":
