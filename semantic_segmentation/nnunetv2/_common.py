@@ -107,7 +107,6 @@ def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_
 
     elif dataset == "drive":
         file_suffix, transfer_mode = ".tif", "store"
-        preprocess_labels = _binarise_labels
 
         dataset_json_template["channel_names"] = {"0": "R", "1": "G", "2": "B"}
         dataset_json_template["labels"] = {"background": 0, "vessels": 1}
