@@ -4,11 +4,6 @@ from torch_em.data.datasets import medical
 from torch_em.data import MinInstanceSampler
 from torch_em.transform.augmentation import get_augmentations
 
-import micro_sam.training as sam_training
-
-from medico_sam.transform.raw import RawTrafoFor3dInputs, RawResizeTrafoFor3dInputs
-from medico_sam.transform.label import LabelTrafoToBinary, LabelResizeTrafoFor3dInputs
-
 
 DATASETS_2D = [
     "oimhs", "isic", "dca1", "cbis_ddsm", "drive", "piccolo", "siim_acr", "hil_toothseg", "covid_qu_ex"
@@ -31,6 +26,11 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive.
     """
+    import micro_sam.training as sam_training
+
+    from medico_sam.transform.raw import RawTrafoFor3dInputs, RawResizeTrafoFor3dInputs
+    from medico_sam.transform.label import LabelTrafoToBinary, LabelResizeTrafoFor3dInputs
+
     kwargs = {
         "resize_inputs": True,
         "patch_shape": patch_shape,
@@ -153,7 +153,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         )
         val_loader = medical.get_lgg_mri_loader(path=data_path, batch_size=1, split="val", channels="flair", **kwargs)
 
-    elif dataset_name == "leg_3d_us":  # FIXME: backprop is creating some issues
+    elif dataset_name == "leg_3d_us":
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
         train_loader = medical.get_leg_3d_us_loader(
