@@ -34,14 +34,16 @@ def interactive_segmentation_for_3d_images(
 
     min_size = 10
     device = util.get_device()
-    image_paths, gt_paths, semantic_maps = _get_data_paths(path=path, dataset_name=dataset_name)
+    image_paths, gt_paths, semantic_maps, ensure_channels_first = _get_data_paths(path=path, dataset_name=dataset_name)
 
     # HACK: testing it on first 200 (or fewer) samples
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
     # First stage: Inference
     for image_path, gt_path in zip(image_paths, gt_paths):
-        raw, labels = _load_raw_and_label_volumes(raw_path=image_path, label_path=gt_path)
+        raw, labels = _load_raw_and_label_volumes(
+            raw_path=image_path, label_path=gt_path, channels_first=ensure_channels_first,
+        )
 
         if view:
             import napari
@@ -68,12 +70,15 @@ def interactive_segmentation_for_3d_images(
             min_size=min_size,
             n_iterations=n_iterations,  # Total no. of iterations w. iterative prompting for interactive segmentation.
             use_masks=use_masks,
+            run_connected_components=False,
         )
 
     # Second stage: Evaluate the interactive segmentation for 3d.
     fname_list, label_list = [], []
     for image_path, gt_path in zip(image_paths, gt_paths):
-        raw, labels = _load_raw_and_label_volumes(raw_path=image_path, label_path=gt_path)
+        raw, labels = _load_raw_and_label_volumes(
+            raw_path=image_path, label_path=gt_path, channels_first=ensure_channels_first,
+        )
 
         fname_list.append(os.path.basename(image_path).split(".")[0])
         label_list.append(labels)
@@ -109,7 +114,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset_name", type=str, required=True)
-    parser.add_argument("-i", "--input_path", type=str, default="data")
+    parser.add_argument("-i", "--input_path", type=str, default="/mnt/vast-nhr/projects/cidas/cca/data")
     parser.add_argument("-m", "--model_type", type=str, default="hvit_t")
     parser.add_argument("-b", "--backbone", type=str, default="sam2.0")
     parser.add_argument("-e", "--experiment_folder", type=str, default="experiments")

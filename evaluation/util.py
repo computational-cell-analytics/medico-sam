@@ -57,10 +57,15 @@ SEMANTIC_CLASS_MAPS = {
         "OpticNrv_L": 25, "OpticNrv_R": 26, "Parotid_L": 27, "Parotid_R": 28, "Pituitary": 29, "SpinalCord": 30,
     },
     "toothfairy": {"mandibular_canal": 1},
-    "drive": {"retinal_vessel": 1}
+    "drive": {"retinal_vessel": 1},
+    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},
+    "ct_cadaiver": {"all": None},
 }
 
-MULTICLASS_SEMANTIC = ["oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib", "spider", "han-seg"]
+
+MULTICLASS_SEMANTIC = [
+    "oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib", "spider", "han-seg", "curvas",
+]
 
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"
 
