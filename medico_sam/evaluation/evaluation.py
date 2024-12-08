@@ -3,11 +3,12 @@ from glob import glob
 from tqdm import tqdm
 from pathlib import Path
 from natsort import natsorted
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-import imageio.v3 as imageio
+
+from tukra.io import read_image
 
 
 def calculate_dice_score(input_, target, eps=1e-7):
@@ -18,30 +19,29 @@ def calculate_dice_score(input_, target, eps=1e-7):
 
 
 def _run_evaluation_per_semantic_class(
-    gt_paths, prediction_paths, semantic_class_id, verbose=True, is_multiclass=False, for_3d=False,
+    gt_paths,
+    prediction_paths,
+    semantic_class_id,
+    verbose=True,
+    is_multiclass=False,
+    keys=None,
+    ensure_channels_first=False,
 ):
-    first_gt_path = gt_paths[0]
-    gt_dir = os.path.split(first_gt_path)[0]
+    if keys is None:
+        gt_key = pred_key = None
+    else:
+        gt_key, pred_key = keys
 
     dice_scores = []
-
-    for pred_path in tqdm(prediction_paths, desc="Evaluate predictions", disable=not verbose):
-        image_id = os.path.split(pred_path)[-1]
-        if for_3d:
-            image_id = image_id.split(".")[0]
-            gt_path = os.path.join(gt_dir, f"{image_id}.nii.gz")
-        else:
-            gt_path = os.path.join(gt_dir, image_id)
-
+    for gt_path, pred_path in tqdm(
+        zip(gt_paths, prediction_paths), total=len(prediction_paths), desc="Evaluate predictions", disable=not verbose
+    ):
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
-        if for_3d:
-            from tukra.io import read_image
-            gt = read_image(gt_path)
+        gt = read_image(gt_path, key=gt_key)
+        if ensure_channels_first:
             gt = gt.transpose(2, 0, 1)
-        else:
-            gt = imageio.imread(gt_path)
 
         if semantic_class_id is not None:
             gt = (gt == semantic_class_id).astype("uint8")
@@ -53,7 +53,7 @@ def _run_evaluation_per_semantic_class(
         if len(counts) == 1:
             continue
 
-        pred = imageio.imread(pred_path)
+        pred = read_image(pred_path, key=pred_key)
 
         if is_multiclass:
             if semantic_class_id is None:  # for SPIDER: if None, we return instance segmentation and binarise them.
@@ -76,16 +76,20 @@ def run_evaluation_per_semantic_class(
     save_path: Optional[Union[os.PathLike, str]] = None,
     verbose: bool = True,
     is_multiclass: bool = False,
-    for_3d: bool = False,
+    keys: Optional[Tuple[str]] = None,
+    ensure_channels_first: bool = True,
 ) -> pd.DataFrame:
     """Run evaluation for semantic segmentation predictions.
 
     Args:
         gt_paths: The list of paths to ground-truth images.
         prediction_paths: The list of paths with the instance segmentations to evaluate.
-        semantic_class_id: ...
+        semantic_class_id: The id of the particular semantic class.
         save_path: Optional path for saving the results.
         verbose: Whether to print the progress.
+        is_multiclass: Whether the labels have multiple class for semantic segmentation.
+        keys: The hierarchy names of inputs in container data format.
+        ensure_channels_first: Whether to ensure channels first for multidimensional images.
 
     Returns:
         A DataFrame that contains the evaluation results.
@@ -95,8 +99,13 @@ def run_evaluation_per_semantic_class(
         return pd.read_csv(save_path)
 
     dice_scores = _run_evaluation_per_semantic_class(
-        gt_paths, prediction_paths, semantic_class_id,
-        verbose=verbose, is_multiclass=is_multiclass, for_3d=for_3d,
+        gt_paths=gt_paths,
+        prediction_paths=prediction_paths,
+        semantic_class_id=semantic_class_id,
+        verbose=verbose,
+        is_multiclass=is_multiclass,
+        keys=keys,
+        ensure_channels_first=ensure_channels_first,
     )
 
     results = pd.DataFrame.from_dict({"dice": [np.mean(dice_scores)]})
