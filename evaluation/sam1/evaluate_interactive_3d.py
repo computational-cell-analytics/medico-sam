@@ -15,19 +15,22 @@ from data_utils import _get_data_paths, _load_raw_and_label_volumes
 
 
 def evaluate_interactive_3d(
-    input_path, device, experiment_folder, model_type, prompt_choice, dataset_name, view
+    input_path, device, experiment_folder, model_type, checkpoint_path, prompt_choice, dataset_name, view
 ):
     """Interactive segmentation scripts for benchmarking micro-sam.
     """
     output_folder = os.path.join(experiment_folder, model_type, dataset_name)
     save_path = os.path.join(output_folder, "results", f"interactive_segmentation_3d_with_{prompt_choice}.csv")
+    os.makedirs(os.path.join(output_folder, "results"))
     if os.path.exists(save_path):
         print(
             f"Results for 3d interactive segmentation with '{prompt_choice}' are already stored at '{save_path}'."
         )
         return
 
-    image_paths, gt_paths, semantic_maps = _get_data_paths(path=input_path, dataset_name=dataset_name)
+    image_paths, gt_paths, semantic_maps, keys, ensure_channels_first = _get_data_paths(
+        path=input_path, dataset_name=dataset_name
+    )
 
     # HACK: testing it on first 200 (or fewer) samples
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
@@ -43,7 +46,9 @@ def evaluate_interactive_3d(
         if os.path.exists(prediction_path):
             continue
 
-        raw, labels = _load_raw_and_label_volumes(raw_path=image_path, label_path=gt_path)
+        raw, labels = _load_raw_and_label_volumes(
+            raw_path=image_path, label_path=gt_path, channels_first=ensure_channels_first, keys=keys,
+        )
 
         if view:
             import napari
@@ -57,6 +62,7 @@ def evaluate_interactive_3d(
             volume=raw,
             ground_truth=labels,
             model_type=model_type,
+            checkpoint_path=checkpoint_path,
             save_path=prediction_path,
             device=device,
             interactive_seg_mode=prompt_choice,
@@ -73,11 +79,13 @@ def evaluate_interactive_3d(
             prediction_paths=pred_paths,
             semantic_class_id=cid,
             save_path=None,
-            for_3d=True,
+            keys=None if keys is None else (keys[-1], None),  # gt might be in container format. predictions in '.tif'
+            ensure_channels_first=ensure_channels_first,
         )
         results[cname] = result['dice'][0]
 
     results = pd.DataFrame.from_dict([results])
+    print(results)
     results.to_csv(save_path)
 
 
@@ -85,9 +93,10 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, required=True)
-    parser.add_argument("-i", "--input_path", type=str, default="data")
+    parser.add_argument("-i", "--input_path", type=str, default="/mnt/vast-nhr/projects/cidas/cca/data")
     parser.add_argument("-m", "--model_type", type=str, default="vit_b")
     parser.add_argument("-e", "--experiment_folder", type=str, default="experiments")
+    parser.add_argument("-c", "--checkpoint_path", type=str, default=None)
 
     parser.add_argument("--box", action="store_true")
     parser.add_argument("--view", action="store_true")
@@ -101,6 +110,7 @@ def main():
         device=device,
         experiment_folder=args.experiment_folder,
         model_type=args.model_type,
+        checkpoint_path=args.checkpoint_path,
         prompt_choice="box" if args.box else "points",
         dataset_name=args.dataset,
         view=args.view,

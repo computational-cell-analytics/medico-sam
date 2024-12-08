@@ -7,14 +7,15 @@ from torch_em.transform.raw import normalize
 from tukra.io import read_image
 
 
-def _load_raw_and_label_volumes(raw_path, label_path, ensure_8bit=True, channels_first=True):
-    raw = read_image(raw_path)
-    label = read_image(label_path)
+def _load_raw_and_label_volumes(raw_path, label_path, ensure_8bit=True, channels_first=True, keys=None):
+    raw = read_image(raw_path, key=keys if keys is None else keys[0])
+    label = read_image(label_path, key=keys if keys is None else keys[1])
 
     if ensure_8bit:
         # Ensure inputs are 8 bit.
         if raw.max() > 255:
             raw = normalize(raw) * 255
+        raw = raw.astype("uint8")
 
     if channels_first:  # Ensure volumes are channels first.
         raw, label = raw.transpose(2, 0, 1), label.transpose(2, 0, 1)
@@ -45,11 +46,20 @@ def _get_data_paths(path, dataset_name):
 
     assert dataset_name in path_to_volumes.keys(), f"'{dataset_name}' is not a supported dataset."
 
-    raw_paths, label_paths = path_to_volumes[dataset_name]()
+    input_paths = path_to_volumes[dataset_name]()
+    if isinstance(input_paths, tuple):
+        raw_paths, label_paths = input_paths
+    else:
+        raw_paths = label_paths = input_paths
+
     semantic_maps = SEMANTIC_CLASS_MAPS[dataset_name]
 
     ensure_channels_first = True
-    if dataset_name == "ct_cadaiver":
+    if dataset_name in ["ct_cadaiver", "lgg_mri"]:
         ensure_channels_first = False
 
-    return raw_paths, label_paths, semantic_maps, ensure_channels_first
+    keys = None
+    if dataset_name == "lgg_mri":
+        keys = ("raw/flair", "labels")
+
+    return raw_paths, label_paths, semantic_maps, keys, ensure_channels_first

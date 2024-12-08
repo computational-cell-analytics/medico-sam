@@ -8,7 +8,7 @@ import torch
 
 
 VALID_DATASETS = [
-    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "btcv_3d", "isic", "dca1",
+    "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "isic", "dca1",
     "papila", "m2caiseg", "siim_acr", "jnu-ifm", "cbis_ddsm", "piccolo", "duke_liver", "spider", "microusp",
     "han-seg", "toothfairy", "drive",
 ]
@@ -60,6 +60,7 @@ SEMANTIC_CLASS_MAPS = {
     "drive": {"retinal_vessel": 1},
     "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},
     "ct_cadaiver": {"all": None},
+    "lgg_mri": {"glioma": 255}
 }
 
 
