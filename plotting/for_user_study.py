@@ -16,7 +16,7 @@ from micro_sam.evaluation.model_comparison import _overlay_mask
 from tukra.utils import read_image
 
 
-ROOT = "/scratch/share/cidas/cca/data"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"
 
 
 def _get_image_gt_pairs(dataset_name, n_pairs=1):

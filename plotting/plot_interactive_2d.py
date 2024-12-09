@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
 
-ROOT = "/scratch/share/cidas/cca/experiments/v1/"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/v1/"
 
 EXPERIMENTS = [
     "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter"
