@@ -19,9 +19,8 @@ def evaluate_interactive_3d(
 ):
     """Interactive segmentation scripts for benchmarking micro-sam.
     """
-    output_folder = os.path.join(experiment_folder, model_type, dataset_name)
-    save_path = os.path.join(output_folder, "results", f"interactive_segmentation_3d_with_{prompt_choice}.csv")
-    os.makedirs(os.path.join(output_folder, "results"))
+    save_path = os.path.join(experiment_folder, "results", f"interactive_segmentation_3d_with_{prompt_choice}.csv")
+    os.makedirs(os.path.join(experiment_folder, "results"), exist_ok=True)
     if os.path.exists(save_path):
         print(
             f"Results for 3d interactive segmentation with '{prompt_choice}' are already stored at '{save_path}'."
@@ -35,7 +34,7 @@ def evaluate_interactive_3d(
     # HACK: testing it on first 200 (or fewer) samples
     image_paths, gt_paths = image_paths[:200], gt_paths[:200]
 
-    prediction_dir = os.path.join(output_folder, "interactive_segmentation_3d", f"{prompt_choice}")
+    prediction_dir = os.path.join(experiment_folder, "interactive_segmentation_3d", f"{prompt_choice}")
     os.makedirs(prediction_dir, exist_ok=True)
 
     for image_path, gt_path in tqdm(

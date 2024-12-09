@@ -21,10 +21,20 @@ CLASS_MAPS = {
     "isic": {"skin_lesion": 1},
     "dca1": {"vessel": 1},
     "cbis_ddsm": {"mass": 1},
-    "piccolo": {"polyp": 1},
-    "drive": {"vessel": 1},
+    "drive": {"veins": 1},
+    "piccolo": {"polyps": 1},
+    "siim_acr": {"pneumothorax": 1},
+    "hil_toothseg": {"teeth": 1},
+    "covid_qu_ex": {"lung": 1},
     # 3d datasets
-    "duke_liver": {"liver": 1}
+    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},
+    "osic_oulmofib": {"heart": 1, "lung": 2, "trachea": 3},
+    "duke_liver": {"liver": 1},
+    "toothfairy": {"mandibular canal": 1},
+    "oasis": {"gray matter": 1, "thalamus": 2, "white matter": 3, "csf": 4},
+    "lgg_mri": {"glioma": 1},
+    "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
+    "micro_usp": {"prostate": 1},
 }
 
 
