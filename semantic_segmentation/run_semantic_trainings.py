@@ -30,37 +30,25 @@ micromamba activate sam \n"""
 
     # python script
     python_script = "python train_semantic_segmentation.py "
-
-    # name of the dataset
-    python_script += f"-d {dataset_name} "
-
-    # save root folder
-    python_script += f"-s {os.path.join(save_root, ckpt_name)} "
-
-    # name of the model configuration
-    python_script += "-m vit_b "
-
-    # add pretrained checkpoints
-    if checkpoint is not None:
+    python_script += f"-d {dataset_name} "  # name of the dataset
+    python_script += f"-s {os.path.join(save_root, ckpt_name)} "  # save root folder
+    python_script += "-m vit_b "  # name of the model configuration
+    if checkpoint is not None:  # add pretrained checkpoints
         python_script += f"-c {checkpoint} "
 
-    # number of iterations to train the model for
-    if iterations is not None:
+    if iterations is not None:  # number of iterations to train the model for
         python_script += f"--iterations {iterations} "
 
-    # whether to use lora for finetuning for semantic segmentation
-    if use_lora:
+    if use_lora:  # whether to use lora for finetuning for semantic segmentation
         python_script += "--lora_rank 16 "
 
-    # let's add the python script to the bash script
-    batch_script += python_script
+    batch_script += python_script  # let's add the python script to the bash script
 
     _op = out_path[:-3] + f"_{dataset_name}.sh"
     with open(_op, "w") as f:
         f.write(batch_script)
 
     cmd = ["sbatch", _op]
-
     if not dry:
         subprocess.run(cmd)
 

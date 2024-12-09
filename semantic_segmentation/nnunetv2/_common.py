@@ -66,10 +66,12 @@ def _binarise_labels(labels):
 def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_count):
     preprocess_inputs, preprocess_labels = None, None  # Decides via a callable whether to perform some preprocessing.
     keys = None  # Decide for container data structures for tukra's image reader.
-    dataset_json_template = {
-        "name": nnunet_dataset_name,
-        "numTraining": val_id_count + train_id_count,
-    }
+    dataset_json_template = {"name": nnunet_dataset_name}
+    if train_id_count is not None:
+        dataset_json_template["numTraining"] = train_id_count
+        if val_id_count is not None:
+            assert "numTraining" in dataset_json_template
+            dataset_json_template["numTraining"] = (val_id_count + dataset_json_template["numTraining"])
 
     # 2d dataset
     if dataset == "oimhs":
