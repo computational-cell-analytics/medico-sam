@@ -101,6 +101,23 @@ def main(args):
 
     if args.predict:
         test_image_paths, test_label_paths = _get_paths_per_dataset(split="test")
+        file_suffix, transfer_mode, _, preprocess_inputs, preprocess_labels, keys = _get_per_dataset_items(
+            dataset=args.dataset,
+            nnunet_dataset_name=nnunet_dataset_name,
+            train_id_count=None,
+            val_id_count=None,
+        )
+
+        kwargs = {
+            "dataset_name": nnunet_dataset_name,
+            "file_suffix": file_suffix,
+            "transfer_mode": transfer_mode,
+            "preprocess_inputs": preprocess_inputs,
+            "preprocess_labels": preprocess_labels,
+            "ensure_unique": True if args.dataset in ["curvas", "leg_3d_us", "oasis"] else False,
+            "keys": keys,
+        }
+
         nnunet_utils.convert_dataset_for_nnunet_training(
             image_paths=test_image_paths, gt_paths=test_label_paths, split="test", **kwargs
         )

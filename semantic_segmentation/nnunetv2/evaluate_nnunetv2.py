@@ -14,7 +14,7 @@ from train_nnunetv2 import DATASET_MAPPING_2D, DATASET_MAPPING_3D, NNUNET_ROOT
 from tukra.io import read_image
 
 
-# These class maps originate from the logic create at  "convert_<DATASET>.py"
+# These class maps originate from the logic create at  "_common.py"
 CLASS_MAPS = {
     # 2d datasets
     "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
@@ -57,16 +57,20 @@ def _evaluate_per_class_dice(gt, prediction, class_maps):
     return all_scores
 
 
-def evaluate_predictions(root_dir, dataset_name, is_3d=False):
-    all_predictions = sorted(glob(os.path.join(root_dir, "predictionTs", "*.nii.gz" if is_3d else "*.tif")))
+def evaluate_predictions(root_dir, dataset_name, fold, is_3d=False):
+    all_predictions = sorted(
+        glob(os.path.join(root_dir, "predictionTs", f"fold_{fold}", "*.nii.gz" if is_3d else "*.tif"))
+    )
     all_gt = sorted(glob(os.path.join(root_dir, "labelsTs", "*.nii.gz" if is_3d else "*.tif")))
 
     assert len(all_predictions) == len(all_gt)
 
     dice_scores = []
-    for prediction_path, gt_path in tqdm(zip(all_predictions, all_gt), total=len(all_gt)):
-        gt = read_image(gt_path, extension=".nii.gz" if is_3d else ".tif")
-        prediction = read_image(prediction_path, extension=".nii.gz" if is_3d else ".tif")
+    for prediction_path, gt_path in tqdm(
+        zip(all_predictions, all_gt), total=len(all_gt), desc="Evaluating nnUNet predictions"
+    ):
+        gt = read_image(gt_path)
+        prediction = read_image(prediction_path)
 
         assert gt.shape == prediction.shape
 
@@ -96,13 +100,14 @@ def main(args):
 
     _, dataset_name = dmap_base[args.dataset]
 
-    root_dir = os.path.join(NNUNET_ROOT, "test", dataset_name)
-    evaluate_predictions(root_dir, args.dataset, is_3d)
+    root_dir = os.path.join(NNUNET_ROOT, "nnUNet_raw", dataset_name)
+    evaluate_predictions(root_dir, args.dataset, args.fold, is_3d)
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, required=True)
+    parser.add_argument("--fold", type=str, default="0")
     args = parser.parse_args()
     main(args)
