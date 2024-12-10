@@ -1,6 +1,3 @@
-# duke_liver: {'liver': 0.914965613366452}
-
-
 import os
 from glob import glob
 from tqdm import tqdm
@@ -27,14 +24,15 @@ CLASS_MAPS = {
     "hil_toothseg": {"teeth": 1},
     "covid_qu_ex": {"lung": 1},
     # 3d datasets
-    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},
-    "osic_oulmofib": {"heart": 1, "lung": 2, "trachea": 3},
+    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},  # TODO: double check the splits and class-level annotations.
+    "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},
     "toothfairy": {"mandibular canal": 1},
     "oasis": {"gray matter": 1, "thalamus": 2, "white matter": 3, "csf": 4},
     "lgg_mri": {"glioma": 1},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
     "micro_usp": {"prostate": 1},
+    "sega": {"aorta": 1}
 }
 
 
@@ -63,18 +61,19 @@ def evaluate_predictions(root_dir, dataset_name, fold, is_3d=False):
     )
     all_gt = sorted(glob(os.path.join(root_dir, "labelsTs", "*.nii.gz" if is_3d else "*.tif")))
 
-    assert len(all_predictions) == len(all_gt)
+    assert len(all_predictions) == len(all_gt) and len(all_predictions) > 0
+
+    class_maps = CLASS_MAPS[dataset_name]
 
     dice_scores = []
     for prediction_path, gt_path in tqdm(
         zip(all_predictions, all_gt), total=len(all_gt), desc="Evaluating nnUNet predictions"
     ):
-        gt = read_image(gt_path)
-        prediction = read_image(prediction_path)
+        gt = read_image(gt_path).astype("uint32")
+        prediction = read_image(prediction_path).astype("uint32")
 
-        assert gt.shape == prediction.shape
+        assert gt.shape == prediction.shape, (gt.shape, prediction.shape)
 
-        class_maps = CLASS_MAPS[dataset_name]
         score = _evaluate_per_class_dice(gt, prediction, class_maps)
         dice_scores.append(score)
 
