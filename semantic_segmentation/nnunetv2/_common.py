@@ -41,7 +41,7 @@ def _get_paths(path, dataset, split):
         "toothfairy": lambda: medical.toothfairy.get_toothfairy_paths(path=path, split=split, version="v1"),
         "oasis": lambda: medical.oasis.get_oasis_paths(path=path, split=split),
         "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(path=path, split=split),
-        "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(path=path, split=split, download=True),
+        "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(path=path, split=split),
         "micro_usp": lambda: medical.micro_usp.get_micro_usp_paths(path=path, split=split),
     }
 

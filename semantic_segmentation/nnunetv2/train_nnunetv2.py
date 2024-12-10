@@ -95,8 +95,7 @@ def main(args):
         nnunet.preprocess_data(dataset_id=dataset_id)
 
     if args.train:
-        # TODO: train 1 fold as a test to see if everything works fine for inference.
-        # once the training run for 1 fold is done, we go ahead for training other folds.
+        # TODO: train other folds
         nnunet.train_nnunetv2(fold=args.fold, dataset_name=nnunet_dataset_name, dataset_id=dataset_id, dim=dim)
 
     if args.predict:

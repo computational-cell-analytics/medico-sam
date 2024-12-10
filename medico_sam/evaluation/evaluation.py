@@ -77,7 +77,7 @@ def run_evaluation_per_semantic_class(
     verbose: bool = True,
     is_multiclass: bool = False,
     keys: Optional[Tuple[str]] = None,
-    ensure_channels_first: bool = True,
+    ensure_channels_first: bool = False,
 ) -> pd.DataFrame:
     """Run evaluation for semantic segmentation predictions.
 
@@ -124,7 +124,6 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
     semantic_class_map: Dict[str, int],
     start_with_box_prompt: bool = False,
     overwrite_results: bool = False,
-    for_3d: bool = False,
 ) -> pd.DataFrame:
     """Run evaluation for iterative prompt-based segmentation predictions per semantic class.
 
@@ -132,9 +131,9 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
         gt_paths: The list of paths to ground-truth images.
         prediction_root: The folder with the iterative prompt-based instance segmentations to evaluate.
         experiment_folder: The folder where all the experiment results are stored.
-        semantic_class_map: ...
+        semantic_class_map: The semantic segmentation class map.
         start_with_box_prompt: Whether to evaluate on experiments with iterative prompting starting with box.
-        overwrite_results: ...
+        overwrite_results: Whether to overwrite results.
 
     Returns:
         A DataFrame that contains the evaluation results.
@@ -170,7 +169,6 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
                 prediction_paths=pred_paths,
                 semantic_class_id=semantic_class_id,
                 save_path=None,
-                for_3d=for_3d,
             )
             list_of_results.append(result)
             print(result)
@@ -186,7 +184,7 @@ def run_evaluation_for_semantic_segmentation(
     semantic_class_map: Dict[str, int],
     is_multiclass: bool = False,
     overwrite_results: bool = False,
-    for_3d: bool = False,
+    ensure_channels_first: bool = True,
 ) -> pd.DataFrame:
     """Run evaluation for semantic segmentation predictions per semantic class.
 
@@ -194,7 +192,10 @@ def run_evaluation_for_semantic_segmentation(
         gt_paths: The list of paths to ground-truth images.
         prediction_root: The folder with the iterative prompt-based instance segmentations to evaluate.
         experiment_folder: The folder where all the experiment results are stored.
-        semantic_class_map: ...
+        semantic_class_map: The semantic maps available per dataset.
+        is_multiclass: Whether the dataset has multiple semantic classes.
+        overwrite_results: Whether to overwrite existing results.
+        ensure_channels_first: Whether to ensure channels first.
 
     Returns:
         A DataFrame that contains the evaluation results.
@@ -227,7 +228,7 @@ def run_evaluation_for_semantic_segmentation(
             semantic_class_id=semantic_class_id,
             save_path=None,
             is_multiclass=is_multiclass,
-            for_3d=for_3d,
+            ensure_channels_first=ensure_channels_first,
         )
         print(result)
         result.to_csv(csv_path)

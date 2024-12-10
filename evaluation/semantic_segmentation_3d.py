@@ -12,49 +12,37 @@ from util import get_default_arguments
 
 
 DATASET_MAPPING_3D = {
-    "btcv": "Dataset301_BTCV",
-    "osic_pulmofib": "Dataset303_OSICPulmoFib",
-    "sega": "Dataset304_SegA",
-    "duke_liver": "Dataset305_DukeLiver",
+    "curvas": "Dataset301_Curvas",
+    "osic_pulmofib": "Dataset302_OSICPulmoFib",
+    "sega": "Dataset303_SegA",
+    "duke_liver": "Dataset304_DukeLiver",
+    "toothfairy": "Dataset305_ToothFairy",
+    "oasis": "Dataset306_OASIS",
+    "lgg_mri": "Dataset307_LGG_MRI",
+    "leg_3d_us": "Dataset308_Leg_3D_US",
+    "micro_usp": "Dataset309_MicroUSP",
+}
+
+CLASS_MAPS = {
+    # 3d datasets
+    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},  # TODO: double check the splits and class-level annotations.
+    "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
+    "duke_liver": {"liver": 1},
+    "toothfairy": {"mandibular canal": 1},
+    "oasis": {"gray_matter": 1, "thalamus": 2, "white_matter": 3, "csf": 4},
+    "lgg_mri": {"glioma": 1},
+    "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
+    "micro_usp": {"prostate": 1},
+    "sega": {"aorta": 1}
 }
 
 
-def check_lucchi():
-    ckpt = "/home/nimcpape/Work/my_projects/medico-sam/semantic_segmentation/checkpoints/lucchi_3d_adapter_lora4"
-    model = get_medico_sam_model("vit_b", device="cuda", use_sam3d=True, lora_rank=4, n_classes=2, image_size=512)
-    model = load_model(ckpt, device="cuda", model=model)
-
-    input_paths = [
-        "/home/nimcpape/Work/my_projects/medico-sam/semantic_segmentation/data/lucchi_test.h5"
-    ]
-    output_dir = "./pred_lucchi"
-    inference.run_semantic_segmentation_3d(
-        model, input_paths, output_dir, semantic_class_map={"blub": 0}, is_multiclass=True,
-        image_key="raw",
-    )
-
-
 def get_3d_dataset_paths(dataset_name):
-    root_dir = "/scratch/share/cidas/cca/nnUNetv2"
-    image_paths = natsorted(glob(os.path.join(root_dir, "test", DATASET_MAPPING_3D[dataset_name], "imagesTs", "*")))
-    gt_paths = natsorted(glob(os.path.join(root_dir, "test", DATASET_MAPPING_3D[dataset_name], "labelsTs", "*")))
-
-    if dataset_name == "sega":
-        semantic_maps = {"aorta": 1}
-    elif dataset_name == "duke_liver":
-        semantic_maps = {"liver": 1}
-    elif dataset_name == "osic_pulmofib":
-        semantic_maps = {"heart": 1, "lung": 2, "trachea": 3}
-    elif dataset_name == "btcv":
-        semantic_maps = {
-            "spleen": 1, "right_kidney": 2, "left_kidney": 3, "gallbladder": 4, "esophagus": 5, "liver": 6,
-            "stomach": 7, "aorta": 8, "inferior_vena_cava": 9, "portan_vein_and_splenic_vein": 10,
-            "pancreas": 11, "right_adrenal_gland": 12, "left_adrenal_gland": 13,
-        }
-
+    root_dir = os.path.join("/mnt/vast-nhr/projects/cidas/cca/nnUNetv2/nnUNet_raw", DATASET_MAPPING_3D[dataset_name])
+    image_paths = natsorted(glob(os.path.join(root_dir, "imagesTs", "*")))
+    gt_paths = natsorted(glob(os.path.join(root_dir, "labelsTs", "*")))
     assert len(image_paths) == len(gt_paths)
-
-    return image_paths, gt_paths, semantic_maps
+    return image_paths, gt_paths, CLASS_MAPS[dataset_name]
 
 
 def main():
@@ -68,7 +56,7 @@ def main():
         model_type="vit_b",
         device="cuda",
         use_sam3d=True,
-        lora_rank=4,
+        lora_rank=args.lora_rank,
         n_classes=len(semantic_class_maps)+1,
         image_size=512
     )
@@ -81,8 +69,8 @@ def main():
         prediction_dir=args.experiment_folder,
         semantic_class_map=semantic_class_maps,
         is_multiclass=True,
-        image_key="raw",
-        make_channels_first=True,
+        image_key=None,
+        make_channels_first=False if args.dataset in ["lgg_mri"] else True,
     )
 
     run_evaluation_for_semantic_segmentation(
@@ -91,7 +79,7 @@ def main():
         experiment_folder=args.experiment_folder,
         semantic_class_map=semantic_class_maps,
         is_multiclass=True,
-        for_3d=True,
+        ensure_channels_first=False if args.dataset in ["lgg_mri"] else True,
     )
 
 

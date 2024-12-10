@@ -1,15 +1,43 @@
 import os
+from glob import glob
+from natsort import natsorted
 
 from medico_sam.evaluation import inference
 from medico_sam.util import get_medico_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
-from util import get_dataset_paths, get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
+from util import get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
+
+
+CLASS_MAPS = {
+    # 2d datasets
+    "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
+    "isic": {"skin_lesion": 1},
+    "dca1": {"vessel": 1},
+    "cbis_ddsm": {"mass": 1},
+    "drive": {"veins": 1},
+    "piccolo": {"polyps": 1},
+    "siim_acr": {"pneumothorax": 1},
+    "hil_toothseg": {"teeth": 1},
+    "covid_qu_ex": {"lung": 1},
+}
+
+DATASET_MAPPING_2D = {
+    "oimhs": "Dataset201_OIMHS",
+    "isic": "Dataset202_ISIC",
+    "dca1": "Dataset203_DCA1",
+    "cbis_ddsm": "Dataset204_CBISDDSM",
+    "drive": "Dataset205_DRIVE",
+    "piccolo": "Dataset206_PICCOLO",
+    "siim_acr": "Dataset207_SIIM_ACR",
+    "hil_toothseg": "Dataset208_HIL_ToothSeg",
+    "covid_qu_ex": "Dataset209_Covid_QU_EX",
+}
 
 
 def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, predictor, is_multiclass):
     prediction_root = os.path.join(exp_folder, "semantic_segmentation")
-    embedding_folder = None  # HACK: compute embeddings on-the-fly now, else: os.path.join(exp_folder, "embeddings")
+    embedding_folder = None  # NOTE: computes embeddings on-the-fly now
     inference.run_semantic_segmentation(
         predictor=predictor,
         image_paths=image_paths,
@@ -21,10 +49,18 @@ def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, pre
     return prediction_root
 
 
+def get_2d_dataset_paths(dataset_name):
+    root_dir = os.path.join("/mnt/vast-nhr/projects/cidas/cca/nnUNetv2/nnUNet_raw", DATASET_MAPPING_2D[dataset_name])
+    image_paths = natsorted(glob(os.path.join(root_dir, "imagesTs", "*")))
+    gt_paths = natsorted(glob(os.path.join(root_dir, "labelsTs", "*")))
+    assert len(image_paths) == len(gt_paths)
+    return image_paths, gt_paths, CLASS_MAPS[dataset_name]
+
+
 def main():
     args = get_default_arguments()
 
-    image_paths, gt_paths, semantic_class_maps = get_dataset_paths(dataset_name=args.dataset, split="test")
+    image_paths, gt_paths, semantic_class_maps = get_2d_dataset_paths(dataset_name=args.dataset)
 
     # get the predictor to perform inference
     predictor = get_medico_sam_model(
@@ -49,6 +85,7 @@ def main():
         experiment_folder=args.experiment_folder,
         semantic_class_map=semantic_class_maps,
         is_multiclass=args.dataset in MULTICLASS_SEMANTIC,
+        ensure_channels_first=False,
     )
 
     _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
