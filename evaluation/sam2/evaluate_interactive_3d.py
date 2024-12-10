@@ -28,7 +28,6 @@ def interactive_segmentation_for_3d_images(
     prompt_choice,
     n_iterations,
     view=False,
-    use_masks=False,
 ):
     from data_utils import _load_raw_and_label_volumes, _get_data_paths
 
@@ -72,14 +71,12 @@ def interactive_segmentation_for_3d_images(
             device=device,
             min_size=min_size,
             n_iterations=n_iterations,  # Total no. of iterations w. iterative prompting for interactive segmentation.
-            use_masks=use_masks,
+            use_masks=False,
             run_connected_components=False,
         )
 
     # Second stage: Evaluate the interactive segmentation for 3d.
-    save_dir = os.path.join(
-        experiment_folder, "results", "iterative_prompting_" + ("with" if use_masks else "without") + "_mask"
-    )
+    save_dir = os.path.join(experiment_folder, "results", "iterative_prompting_without_mask")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, "start_with_" + ("box.csv" if start_with_box_prompt else "point.csv"))
 
@@ -113,7 +110,6 @@ def main():
     parser.add_argument("-p", "--prompt_choice", type=str, default="box")
 
     parser.add_argument("-iter", "--n_iterations", type=int, default=1)
-    parser.add_argument("--use_masks", action="store_true")
     parser.add_argument("--view", action="store_true")
     args = parser.parse_args()
 
@@ -128,7 +124,6 @@ def main():
         prompt_choice=args.prompt_choice,
         n_iterations=args.n_iterations,
         view=args.view,
-        use_masks=args.use_masks,
     )
 
 

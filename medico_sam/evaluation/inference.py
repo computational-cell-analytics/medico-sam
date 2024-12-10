@@ -1,5 +1,6 @@
 import os
 from tqdm import tqdm
+from pathlib import Path
 from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
@@ -194,7 +195,6 @@ def _run_semantic_segmentation_for_image_3d(
     patch_shape: Tuple[int, int, int],
     halo: Tuple[int, int, int],
 ):
-    # (duke_liver) dice: 0.64835
     device = next(model.parameters()).device
     block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
 
@@ -246,7 +246,18 @@ def run_semantic_segmentation_3d(
     is_multiclass: bool = False,
     make_channels_first: bool = False,
 ):
-    """
+    """Run inference for semantic segmentation in 3d.
+
+    Args:
+        model: The choice of model for 3d semantic segmentation.
+        image_paths: List of filepaths to the image data.
+        prediction_dir: Filepath to store predictions.
+        semantic_class_map: The map to semantic classes.
+        patch_shape: The patch shape used for training 3d semantic segmentation.
+        halo: The overlay for tiling window-based prediction.
+        image_key: The hierarchy name for container data structures.
+        is_multiclass: Whether the semantic segmentation is for multiple classes.
+        make_channels_first: Whether to make channels first for inputs.
     """
     for image_path in tqdm(image_paths, desc="Run inference for semantic segmentation with all images"):
         image_name = os.path.basename(image_path)
@@ -261,16 +272,15 @@ def run_semantic_segmentation_3d(
                     continue
 
             # We skip the images that already have been segmented
-            image_name = os.path.splitext(image_name)[0] + ".tif"
+            image_name = Path(image_name.split(".")[0]).with_suffix(".tif")
             prediction_path = os.path.join(prediction_dir, semantic_class_name, image_name)
             if os.path.exists(prediction_path):
                 continue
 
-            if image_key is None:
-                image = imageio.imread(image_path)
-            else:
-                from tukra.io import read_image
-                image = read_image(image_path, ".nii.gz")
+            from tukra.io import read_image
+            image = read_image(image_path, key=image_key)
+
+            print(image.shape)
 
             if make_channels_first:
                 image = image.transpose(2, 0, 1)
@@ -279,6 +289,9 @@ def run_semantic_segmentation_3d(
             os.makedirs(os.path.join(prediction_dir, semantic_class_name), exist_ok=True)
 
             _run_semantic_segmentation_for_image_3d(
-                model=model, image=image, prediction_path=prediction_path,
-                patch_shape=patch_shape, halo=halo,
+                model=model,
+                image=image,
+                prediction_path=prediction_path,
+                patch_shape=patch_shape,
+                halo=halo,
             )

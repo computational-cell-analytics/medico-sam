@@ -63,7 +63,6 @@ SEMANTIC_CLASS_MAPS = {
     "lgg_mri": {"glioma": 255}
 }
 
-
 MULTICLASS_SEMANTIC = [
     "oimhs", "btcv", "m2caiseg", "jnu-ifm", "osic_pulmofib", "spider", "han-seg", "curvas",
 ]

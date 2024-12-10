@@ -1,6 +1,3 @@
-# duke_liver: {'liver': 0.914965613366452}
-
-
 import os
 from glob import glob
 from tqdm import tqdm
@@ -14,7 +11,7 @@ from train_nnunetv2 import DATASET_MAPPING_2D, DATASET_MAPPING_3D, NNUNET_ROOT
 from tukra.io import read_image
 
 
-# These class maps originate from the logic create at  "convert_<DATASET>.py"
+# These class maps originate from the logic create at  "_common.py"
 CLASS_MAPS = {
     # 2d datasets
     "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
@@ -27,14 +24,15 @@ CLASS_MAPS = {
     "hil_toothseg": {"teeth": 1},
     "covid_qu_ex": {"lung": 1},
     # 3d datasets
-    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},
-    "osic_oulmofib": {"heart": 1, "lung": 2, "trachea": 3},
+    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},  # TODO: double check the splits and class-level annotations.
+    "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},
     "toothfairy": {"mandibular canal": 1},
     "oasis": {"gray matter": 1, "thalamus": 2, "white matter": 3, "csf": 4},
     "lgg_mri": {"glioma": 1},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
     "micro_usp": {"prostate": 1},
+    "sega": {"aorta": 1}
 }
 
 
@@ -57,20 +55,25 @@ def _evaluate_per_class_dice(gt, prediction, class_maps):
     return all_scores
 
 
-def evaluate_predictions(root_dir, dataset_name, is_3d=False):
-    all_predictions = sorted(glob(os.path.join(root_dir, "predictionTs", "*.nii.gz" if is_3d else "*.tif")))
+def evaluate_predictions(root_dir, dataset_name, fold, is_3d=False):
+    all_predictions = sorted(
+        glob(os.path.join(root_dir, "predictionTs", f"fold_{fold}", "*.nii.gz" if is_3d else "*.tif"))
+    )
     all_gt = sorted(glob(os.path.join(root_dir, "labelsTs", "*.nii.gz" if is_3d else "*.tif")))
 
-    assert len(all_predictions) == len(all_gt)
+    assert len(all_predictions) == len(all_gt) and len(all_predictions) > 0
+
+    class_maps = CLASS_MAPS[dataset_name]
 
     dice_scores = []
-    for prediction_path, gt_path in tqdm(zip(all_predictions, all_gt), total=len(all_gt)):
-        gt = read_image(gt_path, extension=".nii.gz" if is_3d else ".tif")
-        prediction = read_image(prediction_path, extension=".nii.gz" if is_3d else ".tif")
+    for prediction_path, gt_path in tqdm(
+        zip(all_predictions, all_gt), total=len(all_gt), desc="Evaluating nnUNet predictions"
+    ):
+        gt = read_image(gt_path).astype("uint32")
+        prediction = read_image(prediction_path).astype("uint32")
 
-        assert gt.shape == prediction.shape
+        assert gt.shape == prediction.shape, (gt.shape, prediction.shape)
 
-        class_maps = CLASS_MAPS[dataset_name]
         score = _evaluate_per_class_dice(gt, prediction, class_maps)
         dice_scores.append(score)
 
@@ -96,13 +99,14 @@ def main(args):
 
     _, dataset_name = dmap_base[args.dataset]
 
-    root_dir = os.path.join(NNUNET_ROOT, "test", dataset_name)
-    evaluate_predictions(root_dir, args.dataset, is_3d)
+    root_dir = os.path.join(NNUNET_ROOT, "nnUNet_raw", dataset_name)
+    evaluate_predictions(root_dir, args.dataset, args.fold, is_3d)
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, required=True)
+    parser.add_argument("--fold", type=str, default="0")
     args = parser.parse_args()
     main(args)
