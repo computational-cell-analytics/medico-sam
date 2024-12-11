@@ -110,6 +110,22 @@ def _get_mean_df(res_per_class):
     return mean_df
 
 
+def _get_vanilla_sam_res_with_mask(dataset_name, get_all=False):
+    res_per_class = []
+    base_dir = "/mnt/vast-nhr/projects/cidas/cca/experiments/v2"
+    for res_dir in glob(os.path.join(base_dir, "vanilla", dataset_name, MODEL, "results", "*")):
+        semantic_class = os.path.split(res_dir)[-1]
+
+        ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
+        ip_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_point.csv"))
+
+        res_per_class.append(
+            _get_res_int(semantic_class, "vanilla", dataset_name, ip_results, ib_results, get_all)
+        )
+
+    return _get_mean_df(res_per_class)
+
+
 def _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_all=False):
     res_per_class = []
     for res_dir in glob(os.path.join(ROOT, experiment_name, dataset_name, MODEL, "results", "*")):
@@ -141,12 +157,19 @@ def _get_sam2_results_per_dataset_per_class(
     return _get_mean_df(res_per_class)
 
 
-def _get_results_per_dataset(dataset_name, get_all=False):
+def _get_results_per_dataset(dataset_name, get_all=False, use_masks=True):
     res_per_dataset = []
     for experiment_name in EXPERIMENTS:
-        res_per_dataset.append(_get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_all=get_all))
+        # NOTE: We 'use_masks' for iterative prompting for vanilla SAM1 model.
+        if experiment_name == "vanilla" and use_masks:
+            res = _get_vanilla_sam_res_with_mask(dataset_name, get_all=get_all)
+        else:
+            res = _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_all=get_all)
+
+        res_per_dataset.append(res)
 
     # Get SAM2 results
+    # NOTE: It's hard-coded at the moment in 'mask_dir' argument that uses "with_masks" for iterative prompting.
     res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.0", get_all=get_all))
     res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.1", get_all=get_all))
 
@@ -214,7 +237,7 @@ def _make_per_experiment_plots(dataframes, datasets):
     fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
 
     plt.text(
-        x=-24.5, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-32.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=24
     )
 
@@ -279,7 +302,10 @@ def _make_full_iterative_prompting_average_plots(dataframes):
 
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
-    _order = ["vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"]
+    _order = [
+        "vanilla", "sam2.0", "sam2.1", "medsam", "sam-med2d",
+        "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
+    ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
     avg_df = avg_df.sort_values('experiment')
 
@@ -342,7 +368,7 @@ def _figure_1():
     # for point, box, ip and ib
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
-        res = _get_results_per_dataset(dataset_name=dataset_name)
+        res = _get_results_per_dataset(dataset_name=dataset_name, use_masks=True)
         results.append(res)
 
     _make_per_model_average_plots(results)
@@ -352,7 +378,7 @@ def _figure_3a():
     # for all iterations in iterative prompting
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
-        res = _get_results_per_dataset(dataset_name=dataset_name, get_all=True)
+        res = _get_results_per_dataset(dataset_name=dataset_name, get_all=True, use_masks=True)
         results.append(res)
 
     _make_full_iterative_prompting_average_plots(results)
@@ -362,14 +388,14 @@ def _figure_3b():
     # for point, box, ip and ib
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
-        res = _get_results_per_dataset(dataset_name=dataset_name)
+        res = _get_results_per_dataset(dataset_name=dataset_name, use_masks=True)
         results.append(res)
 
     _make_per_experiment_plots(results, list(DATASET_MAPS.keys()))
 
 
 def main():
-    _figure_1()
+    # _figure_1()
     # _figure_3a()
     _figure_3b()
 

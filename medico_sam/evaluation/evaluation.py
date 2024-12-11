@@ -26,6 +26,7 @@ def _run_evaluation_per_semantic_class(
     is_multiclass=False,
     keys=None,
     ensure_channels_first=False,
+    extension=None,
 ):
     if keys is None:
         gt_key = pred_key = None
@@ -39,7 +40,7 @@ def _run_evaluation_per_semantic_class(
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
-        gt = read_image(gt_path, key=gt_key)
+        gt = read_image(gt_path, key=gt_key, extension=extension)
         if ensure_channels_first:
             gt = gt.transpose(2, 0, 1)
 
@@ -53,7 +54,7 @@ def _run_evaluation_per_semantic_class(
         if len(counts) == 1:
             continue
 
-        pred = read_image(pred_path, key=pred_key)
+        pred = read_image(pred_path, key=pred_key, extension=extension)
 
         if is_multiclass:
             if semantic_class_id is None:  # for SPIDER: if None, we return instance segmentation and binarise them.
@@ -78,6 +79,7 @@ def run_evaluation_per_semantic_class(
     is_multiclass: bool = False,
     keys: Optional[Tuple[str]] = None,
     ensure_channels_first: bool = False,
+    extension: Optional[str] = None,
 ) -> pd.DataFrame:
     """Run evaluation for semantic segmentation predictions.
 
@@ -90,6 +92,7 @@ def run_evaluation_per_semantic_class(
         is_multiclass: Whether the labels have multiple class for semantic segmentation.
         keys: The hierarchy names of inputs in container data format.
         ensure_channels_first: Whether to ensure channels first for multidimensional images.
+        extension: The choice of file extension.
 
     Returns:
         A DataFrame that contains the evaluation results.
@@ -106,6 +109,7 @@ def run_evaluation_per_semantic_class(
         is_multiclass=is_multiclass,
         keys=keys,
         ensure_channels_first=ensure_channels_first,
+        extension=extension,
     )
 
     results = pd.DataFrame.from_dict({"dice": [np.mean(dice_scores)]})
@@ -124,6 +128,7 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
     semantic_class_map: Dict[str, int],
     start_with_box_prompt: bool = False,
     overwrite_results: bool = False,
+    extension: Optional[str] = None,
 ) -> pd.DataFrame:
     """Run evaluation for iterative prompt-based segmentation predictions per semantic class.
 
@@ -134,7 +139,8 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
         semantic_class_map: The semantic segmentation class map.
         start_with_box_prompt: Whether to evaluate on experiments with iterative prompting starting with box.
         overwrite_results: Whether to overwrite results.
-
+        extension: The choice of file extension for predictions.
+    
     Returns:
         A DataFrame that contains the evaluation results.
     """
@@ -169,6 +175,7 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
                 prediction_paths=pred_paths,
                 semantic_class_id=semantic_class_id,
                 save_path=None,
+                extension=extension,
             )
             list_of_results.append(result)
             print(result)

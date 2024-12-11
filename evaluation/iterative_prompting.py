@@ -62,6 +62,7 @@ def main():
         experiment_folder=args.experiment_folder,
         start_with_box_prompt=start_with_box_prompt,
         semantic_class_map=semantic_class_maps,
+        extension=".tif",
     )
 
     _clear_files(experiment_folder=args.experiment_folder, semantic_class_maps=semantic_class_maps)
