@@ -14,18 +14,18 @@ NNUNET_RESULTS = {
     "cbis_ddsm": [0.4281],
     "drive": [0.8143],
     "piccolo": [0.6507],
-    "siim_acr": [0.5621],
+    # "siim_acr": [0.5621],
     "hil_toothseg": [0.8911],
     "covid_qu_ex": [0.9799],
     # 3d
     "osic_pulmofib": [0.5356, 0.8832, 0.7914],
     # "sega": [0.7872],
-    # "duke_liver": [0.911],
+    "duke_liver": [0.911],
     # "toothfairy": [0.8375],
     # "oasis": [0.9519, 0.9689, 0.9773, 0.9655],
-    # "lgg_mri": [0.8855],
+    "lgg_mri": [0.8855],
     # "leg_3d_us": [0.8947, 0.9059, 0.8887],
-    # "micro_usp": [0.8605],
+    "micro_usp": [0.8605],
 }
 
 
@@ -38,7 +38,12 @@ DATASET_MAPS = {
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
     "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
-    "covid_qu_ex": "COVID QU Ex (Lungs in Infected Chest X-Ray)"
+    "covid_qu_ex": "COVID QU Ex (Lungs in Infected Chest X-Ray)",
+    "osic_pulmofib": "OSIC PulmoFib",
+    "duke_liver": "Duke Liver",
+    "toothfairy": "Toothfairy",
+    "lgg_mri": "LGG MRI",
+    "micro_usp": "MicroUSP",
 }
 
 
@@ -93,7 +98,7 @@ def _make_per_dataset_plot():
             percentage_scores = [(s - nnunet_scores[i]) / nnunet_scores[i] * 100 for i, s in enumerate(dice)]
             percentage_results[dataset][name] = np.mean(percentage_scores)
 
-    fig, axes = plt.subplots(4, 4, figsize=(30, 20))
+    fig, axes = plt.subplots(3, 4, figsize=(35, 20))
     axes = axes.flatten()
 
     for ax, (dataset, methods) in zip(axes, percentage_results.items()):
@@ -121,7 +126,7 @@ def _make_per_dataset_plot():
         ax.set_title(f'{DATASET_MAPS[dataset]}', fontsize=14)
 
     plt.text(
-        x=-15.5, y=-13, s="(%) Relative Dice Similarity Coefficient (compared to nnU-Net)",
+        x=-30.1, y=5, s="(%) Relative Dice Similarity Coefficient (compared to nnU-Net)",
         rotation=90, fontweight="bold", fontsize=16
     )
 
@@ -134,7 +139,7 @@ def _make_per_dataset_plot():
 def _plot_absolute_mean_per_experimet():
     method_sums = {}
     method_counts = {}
-    for methods in RESULTS.values():
+    for methods in NNUNET_RESULTS.values():
         for method, scores in methods.items():
             if isinstance(scores, list):
                 mean_score = np.mean(scores)

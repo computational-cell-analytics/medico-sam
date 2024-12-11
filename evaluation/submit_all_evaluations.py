@@ -8,8 +8,7 @@ from datetime import datetime
 
 
 ALL_SCRIPTS = ["iterative_prompting"]
-
-ROOT = "/scratch/share/cidas/cca"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca"
 
 
 def write_batch_script(
@@ -25,8 +24,8 @@ def write_batch_script(
 ):
     "Writing scripts with different fold-trainings for medico-sam evaluation"
     batch_script = f"""#!/bin/bash
-#SBATCH -c 4
-#SBATCH --mem 32G
+#SBATCH -c 32
+#SBATCH --mem 128G
 #SBATCH -t 2-00:00:00
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
@@ -34,39 +33,27 @@ def write_batch_script(
 #SBATCH --job-name={inference_setup}
 
 source ~/.bashrc
-mamba activate sam \n"""
+micromamba activate sam \n"""
 
     # python script
     inference_script_path = os.path.join(Path(__file__).parent, f"{inference_setup}.py")
     python_script = f"python {inference_script_path} "
+    python_script += f"-m {model_type} "  # name of the model configuration
+    python_script += f"-e {experiment_folder} "  # experiment folder
+    python_script += f"-d {dataset_name} "  # choice of the dataset
+    python_script += f"-c {checkpoint} "  # add the finetuned checkpoint
 
-    _op = out_path[:-3] + f"_{inference_setup}.sh"
-
-    # add the finetuned checkpoint
-    python_script += f"-c {checkpoint} "
-
-    # name of the model configuration
-    python_script += f"-m {model_type} "
-
-    # experiment folder
-    python_script += f"-e {experiment_folder} "
-
-    # IMPORTANT: choice of the dataset
-    python_script += f"-d {dataset_name} "
-
-    # use logits for iterative prompting
-    if inference_setup == "iterative_prompting" and use_masks:
+    if inference_setup == "iterative_prompting" and use_masks:  # use logits for iterative prompting
         python_script += "--use_masks "
 
-    # use SAM-Med2d for inference
-    if use_sam_med2d:
+    if use_sam_med2d:  # use SAM-Med2d for inference
         python_script += "--use_sam_med2d "
         if adapter:
             python_script += "--adapter "
 
-    # let's add the python script to the bash script
-    batch_script += python_script
+    batch_script += python_script  # let's add the python script to the bash script
 
+    _op = out_path[:-3] + f"_{inference_setup}.sh"
     with open(_op, "w") as f:
         f.write(batch_script)
 
@@ -188,7 +175,10 @@ def submit_slurm(args):
             ename = f"{experiment_set}_{n_gpus}"
         else:
             ename = experiment_set
-        experiment_folder = os.path.join(ROOT, "experiments", "v1", ename, dataset_name, model_type)
+
+        # NOTE: v1 was the first version of evaluation with all datasets having inference as expected
+        # v2 are the additional experiments for iterative prompting with masks.
+        experiment_folder = os.path.join(ROOT, "experiments", "v2", ename, dataset_name, model_type)
     else:
         experiment_folder = args.experiment_path
 
