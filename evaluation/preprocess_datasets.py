@@ -18,7 +18,7 @@ from torch_em.data.datasets import medical
 from torch_em.transform.raw import normalize
 
 
-ROOT = "/scratch/share/cidas/cca/data"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"
 
 
 def has_foreground(label, min_num_instances=2):
@@ -764,7 +764,7 @@ def _preprocess_datasets(save_dir):
 
 
 def main():
-    save_dir = "/scratch/share/cidas/cca/data"
+    save_dir = "/mnt/vast-nhr/projects/cidas/cca/data"
     _preprocess_datasets(save_dir=save_dir)
 
 

@@ -10,7 +10,7 @@ import matplotlib.colors as mcolors
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/v1/"
 
 EXPERIMENTS = [
-    "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter"
+    "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
     # "generalist_1", "simplesam_1", "medsam-self_1",
 ]
 
@@ -42,56 +42,55 @@ MODEL_MAPS = {
     "medsam-self_8": "MedSAM*",
     "medsam": "MedSAM",
     "sam-med2d": "FT-SAM",
-    "sam-med2d-adapter": "SAM-Med2D"
+    "sam-med2d-adapter": "SAM-Med2D",
     # "generalist_1": "Generalist (Single GPU)",
     # "simplesam_1": "Simple Generalist* (Single GPU)",
     # "medsam-self_1": "MedSAM* (Single GPU)",
+    "sam2.0": "SAM2 (2.0)",
+    "sam2.1": "SAM2 (2.1)",
 }
 
 
-def _get_results_per_dataset_per_class(dataset_name, experiment_name, get_all=False):
-    res_per_class = []
-    for res_dir in glob(os.path.join(ROOT, experiment_name, dataset_name, MODEL, "results", "*")):
-        semantic_class = os.path.split(res_dir)[-1]
+def _get_res_int(semantic_class, experiment_name, dataset_name, ip_results, ib_results, get_all=False):
+    if get_all:
+        res = {
+            "semantic_class": semantic_class,
+            "experiment": experiment_name,
+            "dataset": dataset_name,
+            # point prompts
+            "point": ip_results["dice"][0],
+            "ip1": ip_results["dice"][1],
+            "ip2": ip_results["dice"][2],
+            "ip3": ip_results["dice"][3],
+            "ip4": ip_results["dice"][4],
+            "ip5": ip_results["dice"][5],
+            "ip6": ip_results["dice"][6],
+            "ip7": ip_results["dice"][7],
+            # box prompts
+            "box": ib_results["dice"][0],
+            "ib1": ib_results["dice"][1],
+            "ib2": ib_results["dice"][2],
+            "ib3": ib_results["dice"][3],
+            "ib4": ib_results["dice"][4],
+            "ib5": ib_results["dice"][5],
+            "ib6": ib_results["dice"][6],
+            "ib7": ib_results["dice"][7],
+        }
+    else:
+        res = {
+            "semantic_class": semantic_class,
+            "experiment": experiment_name,
+            "dataset": dataset_name,
+            "point": ip_results["dice"][0],
+            "box": ib_results["dice"][0],
+            "ip": ip_results["dice"][7],
+            "ib": ib_results["dice"][7],
+        }
 
-        ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
-        ip_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_point.csv"))
+    return pd.DataFrame.from_dict([res])
 
-        if get_all:
-            res = {
-                "semantic_class": semantic_class,
-                "experiment": experiment_name,
-                "dataset": dataset_name,
-                "point": ip_results["dice"][0],
-                "ip1": ip_results["dice"][1],
-                "ip2": ip_results["dice"][2],
-                "ip3": ip_results["dice"][3],
-                "ip4": ip_results["dice"][4],
-                "ip5": ip_results["dice"][5],
-                "ip6": ip_results["dice"][6],
-                "ip7": ip_results["dice"][7],
-                "box": ib_results["dice"][0],
-                "ib1": ib_results["dice"][1],
-                "ib2": ib_results["dice"][2],
-                "ib3": ib_results["dice"][3],
-                "ib4": ib_results["dice"][4],
-                "ib5": ib_results["dice"][5],
-                "ib6": ib_results["dice"][6],
-                "ib7": ib_results["dice"][7],
-            }
-        else:
-            res = {
-                "semantic_class": semantic_class,
-                "experiment": experiment_name,
-                "dataset": dataset_name,
-                "point": ip_results["dice"][0],
-                "box": ib_results["dice"][0],
-                "ip": ip_results["dice"][7],
-                "ib": ib_results["dice"][7],
-            }
 
-        res_per_class.append(pd.DataFrame.from_dict([res]))
-
+def _get_mean_df(res_per_class):
     _multiclass = True if len(res_per_class) > 1 else False
 
     if _multiclass:
@@ -111,22 +110,83 @@ def _get_results_per_dataset_per_class(dataset_name, experiment_name, get_all=Fa
     return mean_df
 
 
-def _get_results_per_dataset(dataset_name, get_all=False):
+def _get_vanilla_sam_res_with_mask(dataset_name, get_all=False):
+    res_per_class = []
+    base_dir = "/mnt/vast-nhr/projects/cidas/cca/experiments/v2"
+    for res_dir in glob(os.path.join(base_dir, "vanilla", dataset_name, MODEL, "results", "*")):
+        semantic_class = os.path.split(res_dir)[-1]
+
+        ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
+        ip_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_point.csv"))
+
+        res_per_class.append(
+            _get_res_int(semantic_class, "vanilla", dataset_name, ip_results, ib_results, get_all)
+        )
+
+    return _get_mean_df(res_per_class)
+
+
+def _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_all=False):
+    res_per_class = []
+    for res_dir in glob(os.path.join(ROOT, experiment_name, dataset_name, MODEL, "results", "*")):
+        semantic_class = os.path.split(res_dir)[-1]
+
+        ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
+        ip_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_point.csv"))
+
+        res_per_class.append(
+            _get_res_int(semantic_class, experiment_name, dataset_name, ip_results, ib_results, get_all)
+        )
+
+    return _get_mean_df(res_per_class)
+
+
+def _get_sam2_results_per_dataset_per_class(
+    dataset_name, backbone, mask_dir="iterative_prompting_with_mask", model="hvit_b", get_all=False,
+):
+    res_per_class = []
+    base_dir = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/2d"
+    for res_dir in glob(os.path.join(base_dir, backbone, model, dataset_name, "results", "*")):
+        semantic_class = os.path.split(res_dir)[-1]
+
+        ib_results = pd.read_csv(os.path.join(res_dir, mask_dir, "iterative_prompts_start_box.csv"))
+        ip_results = pd.read_csv(os.path.join(res_dir, mask_dir, "iterative_prompts_start_point.csv"))
+
+        res_per_class.append(_get_res_int(semantic_class, backbone, dataset_name, ip_results, ib_results, get_all))
+
+    return _get_mean_df(res_per_class)
+
+
+def _get_results_per_dataset(dataset_name, get_all=False, use_masks=True):
     res_per_dataset = []
     for experiment_name in EXPERIMENTS:
-        res_per_dataset.append(_get_results_per_dataset_per_class(dataset_name, experiment_name, get_all=get_all))
+        # NOTE: We 'use_masks' for iterative prompting for vanilla SAM1 model.
+        if experiment_name == "vanilla" and use_masks:
+            res = _get_vanilla_sam_res_with_mask(dataset_name, get_all=get_all)
+        else:
+            res = _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_all=get_all)
+
+        res_per_dataset.append(res)
+
+    # Get SAM2 results
+    # NOTE: It's hard-coded at the moment in 'mask_dir' argument that uses "with_masks" for iterative prompting.
+    res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.0", get_all=get_all))
+    res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.1", get_all=get_all))
 
     res_per_dataset = pd.concat(res_per_dataset, ignore_index=True)
     return res_per_dataset
 
 
 def _make_per_experiment_plots(dataframes, datasets):
-    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(30, 30))
+    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(32, 32))
     axes = axes.flatten()
 
     bar_width = 0.2
     for i, df in enumerate(dataframes):
-        _order = ["vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"]
+        _order = [
+            "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8",
+            "simplesam_8", "sam2.0", "sam2.1", "generalist_8",
+        ]
         df['experiment'] = pd.Categorical(df['experiment'], categories=_order, ordered=True)
         df = df.sort_values('experiment')
 
@@ -177,7 +237,7 @@ def _make_per_experiment_plots(dataframes, datasets):
     fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
 
     plt.text(
-        x=-24.5, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-32.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=24
     )
 
@@ -189,12 +249,12 @@ def _make_per_experiment_plots(dataframes, datasets):
 
 def _make_per_model_average_plots(dataframes):
     all_data = pd.concat(dataframes, ignore_index=True)
-    desired_experiments = ['vanilla', 'generalist_8', 'medsam']
+    desired_experiments = ['vanilla', 'generalist_8', 'medsam', "sam2.0", "sam2.1"]
     filtered_data = all_data[all_data['experiment'].isin(desired_experiments)]
 
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
-    _order = ["vanilla", "medsam", "generalist_8"]
+    _order = ["vanilla", "medsam", "sam2.0", "sam2.1", "generalist_8"]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
 
@@ -242,7 +302,10 @@ def _make_full_iterative_prompting_average_plots(dataframes):
 
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
-    _order = ["vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"]
+    _order = [
+        "vanilla", "sam2.0", "sam2.1", "medsam", "sam-med2d",
+        "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
+    ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
     avg_df = avg_df.sort_values('experiment')
 
@@ -301,11 +364,21 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     plt.close()
 
 
+def _figure_1():
+    # for point, box, ip and ib
+    results = []
+    for dataset_name in list(DATASET_MAPS.keys()):
+        res = _get_results_per_dataset(dataset_name=dataset_name, use_masks=True)
+        results.append(res)
+
+    _make_per_model_average_plots(results)
+
+
 def _figure_3a():
     # for all iterations in iterative prompting
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
-        res = _get_results_per_dataset(dataset_name=dataset_name, get_all=True)
+        res = _get_results_per_dataset(dataset_name=dataset_name, get_all=True, use_masks=True)
         results.append(res)
 
     _make_full_iterative_prompting_average_plots(results)
@@ -315,25 +388,15 @@ def _figure_3b():
     # for point, box, ip and ib
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
-        res = _get_results_per_dataset(dataset_name=dataset_name)
+        res = _get_results_per_dataset(dataset_name=dataset_name, use_masks=True)
         results.append(res)
 
     _make_per_experiment_plots(results, list(DATASET_MAPS.keys()))
 
 
-def _figure_1():
-    # for point, box, ip and ib
-    results = []
-    for dataset_name in list(DATASET_MAPS.keys()):
-        res = _get_results_per_dataset(dataset_name=dataset_name)
-        results.append(res)
-
-    _make_per_model_average_plots(results)
-
-
 def main():
-    _figure_1()
-    _figure_3a()
+    # _figure_1()
+    # _figure_3a()
     _figure_3b()
 
 
