@@ -131,8 +131,8 @@ def _make_per_dataset_plot():
     )
 
     plt.subplots_adjust(hspace=0.4, wspace=0.1)
-    plt.savefig("./figure_4_semantic_segmentation_per_dataset.png")
-    plt.savefig("./figure_4_semantic_segmentation_per_dataset.svg")
+    plt.savefig("./fig_4_semantic_segmentation_per_dataset.png")
+    plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg")
     plt.close()
 
 
