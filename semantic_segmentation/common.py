@@ -10,7 +10,7 @@ DATASETS_2D = [
 ]
 
 DATASETS_3D = [
-    "curvas", "osic_pulmofib", "sega", "duke_liver", "toothfairy", "oasis", "lgg_mri", "leg_3d_us", "micro_usp"
+    "curvas", "osic_pulmofib", "sega", "duke_liver", "oasis", "lgg_mri", "leg_3d_us", "micro_usp"
 ]
 
 MODELS_ROOT = "/mnt/vast-nhr/projects/cidas/cca/models"
@@ -131,14 +131,6 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         train_loader = medical.get_duke_liver_loader(path=data_path, batch_size=2, split="train", **kwargs)
         val_loader = medical.get_duke_liver_loader(path=data_path, batch_size=1, split="val", **kwargs)
 
-    elif dataset_name == "toothfairy":
-        kwargs["raw_transform"] = RawTrafoFor3dInputs(switch_last_axes=True)
-        kwargs["label_transform"] = LabelTrafoToBinary(switch_last_axes=True)
-        train_loader = medical.get_toothfairy_loader(
-            path=data_path, batch_size=2, split="train", version="v1", **kwargs
-        )
-        val_loader = medical.get_toothfairy_loader(path=data_path, batch_size=1, split="val", version="v1", **kwargs)
-
     elif dataset_name == "oasis":
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
@@ -182,7 +174,7 @@ def get_num_classes(dataset_name):
         num_classes = 4
     elif dataset_name in [
         "piccolo", "cbis_ddsm", "dca1", "drive", "isic", "siim_acr", "hil_toothseg", "covid_qu_ex",  # 2d datasets
-        "duke_liver", "toothfairy", "sega", "segthy", "lgg_mri", "micro_usp",  # 3d datasets
+        "duke_liver", "sega", "segthy", "lgg_mri", "micro_usp",  # 3d datasets
     ]:
         num_classes = 2
     else:

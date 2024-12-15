@@ -220,7 +220,7 @@ def _run_semantic_segmentation_for_image_3d(
     predict_with_halo(
         input_=image,
         model=model,
-        gpu_ids=[device],
+        gpu_ids=[device], 
         block_shape=block_shape,
         halo=halo,
         preprocess=preprocess,
@@ -279,8 +279,6 @@ def run_semantic_segmentation_3d(
 
             from tukra.io import read_image
             image = read_image(image_path, key=image_key)
-
-            print(image.shape)
 
             if make_channels_first:
                 image = image.transpose(2, 0, 1)

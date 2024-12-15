@@ -136,7 +136,7 @@ def _make_per_dataset_plot():
     plt.close()
 
 
-def _plot_absolute_mean_per_experimet():
+def _plot_absolute_mean_per_experiment():
     method_sums = {}
     method_counts = {}
     for methods in NNUNET_RESULTS.values():
@@ -181,7 +181,7 @@ def _plot_absolute_mean_per_experimet():
 
 def main():
     _make_per_dataset_plot()
-    # _plot_absolute_mean_per_experimet()
+    # _plot_absolute_mean_per_experiment()
 
 
 if __name__ == "__main__":

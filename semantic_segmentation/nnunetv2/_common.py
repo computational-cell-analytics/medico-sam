@@ -38,7 +38,6 @@ def _get_paths(path, dataset, split):
         "osic_pulmofib": lambda: medical.osic_pulmofib.get_osic_pulmofib_paths(path=path, split=split),
         "sega": lambda: medical.sega.get_sega_paths(path=path, data_choice=dchoice),
         "duke_liver": lambda: medical.duke_liver.get_duke_liver_paths(path=path, split=split),
-        "toothfairy": lambda: medical.toothfairy.get_toothfairy_paths(path=path, split=split, version="v1"),
         "oasis": lambda: medical.oasis.get_oasis_paths(path=path, split=split),
         "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(path=path, split=split),
         "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(path=path, split=split),
@@ -151,7 +150,7 @@ def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_
         file_suffix, transfer_mode = ".nii.gz", "copy"
 
         dataset_json_template["channel_names"] = {"0": "CT"}
-        dataset_json_template["labels"] = {"background": 0, "pancreas": 1, "kidney": 2, "liver": 3}
+        dataset_json_template["labels"] = {"background": 0, "kidney": 1, "liver": 2, "pancreas": 3}
         dataset_json_template["description"] = "CURVAS: https://curvas.grand-challenge.org"
 
     elif dataset == "osic_pulmofib":
@@ -176,14 +175,6 @@ def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_
         dataset_json_template["channel_names"] = {"0": "MRI"}
         dataset_json_template["labels"] = {"background": 0, "liver": 1}
         dataset_json_template["description"] = "Duke Liver: https://zenodo.org/records/7774566"
-
-    elif dataset == "toothfairy":
-        file_suffix, transfer_mode = ".nii.gz", "copy"
-        preprocess_labels = _binarise_labels
-
-        dataset_json_template["channel_names"] = {"0": "CBCT"}
-        dataset_json_template["labels"] = {"background": 0, "mandibular canal": 1}
-        dataset_json_template["description"] = "ToothFairy v1: https://toothfairy.grand-challenge.org/"
 
     elif dataset == "oasis":
         file_suffix, transfer_mode = ".nii.gz", "copy"
