@@ -21,7 +21,6 @@ def write_batch_script(out_path, dataset_name, fold_choice, mode, dry):
 #SBATCH -c 32
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
-#SBATCH -x ggpu[150,152,157,212]
 #SBATCH --job-name=nnunet_{dataset_name}
 
 source ~/.bashrc

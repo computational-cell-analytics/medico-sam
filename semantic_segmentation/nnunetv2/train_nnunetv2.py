@@ -94,7 +94,6 @@ def main(args):
         nnunet.preprocess_data(dataset_id=dataset_id)
 
     if args.train:
-        # TODO: train other folds
         nnunet.train_nnunetv2(fold=args.fold, dataset_name=nnunet_dataset_name, dataset_id=dataset_id, dim=dim)
 
     if args.predict:
