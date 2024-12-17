@@ -46,7 +46,11 @@ def evaluate_interactive_3d(
             continue
 
         raw, labels = _load_raw_and_label_volumes(
-            raw_path=image_path, label_path=gt_path, channels_first=ensure_channels_first, keys=keys,
+            raw_path=image_path,
+            label_path=gt_path,
+            dataset_name=dataset_name,
+            channels_first=ensure_channels_first,
+            keys=keys,
         )
 
         if view:
@@ -66,7 +70,9 @@ def evaluate_interactive_3d(
             device=device,
             interactive_seg_mode=prompt_choice,
             min_size=10,
-            projection="points_and_mask",  # TODO: should we play around with this parameter?
+            # mask / points (Y) / box / single_point (N) / points_and_mask (N)
+            projection="single_point",  # TODO: should we play around with this parameter?
+            iou_threshold=0.8,  # TODO: expose this as an additional parameter as well.
         )
 
     results = {}
