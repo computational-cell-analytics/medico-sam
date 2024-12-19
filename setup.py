@@ -15,4 +15,3 @@ setup(
     url='https://user.informatik.uni-goettingen.de/~pape41/',
     packages=['medico_sam'],
 )
-
