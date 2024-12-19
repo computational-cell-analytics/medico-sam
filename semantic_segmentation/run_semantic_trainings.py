@@ -13,13 +13,13 @@ def write_batch_script(
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 4-00:00:00
-#SBATCH --mem 128G
+#SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
-#SBATCH -c 32
+#SBATCH -c 16
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
 #SBATCH --job-name=semsam_{dataset_name}
