@@ -40,7 +40,7 @@ def _run_evaluation_per_semantic_class(
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
-        gt = read_image(gt_path, key=gt_key, extension=extension)
+        gt = read_image(gt_path, key=gt_key, extension=extension).astype("uint32")
         if ensure_channels_first:
             gt = gt.transpose(2, 0, 1)
 
@@ -140,7 +140,7 @@ def run_evaluation_for_iterative_prompting_per_semantic_class(
         start_with_box_prompt: Whether to evaluate on experiments with iterative prompting starting with box.
         overwrite_results: Whether to overwrite results.
         extension: The choice of file extension for predictions.
-    
+
     Returns:
         A DataFrame that contains the evaluation results.
     """

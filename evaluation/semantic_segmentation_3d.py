@@ -16,7 +16,6 @@ DATASET_MAPPING_3D = {
     "osic_pulmofib": "Dataset302_OSICPulmoFib",
     "sega": "Dataset303_SegA",
     "duke_liver": "Dataset304_DukeLiver",
-    "toothfairy": "Dataset305_ToothFairy",
     "oasis": "Dataset306_OASIS",
     "lgg_mri": "Dataset307_LGG_MRI",
     "leg_3d_us": "Dataset308_Leg_3D_US",
@@ -25,10 +24,9 @@ DATASET_MAPPING_3D = {
 
 CLASS_MAPS = {
     # 3d datasets
-    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},  # TODO: double check the splits and class-level annotations.
+    "curvas": {"kidney": 1, "liver": 2, "pancreas": 3},
     "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},
-    "toothfairy": {"mandibular canal": 1},
     "oasis": {"gray_matter": 1, "thalamus": 2, "white_matter": 3, "csf": 4},
     "lgg_mri": {"glioma": 1},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
@@ -63,6 +61,9 @@ def main():
     model = load_model(args.checkpoint, device="cuda", model=model)
     model.eval()
 
+    # Whether to make channels first or not.
+    make_channels_first = False if args.dataset in ["lgg_mri", "leg_3d_us", "oasis"] else True
+
     inference.run_semantic_segmentation_3d(
         model=model,
         image_paths=image_paths,
@@ -70,7 +71,7 @@ def main():
         semantic_class_map=semantic_class_maps,
         is_multiclass=True,
         image_key=None,
-        make_channels_first=False if args.dataset in ["lgg_mri"] else True,
+        make_channels_first=make_channels_first,
     )
 
     run_evaluation_for_semantic_segmentation(
@@ -79,7 +80,7 @@ def main():
         experiment_folder=args.experiment_folder,
         semantic_class_map=semantic_class_maps,
         is_multiclass=True,
-        ensure_channels_first=False if args.dataset in ["lgg_mri"] else True,
+        ensure_channels_first=make_channels_first,
     )
 
 

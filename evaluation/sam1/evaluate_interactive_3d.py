@@ -7,7 +7,9 @@ import pandas as pd
 
 import torch
 
-from micro_sam.evaluation.multi_dimensional_segmentation import segment_slices_from_ground_truth
+from micro_sam.evaluation.multi_dimensional_segmentation import (
+    segment_slices_from_ground_truth, run_multi_dimensional_segmentation_grid_search
+)
 
 from medico_sam.evaluation.evaluation import run_evaluation_per_semantic_class
 
@@ -46,7 +48,11 @@ def evaluate_interactive_3d(
             continue
 
         raw, labels = _load_raw_and_label_volumes(
-            raw_path=image_path, label_path=gt_path, channels_first=ensure_channels_first, keys=keys,
+            raw_path=image_path,
+            label_path=gt_path,
+            dataset_name=dataset_name,
+            channels_first=ensure_channels_first,
+            keys=keys,
         )
 
         if view:
@@ -56,8 +62,29 @@ def evaluate_interactive_3d(
             v.add_labels(labels, name="Labels")
             napari.run()
 
+        # Perform grid-search to get the best parameters
+        best_params_path = run_multi_dimensional_segmentation_grid_search(
+            volume=raw,
+            ground_truth=labels,
+            model_type=model_type,
+            checkpoint_path=checkpoint_path,
+            embedding_path=None,
+            result_dir=prediction_dir,
+            interactive_seg_mode=prompt_choice,
+            min_size=10,
+            verbose=False,
+            evaluation_metric="dice",
+        )
+
+        best_params = {}
+        res_df = pd.read_csv(best_params_path)
+        for k, v in res_df.loc[0].items():
+            if k.startswith("Unnamed") or k == "Dice":
+                continue
+            best_params[k] = v
+
         # Segment using label propagation.
-        _ = segment_slices_from_ground_truth(
+        results = segment_slices_from_ground_truth(
             volume=raw,
             ground_truth=labels,
             model_type=model_type,
@@ -66,8 +93,15 @@ def evaluate_interactive_3d(
             device=device,
             interactive_seg_mode=prompt_choice,
             min_size=10,
-            projection="points_and_mask",  # TODO: should we play around with this parameter?
+            evaluation_metric="dice",
+            **best_params,
         )
+
+        print(results)
+
+        # Remove paths to grid search results
+        os.remove(best_params_path)
+        os.remove(os.path.join(prediction_dir, "all_grid_search_results.csv"))
 
     results = {}
     for cname, cid in semantic_maps.items():

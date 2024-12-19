@@ -24,10 +24,9 @@ CLASS_MAPS = {
     "hil_toothseg": {"teeth": 1},
     "covid_qu_ex": {"lung": 1},
     # 3d datasets
-    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},  # TODO: double check the splits and class-level annotations.
+    "curvas": {"kidney": 1, "liver": 2, "pancreas": 3},
     "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},
-    "toothfairy": {"mandibular canal": 1},
     "oasis": {"gray matter": 1, "thalamus": 2, "white matter": 3, "csf": 4},
     "lgg_mri": {"glioma": 1},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},

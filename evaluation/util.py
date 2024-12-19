@@ -58,7 +58,7 @@ SEMANTIC_CLASS_MAPS = {
     },
     "toothfairy": {"mandibular_canal": 1},
     "drive": {"retinal_vessel": 1},
-    "curvas": {"pancreas": 1, "kidney": 2, "liver": 3},
+    "curvas": {"kidney": 1, "liver": 2, "pancreas": 3},
     "ct_cadaiver": {"all": None},
     "lgg_mri": {"glioma": 255}
 }

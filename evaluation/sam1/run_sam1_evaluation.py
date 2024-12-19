@@ -13,14 +13,7 @@ MODELS_ROOT = "/mnt/vast-nhr/projects/cidas/cca/models"
 
 
 def write_batch_script(
-    out_path,
-    dataset_name,
-    model_type,
-    experiment_folder,
-    prompt_choice,
-    dry_run,
-    time_delay,
-    checkpoint,
+    out_path, dataset_name, model_type, experiment_folder, prompt_choice, dry_run, time_delay, checkpoint,
 ):
     """Writing batch submission scripts for SAM2 evaluations.
     """

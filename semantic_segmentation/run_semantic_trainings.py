@@ -22,7 +22,6 @@ def write_batch_script(
 #SBATCH -c 16
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
-#SBATCH -x ggpu[150,212]
 #SBATCH --job-name=semsam_{dataset_name}
 
 source ~/.bashrc
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models")
-    parser.add_argument("--iterations", type=int, default=int(1e4))
+    parser.add_argument("--iterations", type=int, default=int(1e5))
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)

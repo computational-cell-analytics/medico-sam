@@ -11,7 +11,7 @@ sys.path.append("..")
 def write_batch_script(out_path, dataset_name, fold_choice, mode, dry):
     "Writing scripts with different nnUNet training and inference runs."
     batch_script = f"""#!/bin/bash
-#SBATCH -t 3-00:00:00
+#SBATCH -t 4-00:00:00
 #SBATCH --mem 128G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -21,7 +21,6 @@ def write_batch_script(out_path, dataset_name, fold_choice, mode, dry):
 #SBATCH -c 32
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
-#SBATCH -x ggpu[150,152,157,212]
 #SBATCH --job-name=nnunet_{dataset_name}
 
 source ~/.bashrc
