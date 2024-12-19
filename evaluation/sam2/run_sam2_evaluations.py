@@ -19,15 +19,14 @@ def _get_slurm_template(job_name, env_name):
     batch_script = f"""#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH -t 6:00:00
-#SBATCH -c 32
-#SBATCH --mem 128G
+#SBATCH -t 4-00:00:00
+#SBATCH -c 16
+#SBATCH --mem 64G
 #SBATCH -p grete:shared
 #SBATCH --constraint=80gb
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
 #SBATCH --qos=96h
-#SBATCH -x ggpu[150,201,202,212]
 #SBATCH --job-name={job_name}
 
 source ~/.bashrc

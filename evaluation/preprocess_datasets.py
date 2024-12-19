@@ -11,8 +11,7 @@ import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 
-# TODO: will make a release of tukra soon
-from tukra.utils import read_image
+from tukra.io import read_image
 
 from torch_em.data.datasets import medical
 from torch_em.transform.raw import normalize
@@ -194,7 +193,7 @@ def for_sega(save_dir, split_choice):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.sega._get_sega_paths(
+    image_paths, gt_paths = medical.sega.get_sega_paths(
         path=os.path.join(ROOT, "sega"), data_choice=split_choice, download=False,
     )
 
@@ -249,11 +248,11 @@ def for_idrid(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    train_image_paths, train_gt_paths = medical.idrid._get_idrid_paths(
+    train_image_paths, train_gt_paths = medical.idrid.get_idrid_paths(
         path=os.path.join(ROOT, "idrid"), split="train", task="optic_disc", download=False,
     )
 
-    test_image_paths, test_gt_paths = medical.idrid._get_idrid_paths(
+    test_image_paths, test_gt_paths = medical.idrid.get_idrid_paths(
         path=os.path.join(ROOT, "idrid"), split="test", task="optic_disc", download=False,
     )
 
@@ -314,7 +313,7 @@ def for_montgomery(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.montgomery._get_montgomery_paths(
+    image_paths, gt_paths = medical.montgomery.get_montgomery_paths(
         path=os.path.join(ROOT, "montgomery"), download=False,
     )
 
@@ -333,7 +332,7 @@ def for_oimhs(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.oimhs._get_oimhs_paths(
+    image_paths, gt_paths = medical.oimhs.get_oimhs_paths(
         path=os.path.join(ROOT, "oimhs"), split="test", download=False
     )
 
@@ -349,7 +348,7 @@ def for_isic(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.isic._get_isic_paths(path=os.path.join(ROOT, "isic"), split="test", download=False)
+    image_paths, gt_paths = medical.isic.get_isic_paths(path=os.path.join(ROOT, "isic"), split="test", download=False)
 
     fext = "isic_"
     convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
@@ -363,7 +362,7 @@ def for_papila(save_dir, task):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.papila._get_papila_paths(
+    image_paths, gt_paths = medical.papila.get_papila_paths(
         path=os.path.join(ROOT, "papila"), task=task, expert_choice="exp1", download=True,
     )
 
@@ -379,7 +378,7 @@ def for_osic_pulmofib(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.osic_pulmofib._get_osic_pulmofib_paths(
+    image_paths, gt_paths = medical.osic_pulmofib.get_osic_pulmofib_paths(
         path=os.path.join(ROOT, "osic_pulmofib"), download=True
     )
 
@@ -426,7 +425,7 @@ def for_siim_acr(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.siim_acr._get_siim_acr_paths(
+    image_paths, gt_paths = medical.siim_acr.get_siim_acr_paths(
         path=os.path.join(ROOT, "siim_acr"), split="test", download=True,
     )
 
@@ -442,7 +441,7 @@ def for_jnu_fim(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.jnuifm._get_jnuifm_paths(path=os.path.join(ROOT, "jnu-ifm"), download=False)
+    image_paths, gt_paths = medical.jnuifm.get_jnuifm_paths(path=os.path.join(ROOT, "jnu-ifm"), download=False)
 
     for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
         image = read_image(image_path, extension=".mha")
@@ -483,7 +482,7 @@ def for_microusp(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.micro_usp._get_micro_usp_paths(
+    image_paths, gt_paths = medical.micro_usp.get_micro_usp_paths(
         path=os.path.join(ROOT, "microusp"), split="test", download=True
     )
 
@@ -513,7 +512,7 @@ def for_cbis_ddsm(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.cbis_ddsm._get_cbis_ddsm_paths(
+    image_paths, gt_paths = medical.cbis_ddsm.get_cbis_ddsm_paths(
         path=os.path.join(ROOT, "cbis_ddsm"), split="Test", task="Mass", tumour_type=None, download=True,
     )
 
@@ -529,7 +528,7 @@ def for_dca1(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.dca1._get_dca1_paths(
+    image_paths, gt_paths = medical.dca1.get_dca1_paths(
         path=os.path.join(ROOT, "dca1"), split="test", download=False
     )
 
@@ -597,7 +596,7 @@ def for_piccolo(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.piccolo._get_piccolo_paths(
+    image_paths, gt_paths = medical.piccolo.get_piccolo_paths(
         path=os.path.join(ROOT, "piccolo"), split="test", download=False
     )
 
@@ -613,7 +612,7 @@ def for_duke_liver(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.duke_liver._get_duke_liver_paths(
+    image_paths, gt_paths = medical.duke_liver.get_duke_liver_paths(
         path=os.path.join(ROOT, "duke_liver"), download=False
     )
 
@@ -643,7 +642,7 @@ def for_toothfairy(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.toothfairy._get_toothfairy_paths(
+    image_paths, gt_paths = medical.toothfairy.get_toothfairy_paths(
         path=os.path.join(ROOT, "toothfairy"), download=False
     )
 
@@ -725,7 +724,7 @@ def for_drive(save_dir):
         print("Looks like the preprocessing has completed.")
         return
 
-    image_paths, gt_paths = medical.drive._get_drive_paths(
+    image_paths, gt_paths = medical.drive.get_drive_paths(
         path=os.path.join(ROOT, "drive"), split="test", download=False,
     )
 
