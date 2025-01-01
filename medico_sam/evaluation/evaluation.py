@@ -40,14 +40,15 @@ def _run_evaluation_per_semantic_class(
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
-        gt = read_image(gt_path, key=gt_key, extension=extension).astype("uint32")
+        gt = read_image(gt_path, key=gt_key, extension=extension)
+        gt = np.round(gt).astype(int)  # convert labels to integer type.
         if ensure_channels_first:
             gt = gt.transpose(2, 0, 1)
 
         if semantic_class_id is not None:
-            gt = (gt == semantic_class_id).astype("uint8")
+            gt = (gt == semantic_class_id)
         else:
-            gt = (gt > 0).astype("uint8")
+            gt = (gt > 0)
 
         # Check whether the image has a valid foreground in the ground truth
         _, counts = np.unique(gt, return_counts=True)
@@ -55,16 +56,17 @@ def _run_evaluation_per_semantic_class(
             continue
 
         pred = read_image(pred_path, key=pred_key, extension=extension)
+        pred = np.round(pred).astype(int)  # convert predictions to integer type.
 
         if is_multiclass:
             if semantic_class_id is None:  # for SPIDER: if None, we return instance segmentation and binarise them.
-                pred = (pred > 0).astype("uint8")
+                pred = (pred > 0)
             else:
-                pred = (pred == semantic_class_id).astype("uint8")
+                pred = (pred == semantic_class_id)
         else:
-            pred = (pred > 0).astype("uint8")
+            pred = (pred > 0)
 
-        dice = calculate_dice_score(input_=pred, target=gt)
+        dice = calculate_dice_score(input_=pred.astype("uint8"), target=gt.astype("uint8"))
         dice_scores.append(dice)
 
     return dice_scores

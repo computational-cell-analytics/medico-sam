@@ -55,29 +55,32 @@ def _evaluate_per_class_dice(gt, prediction, class_maps):
 
 
 def evaluate_predictions(root_dir, dataset_name, fold, is_3d=False):
-    all_predictions = sorted(
+    prediction_paths = sorted(
         glob(os.path.join(root_dir, "predictionTs", f"fold_{fold}", "*.nii.gz" if is_3d else "*.tif"))
     )
-    all_gt = sorted(glob(os.path.join(root_dir, "labelsTs", "*.nii.gz" if is_3d else "*.tif")))
+    gt_paths = sorted(glob(os.path.join(root_dir, "labelsTs", "*.nii.gz" if is_3d else "*.tif")))
 
-    assert len(all_predictions) == len(all_gt) and len(all_predictions) > 0
-
-    class_maps = CLASS_MAPS[dataset_name]
+    assert len(prediction_paths) == len(gt_paths) and len(prediction_paths) > 0
 
     dice_scores = []
     for prediction_path, gt_path in tqdm(
-        zip(all_predictions, all_gt), total=len(all_gt), desc="Evaluating nnUNet predictions"
+        zip(prediction_paths, gt_paths), total=len(gt_paths), desc="Evaluating nnUNet predictions"
     ):
-        gt = read_image(gt_path).astype("uint32")
-        prediction = read_image(prediction_path).astype("uint32")
+        # Read ground-truth and predictions
+        gt = read_image(gt_path)
+        prediction = read_image(prediction_path)
+
+        # Convert to integers: we round up because some datasets (eg. CURVAS) have strange labels.
+        gt = np.round(gt).astype(int)
+        prediction = np.round(prediction).astype(int)
 
         assert gt.shape == prediction.shape, (gt.shape, prediction.shape)
 
-        score = _evaluate_per_class_dice(gt, prediction, class_maps)
+        score = _evaluate_per_class_dice(gt, prediction, CLASS_MAPS[dataset_name])
         dice_scores.append(score)
 
     fscores = {}
-    for cname in class_maps.keys():
+    for cname in CLASS_MAPS[dataset_name].keys():
         avg_score_per_class = [
             per_image_score.get(cname)[0] for per_image_score in dice_scores if cname in per_image_score
         ]
