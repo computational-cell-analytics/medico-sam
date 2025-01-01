@@ -14,18 +14,18 @@ def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lor
     "Writing scripts with different medico-sam semantic evaluations."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 2-00:00:00
-#SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
 #SBATCH -c 16
+#SBATCH --mem 64G
 #SBATCH --constraint=80gb
 #SBATCH --job-name=semsam_{dataset}
 
 source ~/.bashrc
-micromamba activate sam \n"""
+micromamba activate super \n"""
 
     # python script
     python_script = "python ../evaluation/" + \
