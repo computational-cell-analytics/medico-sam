@@ -1,8 +1,10 @@
-# medico-sam
-Segment Anything for Medical Imaging
+# Segment Anything for Medical Imaging
+
+## Installation:
 
 How to install `medico-sam`?
-1. Install PyTorch: https://pytorch.org/
+1. Install PyTorch: https://pytorch.org/ (we recommend doing it using `conda`)
 2. Install `micro-sam`: https://computational-cell-analytics.github.io/micro-sam/
-3. Install `tukra`: https://github.com/anwai98/tukra
-4. Install `medico-sam` from source: `pip install -e .`
+    - `conda install -c conda-forge micro_sam`
+3. Install `tukra` (from source): https://github.com/anwai98/tukra
+4. Install `medico-sam` (from source): `pip install -e .`
