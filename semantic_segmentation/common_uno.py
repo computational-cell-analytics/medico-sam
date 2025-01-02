@@ -128,22 +128,26 @@ def _get_data_paths(data_path, dataset_name, split, view):
         get_paths = {
             # 2d
             "oimhs": lambda: medical.oimhs.get_oimhs_paths(path=data_path, split=split, download=True),
-            # "isic": lambda: medical.isic.get_isic_paths(path=data_path, split=split, download=True),
-            # "dca1": lambda: medical.dca1.get_dca1_paths(path=data_path, split=split, download=True),
-            # "cbis_ddsm": lambda: medical.cbis_ddsm.get_cbis_ddsm_paths(
-            #     path=data_path, split=split.title(), task="Mass", download=True,
-            # ),
-            # "piccolo": medical.piccolo.get_piccolo_paths(path=data_path, split="validation" if split == "val" else split),
-            # "hil_toothseg": medical.hil_toothseg.get_hil_toothseg_paths(path=data_path, split=split, download=True),
+            "isic": lambda: medical.isic.get_isic_paths(path=data_path, split=split, download=True),
+            "dca1": lambda: medical.dca1.get_dca1_paths(path=data_path, split=split, download=True),
+            "cbis_ddsm": lambda: medical.cbis_ddsm.get_cbis_ddsm_paths(
+                path=data_path, split=split.title(), task="Mass", download=True,
+            ),
+            "piccolo": lambda: medical.piccolo.get_piccolo_paths(
+                path=data_path, split="validation" if split == "val" else split
+            ),
+            "hil_toothseg": lambda: medical.hil_toothseg.get_hil_toothseg_paths(
+                path=data_path, split=split, download=True
+            ),
             # # 3d
-            # "osic_pulmofib": lambda: medical.osic_pulmofib.get_osic_pulmofib_paths(
-            #     path=data_path, split=split, download=True
-            # ),
-            # "duke_liver": lambda: medical.duke_liver.get_duke_liver_paths(path=data_path, split=split, download=True),
-            # "oasis": lambda: medical.oasis.get_oasis_paths(path=data_path, split=split, download=True),
-            # "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(path=data_path, split=split, download=True),
-            # "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(path=data_path, split=split, download=True),
-            # "micro_usp": lambda: medical.micro_usp.get_micro_usp_paths(path=data_path, split=split, download=True),
+            "osic_pulmofib": lambda: medical.osic_pulmofib.get_osic_pulmofib_paths(
+                path=data_path, split=split, download=True
+            ),
+            "duke_liver": lambda: medical.duke_liver.get_duke_liver_paths(path=data_path, split=split, download=True),
+            "oasis": lambda: medical.oasis.get_oasis_paths(path=data_path, split=split, download=True),
+            "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(path=data_path, split=split, download=True),
+            "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(path=data_path, split=split, download=True),
+            "micro_usp": lambda: medical.micro_usp.get_micro_usp_paths(path=data_path, split=split, download=True),
         }
 
         get_ids = {

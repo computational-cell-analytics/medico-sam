@@ -77,6 +77,8 @@ def finetune_semantic_sam(args):
         patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset, view=args.view,
     )
 
+    breakpoint()
+
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
 
