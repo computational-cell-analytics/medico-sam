@@ -22,7 +22,6 @@ def write_batch_script(
 #SBATCH -c 16
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
-#SBATCH -x ggpu201
 #SBATCH --job-name=semsam_{dataset_name}
 
 source ~/.bashrc

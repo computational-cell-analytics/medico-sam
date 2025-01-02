@@ -25,7 +25,7 @@ def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lor
 #SBATCH --job-name=semsam_{dataset}
 
 source ~/.bashrc
-micromamba activate super \n"""
+micromamba activate sam \n"""
 
     # python script
     python_script = "python ../evaluation/" + \
