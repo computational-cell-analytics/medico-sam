@@ -40,14 +40,15 @@ def _run_evaluation_per_semantic_class(
         assert os.path.exists(gt_path), gt_path
         assert os.path.exists(pred_path), pred_path
 
-        gt = read_image(gt_path, key=gt_key, extension=extension).astype("uint32")
+        gt = read_image(gt_path, key=gt_key, extension=extension)
+        gt = np.round(gt).astype(int)  # convert labels to integer type.
         if ensure_channels_first:
             gt = gt.transpose(2, 0, 1)
 
         if semantic_class_id is not None:
-            gt = (gt == semantic_class_id).astype("uint8")
+            gt = (gt == semantic_class_id)
         else:
-            gt = (gt > 0).astype("uint8")
+            gt = (gt > 0)
 
         # Check whether the image has a valid foreground in the ground truth
         _, counts = np.unique(gt, return_counts=True)
@@ -55,16 +56,17 @@ def _run_evaluation_per_semantic_class(
             continue
 
         pred = read_image(pred_path, key=pred_key, extension=extension)
+        pred = np.round(pred).astype(int)  # convert predictions to integer type.
 
         if is_multiclass:
             if semantic_class_id is None:  # for SPIDER: if None, we return instance segmentation and binarise them.
-                pred = (pred > 0).astype("uint8")
+                pred = (pred > 0)
             else:
-                pred = (pred == semantic_class_id).astype("uint8")
+                pred = (pred == semantic_class_id)
         else:
-            pred = (pred > 0).astype("uint8")
+            pred = (pred > 0)
 
-        dice = calculate_dice_score(input_=pred, target=gt)
+        dice = calculate_dice_score(input_=pred.astype("uint8"), target=gt.astype("uint8"))
         dice_scores.append(dice)
 
     return dice_scores
@@ -223,19 +225,18 @@ def run_evaluation_for_semantic_segmentation(
         # If the results have been computed already, it's not needed to re-run it again.
         if os.path.exists(csv_path):
             print(pd.read_csv(csv_path))
-            return
-
-        print("Evaluating", prediction_root)
-        pred_paths = natsorted(
-            glob(os.path.join(prediction_root, "all" if is_multiclass else semantic_class_name, "*"))
-        )
-        result = run_evaluation_per_semantic_class(
-            gt_paths=gt_paths,
-            prediction_paths=pred_paths,
-            semantic_class_id=semantic_class_id,
-            save_path=None,
-            is_multiclass=is_multiclass,
-            ensure_channels_first=ensure_channels_first,
-        )
-        print(result)
-        result.to_csv(csv_path)
+        else:
+            print("Evaluating", prediction_root)
+            pred_paths = natsorted(
+                glob(os.path.join(prediction_root, "all" if is_multiclass else semantic_class_name, "*"))
+            )
+            result = run_evaluation_per_semantic_class(
+                gt_paths=gt_paths,
+                prediction_paths=pred_paths,
+                semantic_class_id=semantic_class_id,
+                save_path=None,
+                is_multiclass=is_multiclass,
+                ensure_channels_first=ensure_channels_first,
+            )
+            print(result)
+            result.to_csv(csv_path)

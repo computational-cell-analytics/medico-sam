@@ -16,10 +16,10 @@ DATASET_MAPPING_3D = {
     "osic_pulmofib": "Dataset302_OSICPulmoFib",
     "sega": "Dataset303_SegA",
     "duke_liver": "Dataset304_DukeLiver",
-    "oasis": "Dataset306_OASIS",
-    "lgg_mri": "Dataset307_LGG_MRI",
-    "leg_3d_us": "Dataset308_Leg_3D_US",
-    "micro_usp": "Dataset309_MicroUSP",
+    "oasis": "Dataset305_OASIS",
+    "lgg_mri": "Dataset306_LGG_MRI",
+    "leg_3d_us": "Dataset307_Leg_3D_US",
+    "micro_usp": "Dataset308_MicroUSP",
 }
 
 CLASS_MAPS = {
@@ -39,7 +39,7 @@ def get_3d_dataset_paths(dataset_name):
     root_dir = os.path.join("/mnt/vast-nhr/projects/cidas/cca/nnUNetv2/nnUNet_raw", DATASET_MAPPING_3D[dataset_name])
     image_paths = natsorted(glob(os.path.join(root_dir, "imagesTs", "*")))
     gt_paths = natsorted(glob(os.path.join(root_dir, "labelsTs", "*")))
-    assert len(image_paths) == len(gt_paths)
+    assert len(image_paths) == len(gt_paths) and len(image_paths) > 0
     return image_paths, gt_paths, CLASS_MAPS[dataset_name]
 
 

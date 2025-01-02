@@ -8,46 +8,43 @@ import matplotlib.pyplot as plt
 
 NNUNET_RESULTS = {
     # 2d
-    "oimhs": [0.9897, 0.8752,  0.8419, 0.9966],
-    "isic": [0.8443],
-    "dca1": [0.7984],
-    "cbis_ddsm": [0.4281],
-    "drive": [0.8143],
-    "piccolo": [0.6507],
-    # "siim_acr": [0.5621],
-    "hil_toothseg": [0.8911],
-    "covid_qu_ex": [0.9799],
+    "oimhs": [0.9899, 0.8763,  0.8537, 0.9966],
+    "isic": [0.8404],
+    "dca1": [0.8003],
+    "cbis_ddsm": [0.4329],
+    "piccolo": [0.6749],
+    "hil_toothseg": [0.8921],
+
     # 3d
-    "osic_pulmofib": [0.5356, 0.8832, 0.7914],
-    # "sega": [0.7872],
-    "duke_liver": [0.911],
-    # "toothfairy": [0.8375],
-    # "oasis": [0.9519, 0.9689, 0.9773, 0.9655],
-    "lgg_mri": [0.8855],
-    # "leg_3d_us": [0.8947, 0.9059, 0.8887],
-    "micro_usp": [0.8605],
+    "osic_pulmofib": [0.4984, 0.8858, 0.7850],
+    "leg_3d_us": [0.8943, 0.9059, 0.8865],
+    "oasis": [0.9519, 0.9689, 0.9773, 0.9656],
+    "micro_usp": [0.8402],
+    "lgg_mri": [0.8875],
+    "duke_liver": [0.9117],
 }
 
 
 DATASET_MAPS = {
+    # 2d
     "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
     "isic": "ISIC (Skin Lesion in Dermoscopy)",
-    "dca1": "DCA1 (Veins in X-Ray Coronary Angiograms)",
+    "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
-    "drive": "DRIVE (Vessel Segmentation in Fundus)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
-    "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
     "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
-    "covid_qu_ex": "COVID QU Ex (Lungs in Infected Chest X-Ray)",
-    "osic_pulmofib": "OSIC PulmoFib",
-    "duke_liver": "Duke Liver",
-    "toothfairy": "Toothfairy",
-    "lgg_mri": "LGG MRI",
-    "micro_usp": "MicroUSP",
+    # 3
+    "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
+    "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
+    "oasis": "OASIS (Brain Tissue in MRI)",
+    "micro_usp": "MicroUSP (Prostate in Micro-Ultrasound)",
+    "lgg_mri": "LGG MRI (Low-Grade Glioma in Brain MRI)",
+    "duke_liver": "Duke Liver (Liver in MRI)",
 }
 
 
 MODEL_MAPS = {
+    "nnunet": "nnUNet",
     "full/sam": "SAM",
     "lora/sam": "SAM\n(LoRA)",
     "full/medico-sam-8g": "MedicoSAM",
@@ -57,8 +54,6 @@ MODEL_MAPS = {
     "full/simplesam": "Simple FT",
     "lora/simplesam": "Simple FT\n(LoRA)",
 }
-
-MULTICLASS_DATASETS = ["oimhs"]
 
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam"
 
@@ -88,46 +83,51 @@ def get_results(dataset_name):
 
 
 def _make_per_dataset_plot():
-    percentage_results = {}
+    results = {}
     for dataset, nnunet_scores in NNUNET_RESULTS.items():
         scores = get_results(dataset)
-        percentage_results[dataset] = {}
+        results[dataset] = {"nnunet": np.mean(nnunet_scores)}
         for df_val in scores.iloc:
             name = df_val["name"]
             dice = df_val["dice"]
-            percentage_scores = [(s - nnunet_scores[i]) / nnunet_scores[i] * 100 for i, s in enumerate(dice)]
-            percentage_results[dataset][name] = np.mean(percentage_scores)
+            results[dataset][name] = np.mean(dice)
 
-    fig, axes = plt.subplots(3, 4, figsize=(35, 20))
+    fig, axes = plt.subplots(4, 3, figsize=(35, 30))
     axes = axes.flatten()
 
-    for ax, (dataset, methods) in zip(axes, percentage_results.items()):
+    for ax, (dataset, methods) in zip(axes, results.items()):
         methods_list = [
-            "full/sam", "lora/sam", "full/medsam", "lora/medsam", "full/simplesam",
-            "lora/simplesam", "full/medico-sam-8g", "lora/medico-sam-8g",
+            "full/sam", "lora/sam",
+            "full/medsam", "lora/medsam",
+            "full/simplesam", "lora/simplesam",
+            "full/medico-sam-8g", "lora/medico-sam-8g",
         ]
-        percentage_scores = [methods[_method] for _method in methods_list]
+        scores, neu_methods_list = [], []
+        for _method in methods_list:
+            if _method in methods:
+                scores.append(methods[_method])
+                neu_methods_list.append(_method)
 
-        ax.bar(methods_list, percentage_scores, color="#F0746E", edgecolor="grey")
-        ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
+        ax.bar(neu_methods_list, scores, color="#089099")
+        ax.axhline(methods.get("nnunet"), color="#DC3977", linewidth=4)
 
-        min_val, max_val = min(percentage_scores), max(percentage_scores)
-
-        if min_val < 0:
-            ax.axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)
-        if max_val > 0:
-            ax.axhspan(0, max_val, facecolor='lightgreen', alpha=0.2)
-
-        ax.set_ylim([min_val - 10, max_val + 10])
-        _xticklabels = [MODEL_MAPS[_exp] for _exp in methods_list]
-        ax.set_xticks(np.arange(len(methods_list)))
-        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=14)
+        ax.set_ylim([0, 1])
+        _xticklabels = [MODEL_MAPS[_exp] for _exp in neu_methods_list]
+        ax.set_xticks(np.arange(len(neu_methods_list)))
+        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=18)
         ax.tick_params(axis='y', labelsize=14)
-        ax.set_title(f'{DATASET_MAPS[dataset]}', fontsize=14)
+
+        fontdict = {"fontsize": 18}
+        if dataset in ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]:
+            fontdict["fontstyle"] = "italic"
+        else:
+            fontdict["fontweight"] = "bold"
+
+        ax.set_title(f'{DATASET_MAPS[dataset]}', fontdict=fontdict)
+        ax.title.set_color("#212427")
 
     plt.text(
-        x=-30.1, y=5, s="(%) Relative Dice Similarity Coefficient (compared to nnU-Net)",
-        rotation=90, fontweight="bold", fontsize=16
+        x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20
     )
 
     plt.subplots_adjust(hspace=0.4, wspace=0.1)
@@ -137,42 +137,45 @@ def _make_per_dataset_plot():
 
 
 def _plot_absolute_mean_per_experiment():
-    method_sums = {}
-    method_counts = {}
-    for methods in NNUNET_RESULTS.values():
-        for method, scores in methods.items():
-            if isinstance(scores, list):
-                mean_score = np.mean(scores)
-            else:
-                mean_score = scores
-            if method not in method_sums:
-                method_sums[method] = 0
-                method_counts[method] = 0
-            method_sums[method] += mean_score
-            method_counts[method] += 1
-
-    absolute_means = {method: method_sums[method] / method_counts[method] for method in method_sums}
-
     methods = [
-        "nnunet", "sam-fft", "sam-lora", "medsam-fft", "medsam-lora",
-        "simplesam-fft", "simplesam-lora", "medicosam-fft", "medicosam-lora"
+        "nnunet",
+        "full/sam", "lora/sam",
+        "full/medsam", "lora/medsam",
+        "full/simplesam", "lora/simplesam",
+        "full/medico-sam-8g", "lora/medico-sam-8g",
     ]
-    means = [absolute_means[_method] for _method in methods]
+
+    results = {}
+    for dataset, nnunet_scores in NNUNET_RESULTS.items():
+        scores = get_results(dataset)
+        for method in methods:
+            if method == "nnunet":
+                res = np.mean(nnunet_scores)
+            else:
+                res = scores.loc[scores["name"] == method].iloc[0]["dice"]
+                res = np.mean(res)
+
+            if method in results:
+                results[method] = np.mean([results[method], res])
+            else:
+                results[method] = res
 
     fig, ax = plt.subplots(figsize=(20, 10))
 
-    bars = ax.bar(methods, means, color="#F0746E", edgecolor="grey")
+    means = [results[_method] for _method in methods]
+    bars = ax.bar(methods, means, color="#045275")
 
+    ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
     ax.set_xticklabels(_xticklabels, fontsize=16)
     ax.tick_params(axis='y', labelsize=16)
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=16, fontweight="bold")
+    ax.set_ylabel('Average Dice Similarity Coefficient', fontsize=16, fontweight="bold")
 
     # NOTE: adds values on top of each bar
     for bar, mean in zip(bars, means):
         yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, round(mean, 3), ha='center', va='bottom', fontsize=14)
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, round(mean, 4), ha='center', va='bottom', fontsize=14)
 
     plt.savefig("./fig_1_semantic_segmentation_average.png")
     plt.savefig("./fig_1_semantic_segmentation_average.svg")

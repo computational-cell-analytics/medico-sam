@@ -12,13 +12,13 @@ def write_batch_script(out_path, dataset_name, fold_choice, mode, dry):
     "Writing scripts with different nnUNet training and inference runs."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 4-00:00:00
-#SBATCH --mem 128G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
-#SBATCH -c 32
+#SBATCH -c 16
+#SBATCH --mem 64G
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
 #SBATCH --job-name=nnunet_{dataset_name}
