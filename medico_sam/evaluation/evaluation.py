@@ -225,19 +225,18 @@ def run_evaluation_for_semantic_segmentation(
         # If the results have been computed already, it's not needed to re-run it again.
         if os.path.exists(csv_path):
             print(pd.read_csv(csv_path))
-            return
-
-        print("Evaluating", prediction_root)
-        pred_paths = natsorted(
-            glob(os.path.join(prediction_root, "all" if is_multiclass else semantic_class_name, "*"))
-        )
-        result = run_evaluation_per_semantic_class(
-            gt_paths=gt_paths,
-            prediction_paths=pred_paths,
-            semantic_class_id=semantic_class_id,
-            save_path=None,
-            is_multiclass=is_multiclass,
-            ensure_channels_first=ensure_channels_first,
-        )
-        print(result)
-        result.to_csv(csv_path)
+        else:
+            print("Evaluating", prediction_root)
+            pred_paths = natsorted(
+                glob(os.path.join(prediction_root, "all" if is_multiclass else semantic_class_name, "*"))
+            )
+            result = run_evaluation_per_semantic_class(
+                gt_paths=gt_paths,
+                prediction_paths=pred_paths,
+                semantic_class_id=semantic_class_id,
+                save_path=None,
+                is_multiclass=is_multiclass,
+                ensure_channels_first=ensure_channels_first,
+            )
+            print(result)
+            result.to_csv(csv_path)
