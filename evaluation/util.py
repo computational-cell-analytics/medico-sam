@@ -60,7 +60,8 @@ SEMANTIC_CLASS_MAPS = {
     "drive": {"retinal_vessel": 1},
     "curvas": {"kidney": 1, "liver": 2, "pancreas": 3},
     "ct_cadaiver": {"all": None},
-    "lgg_mri": {"glioma": 255}
+    "lgg_mri": {"glioma": 255},
+    "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
 }
 
 MULTICLASS_SEMANTIC = [

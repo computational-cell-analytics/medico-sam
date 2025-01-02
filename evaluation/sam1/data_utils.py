@@ -34,7 +34,6 @@ def _get_data_paths(path, dataset_name):
 
     # Get paths to the volumetric data.
     path_to_volumes = {
-        "curvas": lambda: medical.curvas.get_curvas_paths(path=os.path.join(path, "curvas"), split="test"),
         "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(
             path=os.path.join(path, "lgg_mri"), split="test", download=True
         ),
@@ -44,6 +43,9 @@ def _get_data_paths(path, dataset_name):
         "microusp": lambda: medical.micro_usp.get_micro_usp_paths(
             path=os.path.join(path, "micro_usp"), split="test", download=True,
         ),
+        "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(
+            path=os.path.join(path, "leg_3d_us"), split="test", download=True,
+        )
     }
 
     assert dataset_name in path_to_volumes.keys(), f"'{dataset_name}' is not a supported dataset."
@@ -57,7 +59,7 @@ def _get_data_paths(path, dataset_name):
     semantic_maps = SEMANTIC_CLASS_MAPS[dataset_name]
 
     ensure_channels_first = True
-    if dataset_name == "lgg_mri":
+    if dataset_name in ["lgg_mri", "leg_3d_us"]:
         ensure_channels_first = False
 
     keys = None
