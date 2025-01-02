@@ -12,9 +12,7 @@ from util import get_default_arguments
 
 
 DATASET_MAPPING_3D = {
-    "curvas": "Dataset301_Curvas",
     "osic_pulmofib": "Dataset302_OSICPulmoFib",
-    "sega": "Dataset303_SegA",
     "duke_liver": "Dataset304_DukeLiver",
     "oasis": "Dataset305_OASIS",
     "lgg_mri": "Dataset306_LGG_MRI",
@@ -24,14 +22,12 @@ DATASET_MAPPING_3D = {
 
 CLASS_MAPS = {
     # 3d datasets
-    "curvas": {"kidney": 1, "liver": 2, "pancreas": 3},
     "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},
     "oasis": {"gray_matter": 1, "thalamus": 2, "white_matter": 3, "csf": 4},
     "lgg_mri": {"glioma": 1},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
     "micro_usp": {"prostate": 1},
-    "sega": {"aorta": 1}
 }
 
 

@@ -14,17 +14,12 @@ DATASET_MAPPING_2D = {
     "isic": [202, "Dataset202_ISIC"],
     "dca1": [203, "Dataset203_DCA1"],
     "cbis_ddsm": [204, "Dataset204_CBISDDSM"],
-    "drive": [205, "Dataset205_DRIVE"],
     "piccolo": [206, "Dataset206_PICCOLO"],
-    "siim_acr": [207, "Dataset207_SIIM_ACR"],
     "hil_toothseg": [208, "Dataset208_HIL_ToothSeg"],
-    "covid_qu_ex": [209, "Dataset209_Covid_QU_EX"],
 }
 
 DATASET_MAPPING_3D = {
-    "curvas": [301, "Dataset301_Curvas"],
     "osic_pulmofib": [302, "Dataset302_OSICPulmoFib"],
-    "sega": [303, "Dataset303_SegA"],
     "duke_liver": [304, "Dataset304_DukeLiver"],
     "oasis": [305, "Dataset305_OASIS"],
     "lgg_mri": [306, "Dataset306_LGG_MRI"],

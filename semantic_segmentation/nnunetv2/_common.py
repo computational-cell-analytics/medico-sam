@@ -9,17 +9,6 @@ def _get_paths(path, dataset, split):
     if split not in ['train', 'val', 'test']:
         raise ValueError(f"'{split}' is not a valid split.")
 
-    # NOTE: Case for 'sega' dataset where the splits are on data-level.
-    if dataset == "sega":
-        if split == "train":
-            dchoice = "Rider"
-        elif split == "val":
-            dchoice = "Dongyang"
-        elif split == "test":
-            dchoice = "KiTS"
-        else:
-            raise ValueError
-
     dpaths = {
         # 2d datasets
         "oimhs": lambda: medical.oimhs.get_oimhs_paths(path=path, split=split),
@@ -28,15 +17,10 @@ def _get_paths(path, dataset, split):
         "cbis_ddsm": lambda: medical.cbis_ddsm.get_cbis_ddsm_paths(
             path=path, split=split.title(), task="Mass", ignore_mismatching_pairs=True,
         ),
-        "drive": lambda: medical.drive.get_drive_paths(path=path, split=split),
         "piccolo": lambda: medical.piccolo.get_piccolo_paths(path, split="validation" if split == "val" else split),
-        "siim_acr": lambda: medical.siim_acr.get_siim_acr_paths(path=path, split=split),
         "hil_toothseg": lambda: medical.hil_toothseg.get_hil_toothseg_paths(path=path, split=split),
-        "covid_qu_ex": lambda: medical.covid_qu_ex.get_covid_qu_ex_paths(path=path, split=split, task="lung"),
         # 3d datasets
-        "curvas": lambda: medical.curvas.get_curvas_paths(path=path, split=split),
         "osic_pulmofib": lambda: medical.osic_pulmofib.get_osic_pulmofib_paths(path=path, split=split),
-        "sega": lambda: medical.sega.get_sega_paths(path=path, data_choice=dchoice),
         "duke_liver": lambda: medical.duke_liver.get_duke_liver_paths(path=path, split=split),
         "oasis": lambda: medical.oasis.get_oasis_paths(path=path, split=split),
         "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(path=path, split=split),
@@ -106,13 +90,6 @@ def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_
         dataset_json_template["labels"] = {"background": 0, "mass": 1}
         dataset_json_template["description"] = "CBIS-DDSM: https://doi.org/10.1038/sdata.2017.177"
 
-    elif dataset == "drive":
-        file_suffix, transfer_mode = ".tif", "store"
-
-        dataset_json_template["channel_names"] = {"0": "R", "1": "G", "2": "B"}
-        dataset_json_template["labels"] = {"background": 0, "vessels": 1}
-        dataset_json_template["description"] = "DRIVE: https://drive.grand-challenge.org/"
-
     elif dataset == "piccolo":
         file_suffix, transfer_mode = ".tif", "store"
         preprocess_labels = _binarise_labels
@@ -120,14 +97,6 @@ def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_
         dataset_json_template["channel_names"] = {"0": "R", "1": "G", "2": "B"}
         dataset_json_template["labels"] = {"background": 0, "lesion": 1}
         dataset_json_template["description"] = "PICCOLO: https://www.biobancovasco.bioef.eus/en/Sample-and-data-e-catalog/Databases/PD178-PICCOLO-EN1.html"  # noqa
-
-    elif dataset == "siim_acr":
-        file_suffix, transfer_mode = ".tif", "store"
-        preprocess_labels = _binarise_labels
-
-        dataset_json_template["channel_names"] = {"0": "Chest X-Ray"}
-        dataset_json_template["labels"] = {"background": 0, "pneumothorax": 1}
-        dataset_json_template["description"] = "SIIM ACR: https://kaggle.com/competitions/siim-acr-pneumothorax-segmentation."  # noqa
 
     elif dataset == "hil_toothseg":
         file_suffix, transfer_mode = ".tif", "store"
@@ -137,36 +106,13 @@ def _get_per_dataset_items(dataset, nnunet_dataset_name, train_id_count, val_id_
         dataset_json_template["labels"] = {"background": 0, "teeth": 1}
         dataset_json_template["description"] = "HIL ToothSeg: https://www.mdpi.com/1424-8220/21/9/3110."
 
-    elif dataset == "covid_qu_ex":
-        file_suffix, transfer_mode = ".tif", "store"
-        preprocess_labels = _binarise_labels
-
-        dataset_json_template["channel_names"] = {"0": "Chest X-Ray"}
-        dataset_json_template["labels"] = {"background": 0, "lung": 1}
-        dataset_json_template["description"] = "Covid QU EX: https://doi.org/10.1016/j.compbiomed.2021.104319"
-
     # 3d dataset
-    elif dataset == "curvas":
-        file_suffix, transfer_mode = ".nii.gz", "copy"
-
-        dataset_json_template["channel_names"] = {"0": "CT"}
-        dataset_json_template["labels"] = {"background": 0, "kidney": 1, "liver": 2, "pancreas": 3}
-        dataset_json_template["description"] = "CURVAS: https://curvas.grand-challenge.org"
-
     elif dataset == "osic_pulmofib":
         file_suffix, transfer_mode = ".nii.gz", "copy"
 
         dataset_json_template["channel_names"] = {"0": "CT"}
         dataset_json_template["labels"] = {"background": 0, "heart": 1, "lung": 2, "trachea": 3}
         dataset_json_template["description"] = "OSIC PulmoFib: https://www.kaggle.com/c/osic-pulmonary-fibrosis-progression/data"  # noqa
-
-    elif dataset == "sega":
-        file_suffix, transfer_mode = ".nii.gz", "copy"
-        preprocess_labels = _binarise_labels
-
-        dataset_json_template["channel_names"] = {"0": "CT"}
-        dataset_json_template["labels"] = {"background": 0, "aorta": 1}
-        dataset_json_template["description"] = "SegA: https://multicenteraorta.grand-challenge.org/"
 
     elif dataset == "duke_liver":
         file_suffix, transfer_mode = ".nii.gz", "copy"

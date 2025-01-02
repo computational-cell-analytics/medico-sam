@@ -15,11 +15,8 @@ CLASS_MAPS = {
     "isic": {"skin_lesion": 1},
     "dca1": {"vessel": 1},
     "cbis_ddsm": {"mass": 1},
-    "drive": {"veins": 1},
     "piccolo": {"polyps": 1},
-    "siim_acr": {"pneumothorax": 1},
     "hil_toothseg": {"teeth": 1},
-    "covid_qu_ex": {"lung": 1},
 }
 
 DATASET_MAPPING_2D = {
@@ -27,11 +24,8 @@ DATASET_MAPPING_2D = {
     "isic": "Dataset202_ISIC",
     "dca1": "Dataset203_DCA1",
     "cbis_ddsm": "Dataset204_CBISDDSM",
-    "drive": "Dataset205_DRIVE",
     "piccolo": "Dataset206_PICCOLO",
-    "siim_acr": "Dataset207_SIIM_ACR",
     "hil_toothseg": "Dataset208_HIL_ToothSeg",
-    "covid_qu_ex": "Dataset209_Covid_QU_EX",
 }
 
 
