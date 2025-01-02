@@ -73,7 +73,9 @@ def finetune_semantic_sam(args):
     mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
     scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
 
-    train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
+    train_loader, val_loader = get_dataloaders(
+        patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset, view=args.view,
+    )
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = ConvertToSemanticSamInputs()
@@ -133,6 +135,9 @@ def main():
     )
     parser.add_argument(
         "--uno", action="store_true", help="Whether to train for semantic segmentation on one image only."
+    )
+    parser.add_argument(
+        "--view", action="store_true", help="Whether to visualize the input images and corresponding labels."
     )
 
     args = parser.parse_args()
