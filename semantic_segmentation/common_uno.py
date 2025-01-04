@@ -44,6 +44,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, view):
 
     elif dataset_name == "isic":
         kwargs["label_transform"] = LabelTrafoToBinary()
+        kwargs["is_seg_dataset"] = False
 
     elif dataset_name == "dca1":
         kwargs["label_transform"] = LabelTrafoToBinary()
