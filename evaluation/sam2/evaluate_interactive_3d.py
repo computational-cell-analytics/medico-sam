@@ -43,7 +43,11 @@ def interactive_segmentation_for_3d_images(
     # First stage: Inference
     for image_path, gt_path in zip(image_paths, gt_paths):
         raw, labels = _load_raw_and_label_volumes(
-            raw_path=image_path, label_path=gt_path, channels_first=ensure_channels_first, keys=keys,
+            raw_path=image_path,
+            label_path=gt_path,
+            dataset_name=dataset_name,
+            channels_first=ensure_channels_first,
+            keys=keys,
         )
 
         if view:
