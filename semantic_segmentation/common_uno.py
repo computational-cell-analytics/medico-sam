@@ -12,7 +12,7 @@ from torch_em.transform.augmentation import get_augmentations
 from tukra.io import read_image
 
 
-def get_dataloaders(patch_shape, data_path, dataset_name, view):
+def get_dataloaders(patch_shape, data_path, dataset_name):
     """This returns the medical data loaders implemented in torch_em:
     https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/
 
@@ -33,8 +33,8 @@ def get_dataloaders(patch_shape, data_path, dataset_name, view):
         "n_samples": 100,
     }
 
-    train_raw_paths, train_label_paths = _get_data_paths(data_path, dataset_name, "train", view)
-    val_raw_paths, val_label_paths = _get_data_paths(data_path, dataset_name, "val", view)
+    train_raw_paths, train_label_paths = _get_data_paths(data_path, dataset_name, "train")
+    val_raw_paths, val_label_paths = _get_data_paths(data_path, dataset_name, "val")
 
     # 2D DATASETS
     if dataset_name == "oimhs":
@@ -99,7 +99,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, view):
     # Get the datasets
     def _get_dataset(rpaths, lpaths):
         ds = torch_em.default_segmentation_dataset(
-            raw_paths=[rpaths], raw_key=None, label_paths=[lpaths], label_key=None, patch_shape=patch_shape, **kwargs
+            raw_paths=rpaths, raw_key=None, label_paths=lpaths, label_key=None, patch_shape=patch_shape, **kwargs
         )
         return ds
 
@@ -107,13 +107,13 @@ def get_dataloaders(patch_shape, data_path, dataset_name, view):
     val_ds = _get_dataset(val_raw_paths, val_label_paths)
 
     # Get the dataloaders
-    train_loader = torch_em.get_data_loader(dataset=train_ds, batch_size=2, num_workers=16)
-    val_loader = torch_em.get_data_loader(dataset=val_ds, batch_size=1, num_workers=16)
+    train_loader = torch_em.get_data_loader(dataset=train_ds, batch_size=2, shuffle=True, num_workers=16)
+    val_loader = torch_em.get_data_loader(dataset=val_ds, batch_size=1, shuffle=True, num_workers=16)
 
     return train_loader, val_loader
 
 
-def _get_data_paths(data_path, dataset_name, split, view):
+def _get_data_paths(data_path, dataset_name, split):
     data_path = os.path.join(data_path, dataset_name)
 
     # Let's check if the files are decided and exist already.
@@ -174,20 +174,22 @@ def _get_data_paths(data_path, dataset_name, split, view):
 
             sampler = MinInstanceSampler(min_num_instances=get_ids[dataset_name])
             if sampler(raw, label):
-                if view:
-                    import napari
-                    v = napari.Viewer()
-                    v.add_image(raw, name="Image")
-                    v.add_labels(label, name="Label")
-                    napari.run()
+                if "images" in fpaths:
+                    fpaths["images"].extend([os.path.relpath(raw_path, data_path)])
+                    fpaths["labels"].extend([os.path.relpath(label_path, data_path)])
+                else:
+                    fpaths["images"] = [os.path.relpath(raw_path, data_path)]
+                    fpaths["labels"] = [os.path.relpath(label_path, data_path)]
 
-                fpaths[split] = [os.path.relpath(raw_path, data_path), os.path.relpath(label_path, data_path)]
-                break
+                if split == "train" and len(fpaths["images"]) == 3:  # If we have 3 images already.
+                    break
 
         with open(json_file, "w") as f:
             json.dump(fpaths, f, indent=4)
 
-    raw_path, label_path = fpaths[split]
-    raw_path, label_path = os.path.join(data_path, raw_path), os.path.join(data_path, label_path)
+    raw_paths = [os.path.join(data_path, p) for p in fpaths["images"]]
+    label_paths = [os.path.join(data_path, p) for p in fpaths["labels"]]
 
-    return raw_path, label_path
+    assert len(raw_paths) == len(label_paths) and len(raw_paths) > 0
+
+    return raw_paths, label_paths

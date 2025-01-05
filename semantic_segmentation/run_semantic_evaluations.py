@@ -76,7 +76,11 @@ def submit_slurm(args):
         if per_dataset in DATASETS_3D:
             mchoice = "vit_b_3d_lora_16" if use_lora else "vit_b_3d_all"
 
-        base_dir = os.path.join(args.save_root, "lora_finetuning" if use_lora else "full_finetuning", model_type)
+        base_dir = os.path.join(
+            args.save_root + "_uno" if args.uno else "",
+            "lora_finetuning" if use_lora else "full_finetuning",
+            model_type
+        )
         checkpoint = os.path.join(base_dir, "checkpoints", mchoice, f"{per_dataset}_semanticsam", "best.pt")
         assert os.path.exists(checkpoint), checkpoint
 
@@ -106,6 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam")
+    parser.add_argument("--uno", action="store_true")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)
