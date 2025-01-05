@@ -68,15 +68,10 @@ def finetune_semantic_sam(args):
         raise ValueError(f"'{dataset}' is not a valid dataset name.")
 
     # all the stuff we need for training
-    if args.uno:
-        learning_rate = 1e-5
-        optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5)
-    else:
-        learning_rate = 1e-4
-        optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
-        mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5)
-        scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
+    learning_rate = 1e-4
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
+    mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5)
+    scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
