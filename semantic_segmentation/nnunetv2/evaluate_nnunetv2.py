@@ -18,20 +18,15 @@ CLASS_MAPS = {
     "isic": {"skin_lesion": 1},
     "dca1": {"vessel": 1},
     "cbis_ddsm": {"mass": 1},
-    "drive": {"veins": 1},
     "piccolo": {"polyps": 1},
-    "siim_acr": {"pneumothorax": 1},
     "hil_toothseg": {"teeth": 1},
-    "covid_qu_ex": {"lung": 1},
     # 3d datasets
-    "curvas": {"kidney": 1, "liver": 2, "pancreas": 3},
     "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},
     "oasis": {"gray matter": 1, "thalamus": 2, "white matter": 3, "csf": 4},
     "lgg_mri": {"glioma": 1},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
     "micro_usp": {"prostate": 1},
-    "sega": {"aorta": 1}
 }
 
 

@@ -8,12 +8,17 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 
 from medico_sam.util import LinearWarmUpScheduler
 
-from common import get_dataloaders, get_num_classes, DATASETS_2D, DATASETS_3D
-
 
 def finetune_semantic_sam(args):
     """Code for finetuning SAM on medical datasets for semantic segmentation."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
+    from common import get_num_classes, DATASETS_2D, DATASETS_3D
+
+    if args.uno:
+        from common_uno import get_dataloaders
+    else:
+        from common import get_dataloaders
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # training settings:
@@ -63,10 +68,15 @@ def finetune_semantic_sam(args):
         raise ValueError(f"'{dataset}' is not a valid dataset name.")
 
     # all the stuff we need for training
-    learning_rate = 1e-4
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
-    mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5, verbose=True)
-    scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
+    if args.uno:
+        learning_rate = 1e-5
+        optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5)
+    else:
+        learning_rate = 1e-4
+        optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
+        mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5)
+        scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
@@ -125,6 +135,9 @@ def main():
     )
     parser.add_argument(
         "--dice_weight", type=float, default=0.5, help="The weight for dice loss with combined cross entropy loss."
+    )
+    parser.add_argument(
+        "--uno", action="store_true", help="Whether to train for semantic segmentation on one image only."
     )
 
     args = parser.parse_args()

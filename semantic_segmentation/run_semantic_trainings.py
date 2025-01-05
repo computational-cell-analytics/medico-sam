@@ -8,21 +8,20 @@ from common import DATASETS_2D, DATASETS_3D, MODELS_ROOT
 
 
 def write_batch_script(
-    out_path, dataset_name, save_root, checkpoint, ckpt_name, use_lora, dry, iterations,
+    out_path, dataset_name, save_root, checkpoint, ckpt_name, use_lora, dry, iterations, uno,
 ):
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
 #SBATCH -t 4-00:00:00
-#SBATCH --mem 64G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
 #SBATCH -c 16
+#SBATCH --mem 64G
 #SBATCH --constraint=80gb
 #SBATCH --qos=96h
-#SBATCH -x ggpu201
 #SBATCH --job-name=semsam_{dataset_name}
 
 source ~/.bashrc
@@ -35,6 +34,9 @@ micromamba activate sam \n"""
     python_script += "-m vit_b "  # name of the model configuration
     if checkpoint is not None:  # add pretrained checkpoints
         python_script += f"-c {checkpoint} "
+
+    if uno:  # whether to train with one image only.
+        python_script += "--uno "
 
     if iterations is not None:  # number of iterations to train the model for
         python_script += f"--iterations {iterations} "
@@ -81,11 +83,13 @@ def submit_slurm(args, tmp_folder):
             "sam": None,
             # our finetuned models
             "medico-sam-8g": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",
-            "medico-sam-1g": "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt",
-            "simplesam": "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
-            # MedSAM's original model
-            "medsam": "medsam/original/medsam_vit_b.pth",
         }
+        if not args.uno:  # i.e. we train 1 image models with the best chosen models only.
+            # MedSAM's original model.
+            checkpoints["medsam"] = "medsam/original/medsam_vit_b.pth"
+            # our finetuned models.
+            checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt",  # noqa
+            checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
 
     lora_choices = [True, False]
     for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):
@@ -96,13 +100,16 @@ def submit_slurm(args, tmp_folder):
             out_path=get_batch_script_names(tmp_folder),
             dataset_name=per_dataset,
             save_root=os.path.join(
-                args.save_root, "semantic_sam", "lora_finetuning" if use_lora else "full_finetuning"
+                args.save_root,
+                "semantic_sam" + "_uno" if args.uno else "",
+                "lora_finetuning" if use_lora else "full_finetuning"
             ),
             checkpoint=checkpoint,
             ckpt_name=ckpt_name,
             use_lora=use_lora,
             dry=args.dry,
             iterations=args.iterations,
+            uno=args.uno,
         )
 
 
@@ -121,6 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models")
     parser.add_argument("--iterations", type=int, default=int(1e5))
+    parser.add_argument("--uno", action="store_true")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)
