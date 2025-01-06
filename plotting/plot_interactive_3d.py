@@ -101,23 +101,27 @@ def _get_plots():
         x = range(len(methods))
 
         ax[i].bar(
-            [pos - bar_width / 2 for pos in x], [s.get("box") for s in scores], width=bar_width, label='Box'
+            [pos - bar_width / 2 for pos in x], [s.get("box") for s in scores],
+            width=bar_width, label='Box', color="#FCDE9C", edgecolor="grey",
         )
         ax[i].bar(
-            [pos + bar_width / 2 for pos in x], [s.get("point") for s in scores], width=bar_width, label='Point'
+            [pos + bar_width / 2 for pos in x], [s.get("point") for s in scores],
+            width=bar_width, label='Point', color="#7CCBA2", edgecolor="grey",
         )
 
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels, rotation=45, ha='right', fontsize=16)
         ax[i].tick_params(axis='y', labelsize=16)  # Set y-tick label size
-        # ax[i].legend()
-
         ax[i].set_title(dmap, fontweight="bold", fontsize=16)
 
     handles, labels = ax[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center', fontsize=14, ncol=2)
+    fig.legend(handles, labels, loc='lower center', fontsize=16, ncol=2)
 
-    plt.tight_layout()
+    plt.text(
+        x=-15.4, y=0.24, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20
+    )
+
+    plt.subplots_adjust(top=0.9, bottom=0.125, right=0.95, left=0.05, wspace=0.1)
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.svg", bbox_inches="tight")
 
