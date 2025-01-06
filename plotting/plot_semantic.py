@@ -177,8 +177,8 @@ def _plot_absolute_mean_per_experiment():
         yval = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, round(mean, 4), ha='center', va='bottom', fontsize=14)
 
-    plt.savefig("./fig_1_semantic_segmentation_average.png")
-    plt.savefig("./fig_1_semantic_segmentation_average.svg")
+    plt.savefig("./fig_1_semantic_segmentation_average.png", bbox_inches="tight")
+    plt.savefig("./fig_1_semantic_segmentation_average.svg", bbox_inches="tight")
     plt.close()
 
 

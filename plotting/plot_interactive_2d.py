@@ -242,8 +242,8 @@ def _make_per_experiment_plots(dataframes, datasets):
     )
 
     plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.3, wspace=0.2)
-    plt.savefig("./fig_3_interactive_segmentation_per_dataset.png")
-    plt.savefig("./fig_3_interactive_segmentation_per_dataset.svg")
+    plt.savefig("./fig_3_interactive_segmentation_per_dataset.png", bbox_inches="tight")
+    plt.savefig("./fig_3_interactive_segmentation_per_dataset.svg", bbox_inches="tight")
     plt.close()
 
 
