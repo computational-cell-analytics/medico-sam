@@ -43,9 +43,10 @@ def _get_data_paths(path, dataset_name):
         "microusp": lambda: medical.micro_usp.get_micro_usp_paths(
             path=os.path.join(path, "micro_usp"), split="test", download=True,
         ),
-        "leg_3d_us": lambda: medical.leg_3d_us.get_leg_3d_us_paths(
-            path=os.path.join(path, "leg_3d_us"), split="test", download=True,
-        )
+        # toothfairy: cbct
+        # osic pulmofib: ct
+        # segthy: us?
+        # kits: ct
     }
 
     assert dataset_name in path_to_volumes.keys(), f"'{dataset_name}' is not a supported dataset."
