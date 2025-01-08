@@ -1,6 +1,8 @@
 import os
 import sys
 
+import numpy as np
+
 from torch_em.data.datasets import medical
 from torch_em.transform.raw import normalize
 
@@ -21,7 +23,7 @@ def _load_raw_and_label_volumes(raw_path, label_path, dataset_name, ensure_8bit=
         raw, label = raw.transpose(2, 0, 1), label.transpose(2, 0, 1)
 
     # Ensure labels are integers.
-    label = label.astype("uint32")
+    label = np.round(label).astype("uint32")
 
     assert raw.shape == label.shape
 
@@ -71,11 +73,15 @@ def _get_data_paths(path, dataset_name):
     semantic_maps = SEMANTIC_CLASS_MAPS[dataset_name]
 
     ensure_channels_first = True
-    if dataset_name in ["lgg_mri", "leg_3d_us"]:
+    # The datasets below already have channels first. We do not need to take care of them.
+    if dataset_name in ["lgg_mri", "leg_3d_us", "kits"]:
         ensure_channels_first = False
 
     keys = None
+    # The datasets below are in container format. We need their hierarchy names.
     if dataset_name == "lgg_mri":
         keys = ("raw/flair", "labels")
+    elif dataset_name == "kits":
+        keys = ("raw", "labels/tumor/rater_1")
 
     return raw_paths, label_paths, semantic_maps, keys, ensure_channels_first
