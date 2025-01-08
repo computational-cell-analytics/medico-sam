@@ -2,6 +2,7 @@ import os
 import sys
 
 import numpy as np
+from skimage.measure import label as connected_components
 
 from torch_em.data.datasets import medical
 from torch_em.transform.raw import normalize
@@ -19,11 +20,34 @@ def _load_raw_and_label_volumes(raw_path, label_path, dataset_name, ensure_8bit=
             raw = normalize(raw) * 255
         raw = raw.astype("uint8")
 
-    if channels_first:  # Ensure volumes are channels first.
+    # Ensure volumes are channels first.
+    if channels_first:
         raw, label = raw.transpose(2, 0, 1), label.transpose(2, 0, 1)
+
+    if dataset_name == "segthy":
+        raw, label = raw.transpose(0, 2, 1), label.transpose(0, 2, 1)
 
     # Ensure labels are integers.
     label = np.round(label).astype("uint32")
+
+    # Ensure unique ids for specific class
+    if dataset_name == "kits":
+        label = connected_components(label).astype(label.dtype)
+    elif dataset_name == "osic_pulmofib":
+        lung_label = (label == 2)
+        lung_label = connected_components(lung_label).astype(label.dtype)
+
+        # Change the mapping to work with two lung ids.
+        label[label == 2] = 0  # Remove the lung labels
+        label[label == 3] = 2  # Move 'trachea' to label id '2'.
+
+        # Now insert both lung labels.
+        fids = np.unique(lung_label)[1:]
+        assert len(fids) == 2
+        for id in fids:  # Add offset to new id
+            offset_id = 2 + id
+            assert offset_id not in label
+            label[lung_label == id] = offset_id
 
     assert raw.shape == label.shape
 
@@ -70,7 +94,7 @@ def _get_data_paths(path, dataset_name):
     else:
         raw_paths = label_paths = input_paths
 
-    semantic_maps = SEMANTIC_CLASS_MAPS[dataset_name]
+    semantic_maps = SEMANTIC_CLASS_MAPS[dataset_name + ("_3d" if dataset_name == "osic_pulmofib" else "")]
 
     ensure_channels_first = True
     # The datasets below already have channels first. We do not need to take care of them.

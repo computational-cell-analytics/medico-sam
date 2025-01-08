@@ -62,6 +62,9 @@ SEMANTIC_CLASS_MAPS = {
     "ct_cadaiver": {"all": None},
     "lgg_mri": {"glioma": 255},
     "leg_3d_us": {"SOL": 1, "GM": 2, "GL": 3},
+    "osic_pulmofib_3d": {"heart": 1, "trachea": 2, "lung_1": 3, "lung_2": 4},
+    "kits": {"all": None},
+    "segthy": {"all": None},
 }
 
 MULTICLASS_SEMANTIC = [
