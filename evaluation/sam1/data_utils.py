@@ -34,19 +34,30 @@ def _get_data_paths(path, dataset_name):
 
     # Get paths to the volumetric data.
     path_to_volumes = {
+        # glioma segmentation in MRI.
         "lgg_mri": lambda: medical.lgg_mri.get_lgg_mri_paths(
             path=os.path.join(path, "lgg_mri"), split="test", download=True
         ),
+        # liver segmentation in MRI.
         "duke_liver": lambda: medical.duke_liver.get_duke_liver_paths(
             path=os.path.join(path, "duke_liver"), split="test",
         ),
+        # prostate segmentation in MicroUS.
         "microusp": lambda: medical.micro_usp.get_micro_usp_paths(
             path=os.path.join(path, "micro_usp"), split="test", download=True,
         ),
-        # toothfairy: cbct
-        # osic pulmofib: ct
-        # segthy: us?
-        # kits: ct
+        # thyroid segmentation in US.
+        "segthy": lambda: medical.segthy.get_segthy_paths(
+            path=os.path.join(path, "segthy"), split="test", source="US", region="thyroid", download=True,
+        ),
+        # thoracic organ segmentation in CT.
+        "osic_pulmofib": lambda: medical.osic_pulmofib.get_osic_pulmofib_paths(
+            path=os.path.join(path, "osic_pulmofib"), split="test", download=True,
+        ),
+        # kidney tumor segmentation in CT.
+        "kits": lambda: medical.kits.get_kits_paths(
+            path=os.path.join(path, "kits"), download=True,
+        ),
     }
 
     assert dataset_name in path_to_volumes.keys(), f"'{dataset_name}' is not a supported dataset."
