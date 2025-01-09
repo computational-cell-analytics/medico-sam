@@ -18,8 +18,12 @@ dependencies:
     - python-elf >=0.4.8
     - pytorch >=2.4
     - pytorch-cuda>=11.7  # you may need to update the cuda version to match your system
+    - micro_sam
     - segment-anything
     - torchvision
     - torch_em >=0.7.0
     - tqdm
     - timm
+    - pip
+    - pip:
+        - https://github.com/anwai98/tukra.git

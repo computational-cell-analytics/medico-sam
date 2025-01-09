@@ -16,9 +16,13 @@ dependencies:
     - pyqt
     - python-xxhash
     - python-elf >=0.4.8
+    - micro_sam
     - pytorch >=2.4
     - segment-anything
     - torchvision
     - torch_em >=0.7.0
     - tqdm
     - timm
+    - pip
+    - pip:
+        - https://github.com/anwai98/tukra.git
