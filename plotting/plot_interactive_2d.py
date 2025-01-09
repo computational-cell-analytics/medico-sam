@@ -21,17 +21,17 @@ DATASET_MAPS = {
     "uwaterloo_skin": "UWaterloo Skin (Skin Lesion in Dermoscopy)",
     "montgomery": "Montgomery (Lungs in Chest X-Ray)",
     "sega": "SegA (Aorta in CT)",
-    "duke_liver": "Duke Liver (Liver Segmentation in MRI)",
+    "duke_liver": "DLDS (Liver Segmentation in MRI)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
     "papila": "Papila (Optic Disc & Optic Cup in Fundus)",
     "jnu-ifm": "JNU IFM (Pubic Symphysis & Fetal Head in US)",
     "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
-    "m2caiseg": "m2caiseg (Tools and Organs in Endoscopy)",
+    "m2caiseg": "m2caisSeg (Tools and Organs in Endoscopy)",
     "toothfairy": "ToothFairy (Mandibular Canal Segmentation in CBCT)",
     "spider": "SPIDER (Lumbar Spine & Vertebrae Segmentation in MRI)",
-    "han-seg": "HanSeg (Head & Neck Organ Segmentation in CT)",
+    "han-seg": "HaN-Seg (Head & Neck Organ Segmentation in CT)",
     "microusp": "MicroUSP (Prostate Segmentation in Micro-Ultrasound)",
 }
 
@@ -46,7 +46,7 @@ MODEL_MAPS = {
     # "generalist_1": "Generalist (Single GPU)",
     # "simplesam_1": "Simple Generalist* (Single GPU)",
     # "medsam-self_1": "MedSAM* (Single GPU)",
-    "sam2.0": "SAM2 (2.0)",
+    # "sam2.0": "SAM2 (2.0)",
     "sam2.1": "SAM2 (2.1)",
 }
 
@@ -170,8 +170,8 @@ def _get_results_per_dataset(dataset_name, get_all=False, use_masks=True):
 
     # Get SAM2 results
     # NOTE: It's hard-coded at the moment in 'mask_dir' argument that uses "with_masks" for iterative prompting.
-    res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.0", get_all=get_all))
     res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.1", get_all=get_all))
+    # res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.0", get_all=get_all))
 
     res_per_dataset = pd.concat(res_per_dataset, ignore_index=True)
     return res_per_dataset
@@ -184,8 +184,9 @@ def _make_per_experiment_plots(dataframes, datasets):
     bar_width = 0.2
     for i, df in enumerate(dataframes):
         _order = [
-            "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8",
-            "simplesam_8", "sam2.0", "sam2.1", "generalist_8",
+            "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8",
+            "sam2.1",  # "sam2.0",
+            "generalist_8",
         ]
         df['experiment'] = pd.Categorical(df['experiment'], categories=_order, ordered=True)
         df = df.sort_values('experiment')
@@ -217,7 +218,7 @@ def _make_per_experiment_plots(dataframes, datasets):
         axes[i].axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)
 
         _xticklabels = [MODEL_MAPS[_exp] for _exp in df["experiment"]]
-        tick_positions = [r + 1.5 * bar_width for r in range(len(df))]
+        tick_positions = [r + 3 * bar_width for r in range(len(df))]  # Adjusted to center the labels
         axes[i].set_xticks(tick_positions)
         axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=16)
         axes[i].tick_params(axis='y', labelsize=14)
@@ -237,7 +238,7 @@ def _make_per_experiment_plots(dataframes, datasets):
     fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
 
     plt.text(
-        x=-32.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-28.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=24
     )
 
@@ -249,12 +250,18 @@ def _make_per_experiment_plots(dataframes, datasets):
 
 def _make_per_model_average_plots(dataframes):
     all_data = pd.concat(dataframes, ignore_index=True)
-    desired_experiments = ['vanilla', 'generalist_8', 'medsam', "sam2.0", "sam2.1"]
+    desired_experiments = [
+        'vanilla', 'generalist_8', 'medsam', "sam2.1",  # "sam2.0"
+    ]
     filtered_data = all_data[all_data['experiment'].isin(desired_experiments)]
 
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
-    _order = ["vanilla", "medsam", "sam2.0", "sam2.1", "generalist_8"]
+    _order = [
+        "vanilla", "medsam",
+        "sam2.1",  # "sam2.0",
+        "generalist_8"
+    ]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
 
@@ -303,8 +310,9 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
     _order = [
-        "vanilla", "sam2.0", "sam2.1", "medsam", "sam-med2d",
-        "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
+        "vanilla",
+        "sam2.1",  # "sam2.0",
+        "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
     ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
     avg_df = avg_df.sort_values('experiment')
@@ -395,8 +403,8 @@ def _figure_3b():
 
 
 def main():
-    # _figure_1()
-    # _figure_3a()
+    _figure_1()
+    _figure_3a()
     _figure_3b()
 
 

@@ -240,7 +240,7 @@ def _plot_absolute_mean_per_experiment():
 
 def main():
     _make_per_dataset_plot()
-    # _plot_absolute_mean_per_experiment()
+    _plot_absolute_mean_per_experiment()
 
 
 if __name__ == "__main__":
