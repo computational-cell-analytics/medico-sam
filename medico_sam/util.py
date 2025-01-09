@@ -1,13 +1,114 @@
+"""Helper function for downloading Segment Anything models.
+"""
+
+import os
+from pathlib import Path
+from typing import Union, Optional
+
+import pooch
+
+import torch
 from torch.optim.lr_scheduler import _LRScheduler
+
+from segment_anything import SamPredictor
+
+
+# this is the default model used in medico_sam
+# currently set to the default 'vit_b'
+_DEFAULT_MODEL = "vit_b"
+
+
+def get_cache_directory() -> None:
+    """Get medico-sam cache directory location.
+
+    Users can set the MEDICOSAM_CACHEDIR environment variable for a custom cache directory.
+    """
+    default_cache_directory = os.path.expanduser(pooch.os_cache("medico_sam"))
+    cache_directory = Path(os.environ.get("MEDICOSAM_CACHEDIR", default_cache_directory))
+    return cache_directory
+
+
+#
+# Functionality for model download.
+#
+
+
+def medico_sam_cachedir() -> None:
+    """Return the medico-sam cache directory.
+
+    Returns the top level cache directory for medico-sam models and sample data.
+
+    Every time this function is called, we check for any user updates made to
+    the MEDICOSAM_CACHEDIR os environment variable since the last time.
+    """
+    cache_directory = os.environ.get("MEDICOSAM_CACHEDIR") or pooch.os_cache("medico_sam")
+    return cache_directory
+
+
+def models():
+    """Return the segmentation models registry.
+
+    We recreate the model registry every time this function is called,
+    so any user changes to the default medico-sam cache directory location
+    are respected.
+    """
+
+    # We use xxhash to compute the hash of the models, see
+    # https://github.com/computational-cell-analytics/micro-sam/issues/283
+    # (It is now a dependency, so we don't provide the sha256 fallback anymore.)
+    # To generate the xxh128 hash:
+    #     xxh128sum filename
+    registry = {
+        # The default segment anything models:
+        "vit_l": "xxh128:a82beb3c660661e3dd38d999cc860e9a",
+        "vit_h": "xxh128:97698fac30bd929c2e6d8d8cc15933c2",
+        "vit_b": "xxh128:6923c33df3637b6a922d7682bfc9a86b",
+        # The model with vit tiny backend fom https://github.com/ChaoningZhang/MobileSAM.
+        "vit_t": "xxh128:8eadbc88aeb9d8c7e0b4b60c3db48bd0",
+        # TODO: add medico-sam models.
+    }
+
+    urls = {
+        "vit_l": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
+        "vit_h": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+        "vit_b": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
+        "vit_t": "https://owncloud.gwdg.de/index.php/s/TuDzuwVDHd1ZDnQ/download",
+        # TODO: add medico-sam models.
+    }
+
+    models = pooch.create(
+        path=os.path.join(medico_sam_cachedir(), "models"), base_url="", registry=registry, urls=urls,
+    )
+    return models
 
 
 def get_medico_sam_model(
-    model_type, device=None, checkpoint_path=None, use_sam_med2d=False, use_sam3d=False, encoder_adapter=False, **kwargs
-):
+    model_type: str = _DEFAULT_MODEL,
+    device: Optional[Union[str, torch.device]] = None,
+    checkpoint_path: Optional[Union[os.PathLike, str]] = None,
+    use_sam_med2d: bool = False,
+    use_sam3d: bool = False,
+    encoder_adapter: bool = False,
+    **kwargs
+) -> SamPredictor:
+    """Get the Segment Anything Predictor.
+
+    Args:
+        model_type: The Segment Anything model to use. Will use the standard `vit_b` model by default.
+            To get a list of all available model names, you can call `get_model_names`.
+        device: The device for the model. If `None` is given, it will use GPU if available.
+        checkpoint_path: The path to a file with weights that should be used instead of using the
+            weights corresponding to the weight file. e.g. if you use weights for SAM with `vit_b` encoder,
+            then `model_type` must be given as "vit_b".
+        use_sam_med2d: Whether to use SAM-Med2d model for initializing the checkpoints.
+        use_sam3d: Whether to use SAM-3d model for initializing the checkpoints.
+        encoder_adapter: Whether the encuder in SAM-Med2d has adapter modules.
+
+    Returns:
+        The segment anything predictor.
+    """
     model_kwargs = {
-        "model_type": model_type,
-        "device": device,
-        "checkpoint_path": checkpoint_path,
+        "model_type": model_type, "device": device, "checkpoint_path": checkpoint_path,
     }
 
     assert (use_sam_med2d + use_sam3d) < 2, "Please use either of 'use_sam_med2d' or 'use_sam3d'."
@@ -26,8 +127,7 @@ def get_medico_sam_model(
             from micro_sam.util import get_sam_model
             _fetch_model = get_sam_model
 
-        for k, v in kwargs.items():
-            model_kwargs[k] = v
+        model_kwargs = {**model_kwargs, **kwargs}
 
     return _fetch_model(**model_kwargs)
 
