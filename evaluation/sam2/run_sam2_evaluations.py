@@ -49,7 +49,7 @@ def write_batch_script(
 ):
     """Writing batch submission scripts for SAM2 evaluations.
     """
-    batch_script = _get_slurm_template(job_name="sam2_mi_evaluation", env_name="sam2")
+    batch_script = _get_slurm_template(job_name="sam2_mi_evaluation", env_name="super")
 
     # add delay by a few seconds (to avoid io blocking in container data access)
     batch_script += f"sleep {time_delay}s \n"
