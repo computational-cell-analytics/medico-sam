@@ -95,6 +95,10 @@ def _make_per_dataset_plot():
     fig, axes = plt.subplots(4, 3, figsize=(35, 30))
     axes = axes.flatten()
 
+    # Define color shades for top 3 methods
+    top_colors = ["#045275", "#2B6C8F", "#5093A9"]
+    default_color = "#D3D3D3"
+
     for ax, (dataset, methods) in zip(axes, results.items()):
         methods_list = [
             "full/sam", "lora/sam",
@@ -108,7 +112,36 @@ def _make_per_dataset_plot():
                 scores.append(methods[_method])
                 neu_methods_list.append(_method)
 
-        ax.bar(neu_methods_list, scores, color="#089099")
+        # Determine the ranking of methods based on scores
+        sorted_indices = np.argsort(scores)[::-1]  # Sort in descending order
+        bar_colors = [default_color] * len(scores)
+        edge_colors = ["none"] * len(scores)  # Default: no edge
+        edge_styles = ["solid"] * len(scores)  # Default: solid edges
+
+        for rank, idx in enumerate(sorted_indices[:3]):  # Top 3 methods
+            bar_colors[idx] = top_colors[rank]
+            edge_colors[idx] = "none"  # No edge color for top 3 methods
+
+        # Highlight "full/medico-sam-8g" if not in top 3
+        if "full/medico-sam-8g" in neu_methods_list:
+            index = neu_methods_list.index("full/medico-sam-8g")
+            if index not in sorted_indices[:3]:  # Not in top 3
+                edge_colors[index] = "black"
+                edge_styles[index] = "dashed"  # Dashed edge style for emphasis
+            else:  # If in top 3, no edge color
+                edge_colors[index] = "none"
+
+        # Plot bars with respective colors and edge styles
+        bars = ax.bar(
+            neu_methods_list, scores, color=bar_colors, edgecolor=edge_colors, linewidth=1.5
+        )
+
+        # Apply dashed style where needed
+        for bar, style in zip(bars, edge_styles):
+            if style == "dashed":
+                bar.set_linestyle("--")
+                bar.set_linewidth(3)
+
         ax.axhline(methods.get("nnunet"), color="#DC3977", linewidth=4)
 
         ax.set_ylim([0, 1])
@@ -116,6 +149,11 @@ def _make_per_dataset_plot():
         ax.set_xticks(np.arange(len(neu_methods_list)))
         ax.set_xticklabels(_xticklabels, rotation=45, fontsize=18)
         ax.tick_params(axis='y', labelsize=14)
+
+        # Make "full/medico-sam-8g" bold in x-tick labels
+        for label, method in zip(ax.get_xticklabels(), neu_methods_list):
+            if method == "full/medico-sam-8g":
+                label.set_fontweight("bold")
 
         fontdict = {"fontsize": 18}
         if dataset in ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]:
@@ -130,9 +168,9 @@ def _make_per_dataset_plot():
         x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20
     )
 
-    plt.subplots_adjust(hspace=0.4, wspace=0.1)
-    plt.savefig("./fig_4_semantic_segmentation_per_dataset.png")
-    plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg")
+    plt.subplots_adjust(hspace=0.45, wspace=0.1)
+    plt.savefig("./fig_4_semantic_segmentation_per_dataset.png", bbox_inches="tight")
+    plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg", bbox_inches="tight")
     plt.close()
 
 
@@ -162,8 +200,17 @@ def _plot_absolute_mean_per_experiment():
 
     fig, ax = plt.subplots(figsize=(20, 10))
 
+    # sort results
+    top_colors = ["#045275", "#2B6C8F", "#5093A9"]
+    sorted_methods = sorted(results, key=results.get, reverse=True)
+    top_methods = sorted_methods[:3]  # get the top 3 methods.
+
     means = [results[_method] for _method in methods]
-    bars = ax.bar(methods, means, color="#045275")
+    bars = ax.bar(
+        methods, means,
+        edgecolor=["None" if _method in top_methods else "grey" for _method in methods],
+        color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
+    )
 
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
@@ -173,9 +220,18 @@ def _plot_absolute_mean_per_experiment():
     ax.set_ylabel('Average Dice Similarity Coefficient', fontsize=16, fontweight="bold")
 
     # NOTE: adds values on top of each bar
-    for bar, mean in zip(bars, means):
-        yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, round(mean, 4), ha='center', va='bottom', fontsize=14)
+    for bar, mean, method in zip(bars, means, methods):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, round(mean, 4),
+            ha='center', va='bottom', fontsize=14,
+            color="black" if method in top_methods else "#696969",
+            fontweight="bold" if method in top_methods else "normal",
+        )
+
+    # make our method's xtick label bold
+    for label, method in zip(ax.get_xticklabels(), methods):
+        if method == "full/medico-sam-8g":
+            label.set_fontweight("bold")
 
     plt.savefig("./fig_1_semantic_segmentation_average.png", bbox_inches="tight")
     plt.savefig("./fig_1_semantic_segmentation_average.svg", bbox_inches="tight")
@@ -184,7 +240,7 @@ def _plot_absolute_mean_per_experiment():
 
 def main():
     _make_per_dataset_plot()
-    _plot_absolute_mean_per_experiment()
+    # _plot_absolute_mean_per_experiment()
 
 
 if __name__ == "__main__":
