@@ -12,7 +12,7 @@ sys.path.append("..")
 
 
 PROMPT_CHOICES = ["box", "point"]
-DATASETS_3D = ["lgg_mri", "duke_liver", "microusp", "leg_3d_us"]
+DATASETS_3D = ["lgg_mri", "duke_liver", "microusp", "kits", "osic_pulmofib", "segthy"]
 
 
 def _get_slurm_template(job_name, env_name):
