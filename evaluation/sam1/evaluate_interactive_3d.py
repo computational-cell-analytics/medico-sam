@@ -112,7 +112,7 @@ def evaluate_interactive_3d(
             prediction_paths=pred_paths,
             semantic_class_id=cid,
             save_path=None,
-            keys=None if keys is None else (keys[-1], None),  # gt might be in container format. predictions in '.tif'
+            keys=None if keys is None else (keys[-1], None),  # gt might be in container format.
             ensure_channels_first=ensure_channels_first,
         )
         results[cname] = result['dice'][0]

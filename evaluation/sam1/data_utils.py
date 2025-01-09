@@ -31,8 +31,9 @@ def _load_raw_and_label_volumes(raw_path, label_path, dataset_name, ensure_8bit=
     label = np.round(label).astype("uint32")
 
     # Ensure unique ids for specific class
-    if dataset_name == "kits":
+    if dataset_name in ["kits", "segthy"]:
         label = connected_components(label).astype(label.dtype)
+
     elif dataset_name == "osic_pulmofib":
         lung_label = (label == 2)
         lung_label = connected_components(lung_label).astype(label.dtype)
@@ -93,6 +94,10 @@ def _get_data_paths(path, dataset_name):
         raw_paths, label_paths = input_paths
     else:
         raw_paths = label_paths = input_paths
+
+    # NOTE: We limit the number of images for KiTS
+    if dataset_name == "kits":
+        raw_paths, label_paths = raw_paths[:20], label_paths[:20]  # evaluate on 20 volumes only.
 
     semantic_maps = SEMANTIC_CLASS_MAPS[dataset_name + ("_3d" if dataset_name == "osic_pulmofib" else "")]
 
