@@ -214,11 +214,24 @@ def _plot_absolute_mean_per_experiment(dim):
     top_methods = sorted_methods[:3]  # get the top 3 methods.
 
     means = [results[_method] for _method in methods]
+
+    # Set edge colors
+    edgecolors = ["None" if method in top_methods else "grey" for method in methods]
+
+    # Create bars
     bars = ax.bar(
         methods, means,
-        edgecolor=["None" if _method in top_methods else "grey" for _method in methods],
+        edgecolor=edgecolors,
+        linewidth=1.5,
         color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
     )
+
+    # Apply dotted edge to 'full/medico-sam-8g' if not in top 3
+    for bar, method in zip(bars, methods):
+        if method == "full/medico-sam-8g" and method not in top_methods:
+            bar.set_edgecolor("black")
+            bar.set_linestyle("--")
+            bar.set_linewidth(3)
 
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))

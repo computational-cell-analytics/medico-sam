@@ -294,7 +294,7 @@ def _make_per_model_average_plots(dataframes):
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.315, 0.875), fontsize=16)
+    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.27, 0.875), fontsize=16)
 
     plt.title("Interactive Segmentation (2D)", fontsize=18, fontweight="bold")
     plt.savefig("./fig_1_interactive_segmentation_average.png", bbox_inches="tight")
@@ -405,8 +405,8 @@ def _figure_3b():
 
 def main():
     _figure_1()
-    _figure_3a()
-    _figure_3b()
+    # _figure_3a()
+    # _figure_3b()
 
 
 if __name__ == "__main__":
