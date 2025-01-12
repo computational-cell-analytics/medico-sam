@@ -274,7 +274,7 @@ def _make_per_model_average_plots(dataframes):
     x = np.arange(len(experiments))
     width = 0.2
 
-    fig, ax = plt.subplots(figsize=(15, 10))
+    fig, ax = plt.subplots(figsize=(20, 15))
     for i, (metric, color, label) in enumerate(zip(metrics, color_map, label_map)):
         ax.bar(x + i * width, grouped_data[metric], width, label=label, color=color, edgecolor='grey')
 
@@ -296,6 +296,7 @@ def _make_per_model_average_plots(dataframes):
 
     fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.315, 0.875), fontsize=16)
 
+    plt.title("Interactive Segmentation (2D)", fontsize=18, fontweight="bold")
     plt.savefig("./fig_1_interactive_segmentation_average.png", bbox_inches="tight")
     plt.savefig("./fig_1_interactive_segmentation_average.svg", bbox_inches="tight")
     plt.close()
