@@ -1,23 +1,18 @@
 import os
 from tqdm import tqdm
-from glob import glob
-from natsort import natsorted
 
+import numpy as np
 import pandas as pd
 
 import torch
 
-from micro_sam.evaluation.multi_dimensional_segmentation import (
-    segment_slices_from_ground_truth, run_multi_dimensional_segmentation_grid_search
-)
-
-from medico_sam.evaluation.evaluation import run_evaluation_per_semantic_class
+from micro_sam.evaluation.multi_dimensional_segmentation import run_multi_dimensional_segmentation_grid_search
 
 from data_utils import _get_data_paths, _load_raw_and_label_volumes
 
 
 def evaluate_interactive_3d(
-    input_path, device, experiment_folder, model_type, checkpoint_path, prompt_choice, dataset_name, view
+    input_path, experiment_folder, model_type, checkpoint_path, prompt_choice, dataset_name, view
 ):
     """Interactive segmentation scripts for benchmarking micro-sam.
     """
@@ -29,7 +24,7 @@ def evaluate_interactive_3d(
         )
         return
 
-    image_paths, gt_paths, semantic_maps, keys, ensure_channels_first = _get_data_paths(
+    image_paths, gt_paths, _, keys, ensure_channels_first = _get_data_paths(
         path=input_path, dataset_name=dataset_name
     )
 
@@ -39,14 +34,11 @@ def evaluate_interactive_3d(
     prediction_dir = os.path.join(experiment_folder, "interactive_segmentation_3d", f"{prompt_choice}")
     os.makedirs(prediction_dir, exist_ok=True)
 
+    results = []
     for image_path, gt_path in tqdm(
         zip(image_paths, gt_paths), total=len(image_paths),
         desc=f"Run interactive segmentation in 3d with '{prompt_choice}'"
     ):
-        prediction_path = os.path.join(prediction_dir, f"{os.path.basename(image_path).split('.')[0]}.tif")
-        if os.path.exists(prediction_path):
-            continue
-
         raw, labels = _load_raw_and_label_volumes(
             raw_path=image_path,
             label_path=gt_path,
@@ -73,52 +65,19 @@ def evaluate_interactive_3d(
             interactive_seg_mode=prompt_choice,
             min_size=10,
             verbose=False,
-            evaluation_metric="dice",
+            evaluation_metric="dice_per_class",
         )
 
-        best_params = {}
         res_df = pd.read_csv(best_params_path)
-        for k, v in res_df.loc[0].items():
-            if k.startswith("Unnamed") or k == "Dice":
-                continue
-            best_params[k] = v
-
-        # Segment using label propagation.
-        results = segment_slices_from_ground_truth(
-            volume=raw,
-            ground_truth=labels,
-            model_type=model_type,
-            checkpoint_path=checkpoint_path,
-            save_path=prediction_path,
-            device=device,
-            interactive_seg_mode=prompt_choice,
-            min_size=10,
-            evaluation_metric="dice",
-            **best_params,
-        )
-
-        print(results)
+        score = res_df["Dice"].iloc[0]
+        print(res_df)
+        results.append(score)
 
         # Remove paths to grid search results
         os.remove(best_params_path)
         os.remove(os.path.join(prediction_dir, "all_grid_search_results.csv"))
 
-    results = {}
-    for cname, cid in semantic_maps.items():
-        pred_paths = natsorted(glob(os.path.join(prediction_dir, "*.tif")))
-
-        result = run_evaluation_per_semantic_class(
-            gt_paths=gt_paths,
-            prediction_paths=pred_paths,
-            semantic_class_id=cid,
-            save_path=None,
-            keys=None if keys is None else (keys[-1], None),  # gt might be in container format.
-            ensure_channels_first=ensure_channels_first,
-        )
-        results[cname] = result['dice'][0]
-
-    results = pd.DataFrame.from_dict([results])
-    print(results)
+    results = pd.DataFrame.from_dict([{"results": np.mean(results)}])
     results.to_csv(save_path)
 
 
@@ -136,11 +95,9 @@ def main():
     args = parser.parse_args()
 
     print("Resource Name:", torch.cuda.get_device_name() if torch.cuda.is_available() else "CPU")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     evaluate_interactive_3d(
         input_path=args.input_path,
-        device=device,
         experiment_folder=args.experiment_folder,
         model_type=args.model_type,
         checkpoint_path=args.checkpoint_path,

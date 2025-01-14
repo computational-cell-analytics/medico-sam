@@ -24,7 +24,6 @@ NNUNET_RESULTS = {
     "duke_liver": [0.9117],
 }
 
-
 DATASET_MAPS = {
     # 2d
     "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
@@ -33,7 +32,7 @@ DATASET_MAPS = {
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
-    # 3
+    # 3d
     "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
     "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
     "oasis": "OASIS (Brain Tissue in MRI)",
@@ -42,6 +41,9 @@ DATASET_MAPS = {
     "duke_liver": "Duke Liver (Liver in MRI)",
 }
 
+DATASETS_2D = ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]
+
+DATASETS_3D = ["osic_pulmofib", "leg_3d_us", "oasis", "micro_usp", "lgg_mri", "duke_liver"]
 
 MODEL_MAPS = {
     "nnunet": "nnUNet",
@@ -174,17 +176,23 @@ def _make_per_dataset_plot():
     plt.close()
 
 
-def _plot_absolute_mean_per_experiment():
+def _plot_absolute_mean_per_experiment(dim):
     methods = [
         "nnunet",
-        "full/sam", "lora/sam",
-        "full/medsam", "lora/medsam",
-        "full/simplesam", "lora/simplesam",
-        "full/medico-sam-8g", "lora/medico-sam-8g",
+        "lora/sam", "full/sam",
+        "lora/medsam", "full/medsam",
+        "lora/simplesam", "full/simplesam",
+        "lora/medico-sam-8g", "full/medico-sam-8g",
     ]
 
     results = {}
     for dataset, nnunet_scores in NNUNET_RESULTS.items():
+        if dim == "3d" and dataset not in DATASETS_3D:
+            continue
+
+        if dim == "2d" and dataset not in DATASETS_2D:
+            continue
+
         scores = get_results(dataset)
         for method in methods:
             if method == "nnunet":
@@ -198,7 +206,7 @@ def _plot_absolute_mean_per_experiment():
             else:
                 results[method] = res
 
-    fig, ax = plt.subplots(figsize=(20, 10))
+    fig, ax = plt.subplots(figsize=(20, 15))
 
     # sort results
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
@@ -206,11 +214,24 @@ def _plot_absolute_mean_per_experiment():
     top_methods = sorted_methods[:3]  # get the top 3 methods.
 
     means = [results[_method] for _method in methods]
+
+    # Set edge colors
+    edgecolors = ["None" if method in top_methods else "grey" for method in methods]
+
+    # Create bars
     bars = ax.bar(
         methods, means,
-        edgecolor=["None" if _method in top_methods else "grey" for _method in methods],
+        edgecolor=edgecolors,
+        linewidth=1.5,
         color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
     )
+
+    # Apply dotted edge to 'full/medico-sam-8g' if not in top 3
+    for bar, method in zip(bars, methods):
+        if method == "full/medico-sam-8g" and method not in top_methods:
+            bar.set_edgecolor("black")
+            bar.set_linestyle("--")
+            bar.set_linewidth(3)
 
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
@@ -233,14 +254,19 @@ def _plot_absolute_mean_per_experiment():
         if method == "full/medico-sam-8g":
             label.set_fontweight("bold")
 
-    plt.savefig("./fig_1_semantic_segmentation_average.png", bbox_inches="tight")
-    plt.savefig("./fig_1_semantic_segmentation_average.svg", bbox_inches="tight")
+    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=18, fontweight="bold")
+    plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.png", bbox_inches="tight")
+    plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.svg", bbox_inches="tight")
     plt.close()
 
 
 def main():
-    _make_per_dataset_plot()
-    _plot_absolute_mean_per_experiment()
+    # For figure 4
+    # _make_per_dataset_plot()
+
+    # For figure 1
+    _plot_absolute_mean_per_experiment(dim="2d")
+    _plot_absolute_mean_per_experiment(dim="3d")
 
 
 if __name__ == "__main__":
