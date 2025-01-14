@@ -83,10 +83,19 @@ def interactive_segmentation_for_3d_images(
     save_dir = os.path.join(experiment_folder, "results", "iterative_prompting_without_mask")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, "start_with_" + ("box.csv" if start_with_box_prompt else "point.csv"))
+    if os.path.exists(save_path):
+        return
 
     results = {}
     for cname, cid in semantic_maps.items():
         pred_paths = natsorted(glob(os.path.join(prediction_root, "iteration0", "*.tif")))
+
+        # HACK: arrange the axes alignment!
+        if dataset_name == "segthy":
+            for pred_path in pred_paths:
+                from tukra.io import read_image, write_image
+                pred = read_image(pred_path).transpose(0, 2, 1)
+                write_image(pred_path, pred)
 
         result = run_evaluation_per_semantic_class(
             gt_paths=gt_paths,
