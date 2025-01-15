@@ -119,7 +119,6 @@ def _get_plots():
 
         x = [pos * 0.6 for pos in range(len(methods))]
 
-        # Prepare scores
         point_scores = [s.get("point") for s in relative_scores]
         box_scores = [s.get("box") for s in relative_scores]
         all_scores = point_scores + box_scores
@@ -127,21 +126,18 @@ def _get_plots():
         max_height = max(all_scores) if all_scores else 0
         min_height = min(all_scores) if all_scores else 0
 
-        # Plot 'Point' bars first
         ax[i].bar(
             [pos - bar_width / 2 for pos in x], point_scores,
             width=bar_width, label='Point', color="#7CCBA2", edgecolor="grey",
         )
 
-        # Plot 'Box' bars second
         ax[i].bar(
             [pos + bar_width / 2 for pos in x], box_scores,
             width=bar_width, label='Box', color="#FCDE9C", edgecolor="grey",
         )
 
-        # Adjust the shaded regions based on bar heights
-        ax[i].axhspan(min_height, 0, color='lightcoral', alpha=0.2)  # Red below zero
-        ax[i].axhspan(0, max_height, color='lightgreen', alpha=0.2)  # Green above zero
+        ax[i].axhspan(min_height, 0, color='lightcoral', alpha=0.2)
+        ax[i].axhspan(0, max_height, color='lightgreen', alpha=0.2)
 
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels, fontsize=fontsize_base)
@@ -150,11 +146,9 @@ def _get_plots():
 
         ax[i].axhline(0, color='black', linewidth=0.8, linestyle="--")
 
-    # Turn off unused subplots
     for idx in range(len(DATASETS), len(ax)):
         ax[idx].axis("off")
 
-    # Adjust legend to match the updated order
     handles, labels = ax[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', fontsize=fontsize_legend, ncol=2)
 
@@ -170,28 +164,24 @@ def _get_plots():
 
 
 def _get_average_plots():
-    method_scores = {method: {'box': [], 'point': []} for method in MODEL_MAPS.keys()}
+    method_scores = {method: {'box': [], 'point': []} for method in MODEL_MAPS.keys() if method != "simplesam"}
 
-    # Aggregate scores across all datasets
     for dname in DATASETS.keys():
         df1 = _get_sam_results_per_dataset(dname)
         df2 = _get_sam2_results_per_dataset(dname)
         df = pd.concat([df1, df2], ignore_index=True)
 
-        for method in MODEL_MAPS.keys():
+        for method in method_scores.keys():
             base_res = df[df['backbone'] == method]
 
-            # Collect 'box' scores
             box_score = base_res[base_res['prompt_choice'] == 'box']['score'].iloc[0] \
                 if not base_res[base_res['prompt_choice'] == 'box'].empty else 0
             method_scores[method]['box'].append(box_score)
 
-            # Collect 'point' scores
             point_score = base_res[base_res['prompt_choice'] == 'point']['score'].iloc[0] \
                 if not base_res[base_res['prompt_choice'] == 'point'].empty else 0
             method_scores[method]['point'].append(point_score)
 
-    # Compute the average scores for each method
     averaged_scores = []
     for method, scores in method_scores.items():
         avg_box = np.mean(scores['box'])
@@ -200,33 +190,25 @@ def _get_average_plots():
 
     fig, ax = plt.subplots(figsize=(20, 15))
 
-    methods = [MODEL_MAPS[m] for m in MODEL_MAPS.keys()]
+    methods = [MODEL_MAPS[m] for m in MODEL_MAPS.keys() if m != "simplesam"]
     x = np.arange(len(methods))
     bar_width = 0.2
 
-    # Extract average scores
     avg_box_scores = [s['box'] for s in averaged_scores]
     avg_point_scores = [s['point'] for s in averaged_scores]
 
-    # Plot 'Point' bars first
     ax.bar(
-        x - bar_width / 2, avg_point_scores,
-        width=bar_width, label='Point', color="#7CCBA2", edgecolor="grey"
+        x - bar_width / 2, avg_point_scores, width=bar_width, label='Point', color="#7CCBA2", edgecolor="grey"
+    )
+    ax.bar(
+        x + bar_width / 2, avg_box_scores, width=bar_width, label='Box', color="#FCDE9C", edgecolor="grey"
     )
 
-    # Plot 'Box' bars second
-    ax.bar(
-        x + bar_width / 2, avg_box_scores,
-        width=bar_width, label='Box', color="#FCDE9C", edgecolor="grey"
-    )
-
-    # Customize the plot
     ax.set_xticks(x)
     ax.set_xticklabels(methods, fontsize=16)
     ax.set_ylabel("Dice Similarity Coefficient", fontsize=16, fontweight="bold")
     ax.set_title("Interactive Segmentation (3D)", fontsize=18, fontweight="bold")
 
-    # Clean and consolidate legends
     all_lines, all_labels = [], []
     for ax in fig.axes:
         lines, labels = ax.get_legend_handles_labels()
@@ -236,7 +218,6 @@ def _get_average_plots():
                 all_labels.append(label)
         ax.legend().remove()
 
-    # Global legend
     fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.2075, 0.875), fontsize=16)
 
     plt.title("Interactive Segmentation (3D)", fontsize=18, fontweight="bold")

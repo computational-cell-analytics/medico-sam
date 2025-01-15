@@ -97,7 +97,6 @@ def _make_per_dataset_plot():
     fig, axes = plt.subplots(4, 3, figsize=(35, 30))
     axes = axes.flatten()
 
-    # Define color shades for top 3 methods
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     default_color = "#D3D3D3"
 
@@ -114,31 +113,27 @@ def _make_per_dataset_plot():
                 scores.append(methods[_method])
                 neu_methods_list.append(_method)
 
-        # Determine the ranking of methods based on scores
-        sorted_indices = np.argsort(scores)[::-1]  # Sort in descending order
+        sorted_indices = np.argsort(scores)[::-1]
         bar_colors = [default_color] * len(scores)
-        edge_colors = ["none"] * len(scores)  # Default: no edge
-        edge_styles = ["solid"] * len(scores)  # Default: solid edges
+        edge_colors = ["none"] * len(scores)
+        edge_styles = ["solid"] * len(scores)
 
-        for rank, idx in enumerate(sorted_indices[:3]):  # Top 3 methods
+        for rank, idx in enumerate(sorted_indices[:3]):
             bar_colors[idx] = top_colors[rank]
-            edge_colors[idx] = "none"  # No edge color for top 3 methods
+            edge_colors[idx] = "none"
 
-        # Highlight "full/medico-sam-8g" if not in top 3
         if "full/medico-sam-8g" in neu_methods_list:
             index = neu_methods_list.index("full/medico-sam-8g")
-            if index not in sorted_indices[:3]:  # Not in top 3
+            if index not in sorted_indices[:3]:
                 edge_colors[index] = "black"
-                edge_styles[index] = "dashed"  # Dashed edge style for emphasis
-            else:  # If in top 3, no edge color
+                edge_styles[index] = "dashed"
+            else:
                 edge_colors[index] = "none"
 
-        # Plot bars with respective colors and edge styles
         bars = ax.bar(
             neu_methods_list, scores, color=bar_colors, edgecolor=edge_colors, linewidth=1.5
         )
 
-        # Apply dashed style where needed
         for bar, style in zip(bars, edge_styles):
             if style == "dashed":
                 bar.set_linestyle("--")
@@ -152,7 +147,6 @@ def _make_per_dataset_plot():
         ax.set_xticklabels(_xticklabels, rotation=45, fontsize=18)
         ax.tick_params(axis='y', labelsize=14)
 
-        # Make "full/medico-sam-8g" bold in x-tick labels
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
             if method == "full/medico-sam-8g":
                 label.set_fontweight("bold")
@@ -208,17 +202,14 @@ def _plot_absolute_mean_per_experiment(dim):
 
     fig, ax = plt.subplots(figsize=(20, 15))
 
-    # sort results
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     sorted_methods = sorted(results, key=results.get, reverse=True)
     top_methods = sorted_methods[:3]  # get the top 3 methods.
 
     means = [results[_method] for _method in methods]
 
-    # Set edge colors
     edgecolors = ["None" if method in top_methods else "grey" for method in methods]
 
-    # Create bars
     bars = ax.bar(
         methods, means,
         edgecolor=edgecolors,
@@ -226,7 +217,6 @@ def _plot_absolute_mean_per_experiment(dim):
         color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
     )
 
-    # Apply dotted edge to 'full/medico-sam-8g' if not in top 3
     for bar, method in zip(bars, methods):
         if method == "full/medico-sam-8g" and method not in top_methods:
             bar.set_edgecolor("black")
@@ -249,7 +239,6 @@ def _plot_absolute_mean_per_experiment(dim):
             fontweight="bold" if method in top_methods else "normal",
         )
 
-    # make our method's xtick label bold
     for label, method in zip(ax.get_xticklabels(), methods):
         if method == "full/medico-sam-8g":
             label.set_fontweight("bold")
@@ -262,7 +251,7 @@ def _plot_absolute_mean_per_experiment(dim):
 
 def main():
     # For figure 4
-    # _make_per_dataset_plot()
+    _make_per_dataset_plot()
 
     # For figure 1
     _plot_absolute_mean_per_experiment(dim="2d")

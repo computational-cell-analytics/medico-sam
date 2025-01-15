@@ -218,7 +218,7 @@ def _make_per_experiment_plots(dataframes, datasets):
         axes[i].axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)
 
         _xticklabels = [MODEL_MAPS[_exp] for _exp in df["experiment"]]
-        tick_positions = [r + 3 * bar_width for r in range(len(df))]  # Adjusted to center the labels
+        tick_positions = [r + 3 * bar_width for r in range(len(df))]
         axes[i].set_xticks(tick_positions)
         axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=16)
         axes[i].tick_params(axis='y', labelsize=14)
