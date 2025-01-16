@@ -18,6 +18,12 @@ from segment_anything import SamPredictor
 _DEFAULT_MODEL = "vit_b"
 
 
+#
+# Functionality for model download.
+# Inspired by: https://github.com/computational-cell-analytics/micro-sam/blob/master/micro_sam/util.py
+#
+
+
 def get_cache_directory() -> None:
     """Get medico-sam cache directory location.
 
@@ -26,11 +32,6 @@ def get_cache_directory() -> None:
     default_cache_directory = os.path.expanduser(pooch.os_cache("medico_sam"))
     cache_directory = Path(os.environ.get("MEDICOSAM_CACHEDIR", default_cache_directory))
     return cache_directory
-
-
-#
-# Functionality for model download.
-#
 
 
 def medico_sam_cachedir() -> None:
