@@ -60,20 +60,19 @@ def models():
     #     xxh128sum filename
     registry = {
         # The default segment anything models:
+        "vit_b": "xxh128:6923c33df3637b6a922d7682bfc9a86b",
         "vit_l": "xxh128:a82beb3c660661e3dd38d999cc860e9a",
         "vit_h": "xxh128:97698fac30bd929c2e6d8d8cc15933c2",
-        "vit_b": "xxh128:6923c33df3637b6a922d7682bfc9a86b",
-        # The model with vit tiny backend fom https://github.com/ChaoningZhang/MobileSAM.
-        "vit_t": "xxh128:8eadbc88aeb9d8c7e0b4b60c3db48bd0",
-        # TODO: add medico-sam models.
+        # The MedicoSAM models:
+        "vit_b_medical_imaging": "xxh128:5be672f1458263a9edc9fd40d7f56ac1",
     }
 
     urls = {
+        "vit_b": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
         "vit_l": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
         "vit_h": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
-        "vit_b": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
-        "vit_t": "https://owncloud.gwdg.de/index.php/s/TuDzuwVDHd1ZDnQ/download",
-        # TODO: add medico-sam models.
+        # The MedicoSAM models:
+        "vit_b_medical_imaging": "https://owncloud.gwdg.de/index.php/s/AB69HGhj8wuozXQ/download",
     }
 
     models = pooch.create(
@@ -107,6 +106,12 @@ def get_medico_sam_model(
     Returns:
         The segment anything predictor.
     """
+    # checkpoint_path has not been passed, we download a known model and derive the correct
+    # URL from the model_type. If the model_type is invalid pooch will raise an error.
+    if checkpoint_path is None:
+        model_registry = models()
+        checkpoint_path = model_registry.fetch(model_type, progressbar=True)
+
     model_kwargs = {
         "model_type": model_type, "device": device, "checkpoint_path": checkpoint_path,
     }
