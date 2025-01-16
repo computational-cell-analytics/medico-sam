@@ -36,9 +36,7 @@ def export_model(model_path, model_type):
 
     os.makedirs(output_folder, exist_ok=True)
 
-    exported_path = os.path.join(
-        output_folder, f"{model_type}.pt"
-    )
+    exported_path = os.path.join(output_folder, f"{model_type}.pt")
 
     _, model_state = _load_checkpoint(checkpoint_path=model_path)
 
