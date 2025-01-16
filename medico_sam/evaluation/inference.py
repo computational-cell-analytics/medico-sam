@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
-import imageio.v3 as imageio
 from skimage.measure import label as connected_components
 
 import torch
@@ -17,6 +16,8 @@ from torch_em.transform.generic import ResizeLongestSideInputs
 from micro_sam import util
 from micro_sam.training.util import ConvertToSemanticSamInputs
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
+
+from tukra.io import read_image, write_image
 
 from segment_anything import SamPredictor
 
@@ -77,8 +78,8 @@ def run_inference_with_iterative_prompting_per_semantic_class(
             if all(os.path.exists(prediction_path) for prediction_path in prediction_paths):
                 continue
 
-            image = imageio.imread(image_path)
-            gt = imageio.imread(gt_path)
+            image = read_image(image_path)
+            gt = read_image(gt_path)
 
             # create all prediction folders for all intermediate iterations
             for i in range(n_iterations):
@@ -142,7 +143,7 @@ def _run_semantic_segmentation_for_image(
     masks = masks.detach().cpu().numpy().squeeze()
 
     # save the segmentations
-    imageio.imwrite(prediction_path, masks, compression="zlib")
+    write_image(prediction_path, masks, compression="zlib")
 
 
 def run_semantic_segmentation(
@@ -172,7 +173,7 @@ def run_semantic_segmentation(
             if os.path.exists(prediction_path):
                 continue
 
-            image = imageio.imread(image_path)
+            image = read_image(image_path)
 
             # create the prediction folder
             os.makedirs(os.path.join(prediction_dir, semantic_class_name), exist_ok=True)
@@ -220,7 +221,7 @@ def _run_semantic_segmentation_for_image_3d(
     predict_with_halo(
         input_=image,
         model=model,
-        gpu_ids=[device], 
+        gpu_ids=[device],
         block_shape=block_shape,
         halo=halo,
         preprocess=preprocess,
@@ -232,7 +233,7 @@ def _run_semantic_segmentation_for_image_3d(
     output = resize_transform.convert_transformed_inputs_to_original_shape(output)
 
     # save the segmentations
-    imageio.imwrite(prediction_path, output, compression="zlib")
+    write_image(prediction_path, output, compression="zlib")
 
 
 def run_semantic_segmentation_3d(
@@ -277,7 +278,6 @@ def run_semantic_segmentation_3d(
             if os.path.exists(prediction_path):
                 continue
 
-            from tukra.io import read_image
             image = read_image(image_path, key=image_key)
 
             if make_channels_first:

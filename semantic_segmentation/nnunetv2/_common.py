@@ -19,6 +19,7 @@ def _get_paths(path, dataset, split):
         ),
         "piccolo": lambda: medical.piccolo.get_piccolo_paths(path, split="validation" if split == "val" else split),
         "hil_toothseg": lambda: medical.hil_toothseg.get_hil_toothseg_paths(path=path, split=split),
+
         # 3d datasets
         "osic_pulmofib": lambda: medical.osic_pulmofib.get_osic_pulmofib_paths(path=path, split=split),
         "duke_liver": lambda: medical.duke_liver.get_duke_liver_paths(path=path, split=split),
