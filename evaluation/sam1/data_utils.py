@@ -44,7 +44,6 @@ def _load_raw_and_label_volumes(raw_path, label_path, dataset_name, ensure_8bit=
 
         # Now insert both lung labels.
         fids = np.unique(lung_label)[1:]
-        assert len(fids) == 2
         for id in fids:  # Add offset to new id
             offset_id = 2 + id
             assert offset_id not in label

@@ -24,7 +24,6 @@ NNUNET_RESULTS = {
     "duke_liver": [0.9117],
 }
 
-
 DATASET_MAPS = {
     # 2d
     "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
@@ -33,7 +32,7 @@ DATASET_MAPS = {
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
-    # 3
+    # 3d
     "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
     "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
     "oasis": "OASIS (Brain Tissue in MRI)",
@@ -42,6 +41,9 @@ DATASET_MAPS = {
     "duke_liver": "Duke Liver (Liver in MRI)",
 }
 
+DATASETS_2D = ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]
+
+DATASETS_3D = ["osic_pulmofib", "leg_3d_us", "oasis", "micro_usp", "lgg_mri", "duke_liver"]
 
 MODEL_MAPS = {
     "nnunet": "nnUNet",
@@ -95,7 +97,6 @@ def _make_per_dataset_plot():
     fig, axes = plt.subplots(4, 3, figsize=(35, 30))
     axes = axes.flatten()
 
-    # Define color shades for top 3 methods
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     default_color = "#D3D3D3"
 
@@ -112,31 +113,27 @@ def _make_per_dataset_plot():
                 scores.append(methods[_method])
                 neu_methods_list.append(_method)
 
-        # Determine the ranking of methods based on scores
-        sorted_indices = np.argsort(scores)[::-1]  # Sort in descending order
+        sorted_indices = np.argsort(scores)[::-1]
         bar_colors = [default_color] * len(scores)
-        edge_colors = ["none"] * len(scores)  # Default: no edge
-        edge_styles = ["solid"] * len(scores)  # Default: solid edges
+        edge_colors = ["none"] * len(scores)
+        edge_styles = ["solid"] * len(scores)
 
-        for rank, idx in enumerate(sorted_indices[:3]):  # Top 3 methods
+        for rank, idx in enumerate(sorted_indices[:3]):
             bar_colors[idx] = top_colors[rank]
-            edge_colors[idx] = "none"  # No edge color for top 3 methods
+            edge_colors[idx] = "none"
 
-        # Highlight "full/medico-sam-8g" if not in top 3
         if "full/medico-sam-8g" in neu_methods_list:
             index = neu_methods_list.index("full/medico-sam-8g")
-            if index not in sorted_indices[:3]:  # Not in top 3
+            if index not in sorted_indices[:3]:
                 edge_colors[index] = "black"
-                edge_styles[index] = "dashed"  # Dashed edge style for emphasis
-            else:  # If in top 3, no edge color
+                edge_styles[index] = "dashed"
+            else:
                 edge_colors[index] = "none"
 
-        # Plot bars with respective colors and edge styles
         bars = ax.bar(
             neu_methods_list, scores, color=bar_colors, edgecolor=edge_colors, linewidth=1.5
         )
 
-        # Apply dashed style where needed
         for bar, style in zip(bars, edge_styles):
             if style == "dashed":
                 bar.set_linestyle("--")
@@ -150,7 +147,6 @@ def _make_per_dataset_plot():
         ax.set_xticklabels(_xticklabels, rotation=45, fontsize=18)
         ax.tick_params(axis='y', labelsize=14)
 
-        # Make "full/medico-sam-8g" bold in x-tick labels
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
             if method == "full/medico-sam-8g":
                 label.set_fontweight("bold")
@@ -174,17 +170,23 @@ def _make_per_dataset_plot():
     plt.close()
 
 
-def _plot_absolute_mean_per_experiment():
+def _plot_absolute_mean_per_experiment(dim):
     methods = [
         "nnunet",
-        "full/sam", "lora/sam",
-        "full/medsam", "lora/medsam",
-        "full/simplesam", "lora/simplesam",
-        "full/medico-sam-8g", "lora/medico-sam-8g",
+        "lora/sam", "full/sam",
+        "lora/medsam", "full/medsam",
+        "lora/simplesam", "full/simplesam",
+        "lora/medico-sam-8g", "full/medico-sam-8g",
     ]
 
     results = {}
     for dataset, nnunet_scores in NNUNET_RESULTS.items():
+        if dim == "3d" and dataset not in DATASETS_3D:
+            continue
+
+        if dim == "2d" and dataset not in DATASETS_2D:
+            continue
+
         scores = get_results(dataset)
         for method in methods:
             if method == "nnunet":
@@ -198,49 +200,62 @@ def _plot_absolute_mean_per_experiment():
             else:
                 results[method] = res
 
-    fig, ax = plt.subplots(figsize=(20, 10))
+    fig, ax = plt.subplots(figsize=(22, 15))
 
-    # sort results
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     sorted_methods = sorted(results, key=results.get, reverse=True)
     top_methods = sorted_methods[:3]  # get the top 3 methods.
 
     means = [results[_method] for _method in methods]
+
+    edgecolors = ["None" if method in top_methods else "grey" for method in methods]
+
     bars = ax.bar(
         methods, means,
-        edgecolor=["None" if _method in top_methods else "grey" for _method in methods],
+        edgecolor=edgecolors,
+        linewidth=1.5,
         color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
     )
+
+    for bar, method in zip(bars, methods):
+        if method == "full/medico-sam-8g" and method not in top_methods:
+            bar.set_edgecolor("black")
+            bar.set_linestyle("--")
+            bar.set_linewidth(3)
 
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
-    ax.set_xticklabels(_xticklabels, fontsize=16)
-    ax.tick_params(axis='y', labelsize=16)
-    ax.set_ylabel('Average Dice Similarity Coefficient', fontsize=16, fontweight="bold")
+    ax.set_xticklabels(_xticklabels, fontsize=18)
+    ax.tick_params(axis='y', labelsize=18)
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
 
     # NOTE: adds values on top of each bar
     for bar, mean, method in zip(bars, means, methods):
         ax.text(
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, round(mean, 4),
-            ha='center', va='bottom', fontsize=14,
+            ha='center', va='bottom', fontsize=18,
             color="black" if method in top_methods else "#696969",
             fontweight="bold" if method in top_methods else "normal",
         )
 
-    # make our method's xtick label bold
     for label, method in zip(ax.get_xticklabels(), methods):
         if method == "full/medico-sam-8g":
             label.set_fontweight("bold")
 
-    plt.savefig("./fig_1_semantic_segmentation_average.png", bbox_inches="tight")
-    plt.savefig("./fig_1_semantic_segmentation_average.svg", bbox_inches="tight")
+    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=24, fontweight="bold")
+    plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.png", bbox_inches="tight")
+    plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.svg", bbox_inches="tight")
     plt.close()
 
 
 def main():
+    # For figure 4
     _make_per_dataset_plot()
-    _plot_absolute_mean_per_experiment()
+
+    # For figure 1
+    _plot_absolute_mean_per_experiment(dim="2d")
+    _plot_absolute_mean_per_experiment(dim="3d")
 
 
 if __name__ == "__main__":

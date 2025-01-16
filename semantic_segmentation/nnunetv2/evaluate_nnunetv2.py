@@ -20,6 +20,7 @@ CLASS_MAPS = {
     "cbis_ddsm": {"mass": 1},
     "piccolo": {"polyps": 1},
     "hil_toothseg": {"teeth": 1},
+
     # 3d datasets
     "osic_pulmofib": {"heart": 1, "lung": 2, "trachea": 3},
     "duke_liver": {"liver": 1},

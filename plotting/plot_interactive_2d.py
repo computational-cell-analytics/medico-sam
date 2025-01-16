@@ -11,7 +11,6 @@ ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/v1/"
 
 EXPERIMENTS = [
     "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
-    # "generalist_1", "simplesam_1", "medsam-self_1",
 ]
 
 MODEL = "vit_b"
@@ -43,10 +42,6 @@ MODEL_MAPS = {
     "medsam": "MedSAM",
     "sam-med2d": "FT-SAM",
     "sam-med2d-adapter": "SAM-Med2D",
-    # "generalist_1": "Generalist (Single GPU)",
-    # "simplesam_1": "Simple Generalist* (Single GPU)",
-    # "medsam-self_1": "MedSAM* (Single GPU)",
-    # "sam2.0": "SAM2 (2.0)",
     "sam2.1": "SAM2 (2.1)",
 }
 
@@ -218,7 +213,7 @@ def _make_per_experiment_plots(dataframes, datasets):
         axes[i].axhspan(min_val, 0, facecolor='lightcoral', alpha=0.2)
 
         _xticklabels = [MODEL_MAPS[_exp] for _exp in df["experiment"]]
-        tick_positions = [r + 3 * bar_width for r in range(len(df))]  # Adjusted to center the labels
+        tick_positions = [r + 3 * bar_width for r in range(len(df))]
         axes[i].set_xticks(tick_positions)
         axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=16)
         axes[i].tick_params(axis='y', labelsize=14)
@@ -258,9 +253,7 @@ def _make_per_model_average_plots(dataframes):
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
     _order = [
-        "vanilla", "medsam",
-        "sam2.1",  # "sam2.0",
-        "generalist_8"
+        "vanilla", "medsam", "sam2.1", "generalist_8"
     ]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
@@ -274,14 +267,14 @@ def _make_per_model_average_plots(dataframes):
     x = np.arange(len(experiments))
     width = 0.2
 
-    fig, ax = plt.subplots(figsize=(15, 10))
+    fig, ax = plt.subplots(figsize=(20, 15))
     for i, (metric, color, label) in enumerate(zip(metrics, color_map, label_map)):
         ax.bar(x + i * width, grouped_data[metric], width, label=label, color=color, edgecolor='grey')
 
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=16, fontweight="bold")
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
     ax.set_xticks(x + width * (len(metrics) - 1) / 2)
     _xticklabels = [MODEL_MAPS[_exp] for _exp in experiments]
-    ax.set_xticklabels(_xticklabels, fontsize=16)
+    ax.set_xticklabels(_xticklabels, fontsize=18)
     ax.tick_params(axis='y', labelsize=16)
     ax.legend()
 
@@ -294,10 +287,11 @@ def _make_per_model_average_plots(dataframes):
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.315, 0.875), fontsize=16)
+    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.29, 0.875), fontsize=18)
 
-    plt.savefig("./fig_1_interactive_segmentation_average.png", bbox_inches="tight")
-    plt.savefig("./fig_1_interactive_segmentation_average.svg", bbox_inches="tight")
+    plt.title("Interactive Segmentation (2D)", fontsize=24, fontweight="bold")
+    plt.savefig("./fig_1b_interactive_segmentation_2d_average.png", bbox_inches="tight")
+    plt.savefig("./fig_1b_interactive_segmentation_2d_average.svg", bbox_inches="tight")
     plt.close()
 
 
@@ -310,9 +304,7 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
     _order = [
-        "vanilla",
-        "sam2.1",  # "sam2.0",
-        "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
+        "vanilla", "sam2.1", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
     ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
     avg_df = avg_df.sort_values('experiment')
@@ -372,7 +364,7 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     plt.close()
 
 
-def _figure_1():
+def _figure_1b():
     # for point, box, ip and ib
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
@@ -403,7 +395,7 @@ def _figure_3b():
 
 
 def main():
-    _figure_1()
+    _figure_1b()
     _figure_3a()
     _figure_3b()
 
