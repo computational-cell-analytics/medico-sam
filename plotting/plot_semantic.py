@@ -251,7 +251,7 @@ def _plot_absolute_mean_per_experiment(dim):
 
 def main():
     # For figure 4
-    # _make_per_dataset_plot()
+    _make_per_dataset_plot()
 
     # For figure 1
     _plot_absolute_mean_per_experiment(dim="2d")

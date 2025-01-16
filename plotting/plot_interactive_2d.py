@@ -11,7 +11,6 @@ ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/v1/"
 
 EXPERIMENTS = [
     "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
-    # "generalist_1", "simplesam_1", "medsam-self_1",
 ]
 
 MODEL = "vit_b"
@@ -43,10 +42,6 @@ MODEL_MAPS = {
     "medsam": "MedSAM",
     "sam-med2d": "FT-SAM",
     "sam-med2d-adapter": "SAM-Med2D",
-    # "generalist_1": "Generalist (Single GPU)",
-    # "simplesam_1": "Simple Generalist* (Single GPU)",
-    # "medsam-self_1": "MedSAM* (Single GPU)",
-    # "sam2.0": "SAM2 (2.0)",
     "sam2.1": "SAM2 (2.1)",
 }
 
@@ -258,9 +253,7 @@ def _make_per_model_average_plots(dataframes):
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
     _order = [
-        "vanilla", "medsam",
-        "sam2.1",  # "sam2.0",
-        "generalist_8"
+        "vanilla", "medsam", "sam2.1", "generalist_8"
     ]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
@@ -311,9 +304,7 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
     _order = [
-        "vanilla",
-        "sam2.1",  # "sam2.0",
-        "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
+        "vanilla", "sam2.1", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
     ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
     avg_df = avg_df.sort_values('experiment')
@@ -405,8 +396,8 @@ def _figure_3b():
 
 def main():
     _figure_1b()
-    # _figure_3a()
-    # _figure_3b()
+    _figure_3a()
+    _figure_3b()
 
 
 if __name__ == "__main__":
