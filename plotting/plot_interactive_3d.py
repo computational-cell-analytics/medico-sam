@@ -205,9 +205,10 @@ def _get_average_plots():
     )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(methods, fontsize=16)
-    ax.set_ylabel("Dice Similarity Coefficient", fontsize=16, fontweight="bold")
-    ax.set_title("Interactive Segmentation (3D)", fontsize=18, fontweight="bold")
+    ax.set_xticklabels(methods, fontsize=18)
+    ax.set_ylabel("Dice Similarity Coefficient", fontsize=20, fontweight="bold")
+    ax.set_title("Interactive Segmentation (3D)", fontsize=24, fontweight="bold")
+    ax.tick_params(axis='y', labelsize=18)
 
     all_lines, all_labels = [], []
     for ax in fig.axes:
@@ -218,9 +219,8 @@ def _get_average_plots():
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.2075, 0.875), fontsize=16)
+    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.22, 0.875), fontsize=18)
 
-    plt.title("Interactive Segmentation (3D)", fontsize=18, fontweight="bold")
     plt.savefig("./fig_1b_interactive_segmentation_3d_average.png", bbox_inches="tight")
     plt.savefig("./fig_1b_interactive_segmentation_3d_average.svg", bbox_inches="tight")
     plt.close()

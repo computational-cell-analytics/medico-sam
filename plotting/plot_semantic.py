@@ -200,7 +200,7 @@ def _plot_absolute_mean_per_experiment(dim):
             else:
                 results[method] = res
 
-    fig, ax = plt.subplots(figsize=(20, 15))
+    fig, ax = plt.subplots(figsize=(22, 15))
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     sorted_methods = sorted(results, key=results.get, reverse=True)
@@ -226,15 +226,15 @@ def _plot_absolute_mean_per_experiment(dim):
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
-    ax.set_xticklabels(_xticklabels, fontsize=16)
-    ax.tick_params(axis='y', labelsize=16)
-    ax.set_ylabel('Average Dice Similarity Coefficient', fontsize=16, fontweight="bold")
+    ax.set_xticklabels(_xticklabels, fontsize=18)
+    ax.tick_params(axis='y', labelsize=18)
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
 
     # NOTE: adds values on top of each bar
     for bar, mean, method in zip(bars, means, methods):
         ax.text(
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, round(mean, 4),
-            ha='center', va='bottom', fontsize=14,
+            ha='center', va='bottom', fontsize=18,
             color="black" if method in top_methods else "#696969",
             fontweight="bold" if method in top_methods else "normal",
         )
@@ -243,7 +243,7 @@ def _plot_absolute_mean_per_experiment(dim):
         if method == "full/medico-sam-8g":
             label.set_fontweight("bold")
 
-    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=18, fontweight="bold")
+    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=24, fontweight="bold")
     plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.png", bbox_inches="tight")
     plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.svg", bbox_inches="tight")
     plt.close()
@@ -251,7 +251,7 @@ def _plot_absolute_mean_per_experiment(dim):
 
 def main():
     # For figure 4
-    _make_per_dataset_plot()
+    # _make_per_dataset_plot()
 
     # For figure 1
     _plot_absolute_mean_per_experiment(dim="2d")

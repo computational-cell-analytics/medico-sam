@@ -278,10 +278,10 @@ def _make_per_model_average_plots(dataframes):
     for i, (metric, color, label) in enumerate(zip(metrics, color_map, label_map)):
         ax.bar(x + i * width, grouped_data[metric], width, label=label, color=color, edgecolor='grey')
 
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=16, fontweight="bold")
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
     ax.set_xticks(x + width * (len(metrics) - 1) / 2)
     _xticklabels = [MODEL_MAPS[_exp] for _exp in experiments]
-    ax.set_xticklabels(_xticklabels, fontsize=16)
+    ax.set_xticklabels(_xticklabels, fontsize=18)
     ax.tick_params(axis='y', labelsize=16)
     ax.legend()
 
@@ -294,11 +294,11 @@ def _make_per_model_average_plots(dataframes):
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.27, 0.875), fontsize=16)
+    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.29, 0.875), fontsize=18)
 
-    plt.title("Interactive Segmentation (2D)", fontsize=18, fontweight="bold")
-    plt.savefig("./fig_1_interactive_segmentation_average.png", bbox_inches="tight")
-    plt.savefig("./fig_1_interactive_segmentation_average.svg", bbox_inches="tight")
+    plt.title("Interactive Segmentation (2D)", fontsize=24, fontweight="bold")
+    plt.savefig("./fig_1b_interactive_segmentation_2d_average.png", bbox_inches="tight")
+    plt.savefig("./fig_1b_interactive_segmentation_2d_average.svg", bbox_inches="tight")
     plt.close()
 
 
@@ -373,7 +373,7 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     plt.close()
 
 
-def _figure_1():
+def _figure_1b():
     # for point, box, ip and ib
     results = []
     for dataset_name in list(DATASET_MAPS.keys()):
@@ -404,7 +404,7 @@ def _figure_3b():
 
 
 def main():
-    _figure_1()
+    _figure_1b()
     # _figure_3a()
     # _figure_3b()
 
