@@ -1,0 +1,117 @@
+import os
+
+from torch_em.data import datasets
+from torch_em.data import MinInstanceSampler
+from torch_em.transform.label import connected_components
+
+from micro_sam.evaluation.model_comparison import generate_data_for_model_comparison, model_comparison
+
+
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"
+
+
+def compare_experiments_for_dataset(
+    dataset_name,
+    experiment_folder,
+    standard_model,
+    finetuned_model,
+    intermediate_model=None,
+    checkpoint1=None,
+    checkpoint2=None,
+    checkpoint3=None,
+    view_napari=False,
+    n_samples=20,
+):
+    output_folder = os.path.join(
+        experiment_folder, "model_comparison", dataset_name, f"{standard_model}-{finetuned_model}"
+    )
+    plot_folder = os.path.join(experiment_folder, "candidates", dataset_name)
+    if not os.path.exists(output_folder):
+        loader = fetch_data_loaders(dataset_name)
+        generate_data_for_model_comparison(
+            loader=loader,
+            output_folder=output_folder,
+            model_type1=standard_model,
+            model_type2=finetuned_model[:5],
+            model_type3=intermediate_model[:5],
+            n_samples=n_samples,
+            checkpoint1=checkpoint1,
+            checkpoint2=checkpoint2,
+            checkpoint3=checkpoint3,
+        )
+
+    model_comparison(
+        output_folder=output_folder,
+        n_images_per_sample=10,
+        min_size=100,
+        plot_folder=plot_folder,
+        point_radius=3,
+        outline_dilation=0,
+        have_model3=intermediate_model is not None
+    )
+    if view_napari:
+        from micro_sam.evaluation.model_comparison import model_comparison_with_napari
+        model_comparison_with_napari(output_folder, show_points=True)
+
+
+def fetch_data_loaders(dataset_name):
+    sampler = MinInstanceSampler()
+
+    def _trafo(x, y):
+        return x, y
+
+    if dataset_name == "camus":
+        loader = datasets.get_camus_loader(
+            path=os.path.join(ROOT, "camus"), batch_size=1, patch_shape=(1, 512, 512), ndim=2, resize_inputs=True,
+            sampler=sampler, shuffle=True, label_transform=connected_components, transform=_trafo,
+        )
+
+    elif dataset_name == "uwaterloo_skin":
+        loader = datasets.get_uwaterloo_skin_loader(
+            path=os.path.join(ROOT, "uwaterloo_skin"), batch_size=1, patch_shape=(512, 512), resize_inputs=True,
+            sampler=sampler, shuffle=True, label_transform=connected_components, transform=_trafo,
+        )
+
+    elif dataset_name == "montgomery":
+        loader = datasets.get_montgomery_loader(
+            path=os.path.join(ROOT, "montgomery"), batch_size=1, patch_shape=(512, 512), resize_inputs=True,
+            sampler=sampler, shuffle=True, label_transform=connected_components, transform=_trafo,
+        )
+
+    elif dataset_name == "sega":
+        loader = datasets.get_sega_loader(
+            path=os.path.join(ROOT, "sega"), batch_size=1, patch_shape=(1, 512, 512), ndim=2, resize_inputs=True,
+            data_choice="Dongyang", sampler=sampler, label_transform=connected_components, transform=_trafo,
+            shuffle=True,
+        )
+
+    elif dataset_name == "piccolo":
+        loader = datasets.get_piccolo_loader(
+            path=os.path.join(ROOT, "piccolo"), batch_size=1, patch_shape=(512, 512), split="test", resize_inputs=True,
+            sampler=sampler, shuffle=True, label_transform=connected_components, transform=_trafo,
+        )
+
+    else:
+        raise ValueError(f"'{dataset_name}' is not a supported dataset.")
+
+    return loader
+
+
+def main():
+    datasets = ["sega"]
+
+    for dname in datasets:
+        compare_experiments_for_dataset(
+            dataset_name=dname,
+            experiment_folder="./figures",
+            standard_model="vit_b",
+            finetuned_model="vit_b_medicosam",
+            intermediate_model="vit_b_medsam",
+            checkpoint1=None,
+            checkpoint2="/mnt/vast-nhr/projects/cidas/cca/models/medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",  # noqa
+            checkpoint3="/mnt/vast-nhr/projects/cidas/cca/models/medsam/original/medsam_vit_b.pth",
+        )
+
+
+if __name__ == "__main__":
+    main()
