@@ -23,19 +23,19 @@ def _get_image_gt_pairs(dataset_name, n_pairs=1):
     os.makedirs("./figures/images", exist_ok=True)
 
     if dataset_name == "amos":
-        image_paths, gt_paths = medical.amos._get_amos_paths(
+        image_paths, gt_paths = medical.amos.get_amos_paths(
             path=os.path.join(ROOT, "amos"), split="val", modality="MRI", download=False
         )
         extension = ".nii.gz"
 
     elif dataset_name == "jnu-ifm":
-        image_paths, gt_paths = medical.jnuifm._get_jnuifm_paths(
+        image_paths, gt_paths = medical.jnuifm.get_jnuifm_paths(
             path=os.path.join(ROOT, "jnu-ifm"), download=False
         )
         extension = ".mha"
 
     elif dataset_name == "montgomery":
-        image_paths, gt_paths = medical.montgomery._get_montgomery_paths(
+        image_paths, gt_paths = medical.montgomery.get_montgomery_paths(
             path=os.path.join(ROOT, "montgomery"), download=False
         )
         extension = ".tif"
