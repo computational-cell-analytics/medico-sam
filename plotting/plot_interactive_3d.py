@@ -12,10 +12,10 @@ ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/3d"
 DATASETS = {
     "lgg_mri": "LGG MRI (Low-Grade Glioma in MRI)",
     "microusp": "MicroUSP (Prostate in Micro-Ultrasound)",
-    "duke_liver": "DLDS (Liver in MRI)",
     "kits": "KiTS (Kidney Tumor in CT)",
+    "duke_liver": "DLDS (Liver in MRI)",
+    "segthy": "SegThy (Thyroid, Jugular Vein & Cartoid Artery and Vein in US)",
     "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
-    "segthy": "SegThy (Thyroid, Jugular Vein & Cartoid Artery and Veins in US)"
 }
 
 MODEL_MAPS = {
@@ -74,7 +74,7 @@ def _get_sam_results_per_dataset(dataset_name):
 
 
 def _get_plots():
-    fig, ax = plt.subplots(3, 2, figsize=(22, 22))
+    fig, ax = plt.subplots(2, 3, figsize=(32, 23))
     ax = ax.flatten()
 
     bar_width = 0.2
@@ -153,11 +153,11 @@ def _get_plots():
     fig.legend(handles, labels, loc='lower center', fontsize=fontsize_legend, ncol=2)
 
     plt.text(
-        x=-3.3, y=-0.1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-6, y=-0.175, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=fontsize_axis_label
     )
 
-    plt.subplots_adjust(top=0.95, bottom=0.06, right=0.95, left=0.05, hspace=0.25, wspace=0.1)
+    plt.subplots_adjust(top=0.95, bottom=0.055, right=0.95, left=0.05, hspace=0.125, wspace=0.1)
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.svg", bbox_inches="tight")
     plt.close()
@@ -228,7 +228,7 @@ def _get_average_plots():
 
 def main():
     _get_plots()
-    _get_average_plots()
+    # _get_average_plots()
 
 
 if __name__ == "__main__":
