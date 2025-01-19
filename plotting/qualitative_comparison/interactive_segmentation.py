@@ -10,8 +10,8 @@ ROOT = "/home/anwai/data/medico-sam/interactive_seg_3d"
 
 
 def main():
-    for dname in ["osic_pulmofib", "microusp", "lgg_mri", "duke_liver"]:
-        res_path = glob(os.path.join(ROOT, f"{dname}*.h5"))[-1]
+    for dname in ["segthy", "osic_pulmofib", "microusp", "lgg_mri", "duke_liver", "kits"]:
+        res_path = glob(os.path.join(ROOT, f"{dname}*.h5"))[0]
 
         with h5py.File(res_path, "r") as f:
             # Get the inputs
@@ -19,6 +19,14 @@ def main():
 
             # Get the segmentation
             seg = f["segmentation"][:]
+
+        # Remove some slices for better visualization
+        if dname == "kits":
+            raw = raw[250:-250, :, :]
+            seg = seg[250:-250, :, :]
+        elif dname == "segthy":
+            raw = raw[100:-100, :, :]
+            seg = seg[100:-100, :, :]
 
         # Extract mid-slice
         raw_slice = raw.copy()
