@@ -33,7 +33,7 @@ Download it via terminal using: `wget https://owncloud.gwdg.de/index.php/s/AB69H
 
 ## Tool Usage for Interactive Annotation
 
-See [`TOOL_USAGE.md`]() document for details.
+See [`TOOL_USAGE.md`](./TOOL_USAGE.md) document for details.
 
 ## Citation
 If you are using this repository in your research please cite:
