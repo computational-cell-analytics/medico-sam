@@ -38,5 +38,5 @@ See [`TOOL_USAGE.md`](./TOOL_USAGE.md) document for details.
 ## Citation
 If you are using this repository in your research please cite:
 
-- our [preprint](TODO).
+- our [preprint](https://doi.org/10.48550/arXiv.2501.11734).
 - and the original [Segment Anything](https://arxiv.org/abs/2304.02643) publication.
