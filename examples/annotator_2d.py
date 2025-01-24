@@ -5,7 +5,7 @@ from tukra.io import read_image
 from micro_sam.sam_annotator import annotator_2d
 
 from medico_sam.util import get_cache_directory
-from medico_sam.sample_data import fetch_dermoscopy_example_data  # fetch_xray_example_data, fetch_fundus_example_data
+from medico_sam.sample_data import fetch_dermoscopy_example_data
 
 
 DATA_CACHE = os.path.join(get_cache_directory(), "sample_data")
