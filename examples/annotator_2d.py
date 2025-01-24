@@ -35,8 +35,5 @@ def main():
     uwaterloo_skin_annotator(use_finetuned_model)
 
 
-# The corresponding CLI call for uwaterloo_skin_annotator:
-# (replace with cache directory on your machine)
-# micro_sam.annotator_2d -i /home/anwai/.cache/medico_sam/sample_data/uwaterloo_skin_sample_image.jpg
 if __name__ == "__main__":
     main()

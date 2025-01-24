@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pooch
 
+from torch_em.data.datasets.util import unzip
+
 
 def fetch_dermoscopy_example_data(save_directory: Union[str, os.PathLike]) -> str:
     """Download the sample images for the 2d annotator.
@@ -41,7 +43,7 @@ def fetch_dermoscopy_example_data(save_directory: Union[str, os.PathLike]) -> st
     return os.path.join(save_directory, fname)
 
 
-def fetch_ct_example_data(save_directory: Union[str, os.PathLike, str]) -> str:
+def fetch_ct_example_data(save_directory: Union[str, os.PathLike]) -> str:
     """Download the sample images for the 3d annotator.
 
     Args:
@@ -63,3 +65,34 @@ def fetch_ct_example_data(save_directory: Union[str, os.PathLike, str]) -> str:
         progressbar=True,
     )
     return os.path.join(save_directory, fname)
+
+
+def fetch_fundus_example_data(save_directory: Union[str, os.PathLike]) -> str:
+    """Download the sample images for the image series annotator.
+
+    Args:
+        save_directory: Root folder to save the downloaded data.
+
+    Returns:
+        The folder that contains the downloaded data.
+    """
+    # micro-sam currently supports only microscopy images under sample dataset.
+    save_directory = Path(save_directory)
+    os.makedirs(save_directory, exist_ok=True)
+    print("Example data directory is:", save_directory.resolve())
+    fname = "papila.zip"
+    pooch.retrieve(
+        url="https://owncloud.gwdg.de/index.php/s/k66IZo3pU7TaSaQ/download",
+        known_hash="b1c1093669451c160eddcbadc25c8c184b9e96952cd5c7c9e8ea3310eb24fbc7",
+        fname=fname,
+        path=save_directory,
+        progressbar=True,
+    )
+    unzip(
+        zip_path=os.path.join(save_directory, fname),
+        dst=os.path.join(save_directory, f"{fname}.unzip"),
+        remove=False
+    )
+    data_folder = os.path.join(save_directory, f"{fname}.unzip")
+    assert os.path.exists(data_folder), data_folder
+    return data_folder
