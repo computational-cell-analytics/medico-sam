@@ -37,6 +37,8 @@ Download it via terminal using: `wget https://owncloud.gwdg.de/index.php/s/AB69H
 
 See [`TOOL_USAGE.md`](./TOOL_USAGE.md) document for details.
 
+> TLDR: We recommend using our model with `micro-sam` annotator tool, in terms of compatibility and ease of annotation experience!
+
 ## Citation
 If you are using this repository in your research please cite:
 
