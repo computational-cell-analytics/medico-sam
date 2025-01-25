@@ -12,3 +12,4 @@ gpu_jobs/
 
 figures/
 *.svg
+*.mha

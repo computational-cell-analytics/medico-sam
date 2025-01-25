@@ -1,20 +1,18 @@
 import os
-import numpy as np
 
 import torch
 
 import torch_em
-from torch_em.transform.label import PerObjectDistanceTransform
+from torch_em.data.datasets.medical.psfhs import get_psfhs_paths
 
 import micro_sam.training as sam_training
 from micro_sam.util import export_custom_sam_model
-from micro_sam.sample_data import fetch_tracking_example_data, fetch_tracking_segmentation_data
 
 
 DATA_FOLDER = "data"
 
 
-def get_dataloader(split, patch_shape, batch_size, train_instance_segmentation):
+def get_dataloader(split, patch_shape, batch_size):
     """Return train or val data loader for finetuning SAM.
 
     The data loader must be a torch data loader that retuns `x, y` tensors,
@@ -31,51 +29,46 @@ def get_dataloader(split, patch_shape, batch_size, train_instance_segmentation):
     os.makedirs(DATA_FOLDER, exist_ok=True)
 
     # This will download the image and segmentation data for training.
-    image_dir = fetch_tracking_example_data(DATA_FOLDER)
-    segmentation_dir = fetch_tracking_segmentation_data(DATA_FOLDER)
+    image_paths, gt_paths = get_psfhs_paths(path=DATA_FOLDER, split="train", download=True)
 
     # torch_em.default_segmentation_loader is a convenience function to build a torch dataloader
     # from image data and labels for training segmentation models.
     # It supports image data in various formats. Here, we load image data and labels from the two
-    # folders with tif images that were downloaded by the example data functionality, by specifying
-    # `raw_key` and `label_key` as `*.tif`. This means all images in the respective folders that end with
-    # .tif will be loadded.
-    # The function supports many other file formats. For example, if you have tif stacks with multiple slices
+    # list of filepaths for images and corresponding labels with mha images that were downloaded by
+    # the example data functionality, by specifying `raw_key` and `label_key` as 'None'.
+    # This means all images in the respective folders that end with .tif will be loaded.
+    # The function supports many other file formats. For example, if you have tifs or tif stacks with multiple slices
     # instead of multiple tif images in a foldder, then you can pass raw_key=label_key=None.
 
-    # Load images from multiple files in folder via pattern (here: all tif files)
-    raw_key, label_key = "*.tif", "*.tif"
-    # Alternative: if you have tif stacks you can just set raw_key and label_key to None
-    # raw_key, label_key= None, None
+    # Load individual images and corresponding labels.
+    raw_key, label_key = None, None
 
-    # The 'roi' argument can be used to subselect parts of the data.
-    # Here, we use it to select the first 70 frames for the train split and the other frames for the val split.
+    # Here, we select the first 100 images for the train split and the next 50 images for the val split.
     if split == "train":
-        roi = np.s_[:70, :, :]
+        image_paths, gt_paths = image_paths[:100], gt_paths[:100]
     else:
-        roi = np.s_[70:, :, :]
+        image_paths, gt_paths = image_paths[100:150], gt_paths[100:150]
 
-    if train_instance_segmentation:
-        # Computes the distance transform for objects to perform end-to-end automatic instance segmentation.
-        label_transform = PerObjectDistanceTransform(
-            distances=True, boundary_distances=True, directed_distances=False,
-            foreground=True, instances=True, min_size=25
-        )
-    else:
-        label_transform = torch_em.transform.label.connected_components
+    label_transform = torch_em.transform.label.connected_components
 
     loader = torch_em.default_segmentation_loader(
-        raw_paths=image_dir, raw_key=raw_key,
-        label_paths=segmentation_dir, label_key=label_key,
-        patch_shape=patch_shape, batch_size=batch_size,
-        ndim=2, is_seg_dataset=True, rois=roi,
+        raw_paths=image_paths,
+        raw_key=raw_key,
+        label_paths=gt_paths,
+        label_key=label_key,
+        patch_shape=patch_shape,
+        batch_size=batch_size,
+        ndim=2,
+        is_seg_dataset=False,
         label_transform=label_transform,
-        num_workers=8, shuffle=True, raw_transform=sam_training.identity,
+        num_workers=8,
+        shuffle=True,
+        raw_transform=sam_training.identity,
     )
     return loader
 
 
-def run_training(checkpoint_name, model_type, train_instance_segmentation):
+def run_training(checkpoint_name, model_type):
     """Run the actual model training."""
 
     # All hyperparameters for training.
@@ -85,8 +78,8 @@ def run_training(checkpoint_name, model_type, train_instance_segmentation):
     device = torch.device("cuda")  # the device/GPU used for training
 
     # Get the dataloaders.
-    train_loader = get_dataloader("train", patch_shape, batch_size, train_instance_segmentation)
-    val_loader = get_dataloader("val", patch_shape, batch_size, train_instance_segmentation)
+    train_loader = get_dataloader("train", patch_shape, batch_size)
+    val_loader = get_dataloader("val", patch_shape, batch_size)
 
     # Run training.
     sam_training.train_sam(
@@ -96,7 +89,7 @@ def run_training(checkpoint_name, model_type, train_instance_segmentation):
         val_loader=val_loader,
         n_epochs=100,
         n_objects_per_batch=n_objects_per_batch,
-        with_segmentation_decoder=train_instance_segmentation,
+        with_segmentation_decoder=False,
         device=device,
     )
 
@@ -104,19 +97,17 @@ def run_training(checkpoint_name, model_type, train_instance_segmentation):
 def export_model(checkpoint_name, model_type):
     """Export the trained model."""
     # export the model after training so that it can be used by the rest of the micro_sam library
-    export_path = "./finetuned_hela_model.pth"
+    export_path = "./finetuned_psfhs_model.pth"
     checkpoint_path = os.path.join("checkpoints", checkpoint_name, "best.pt")
     export_custom_sam_model(
-        checkpoint_path=checkpoint_path,
-        model_type=model_type,
-        save_path=export_path,
+        checkpoint_path=checkpoint_path, model_type=model_type, save_path=export_path,
     )
 
 
 def main():
     """Finetune a Segment Anything model.
 
-    This example uses image data and segmentations from the cell tracking challenge,
+    This example uses image data and segmentations from the PSFHS challenge,
     but can easily be adapted for other data (including data you have annoated with micro_sam beforehand).
     """
     # The model_type determines which base model is used to initialize the weights that are finetuned.
@@ -124,12 +115,9 @@ def main():
     model_type = "vit_b"
 
     # The name of the checkpoint. The checkpoints will be stored in './checkpoints/<checkpoint_name>'
-    checkpoint_name = "sam_hela"
+    checkpoint_name = "sam_psfhs"
 
-    # Train an additional convolutional decoder for end-to-end automatic instance segmentation
-    train_instance_segmentation = True
-
-    run_training(checkpoint_name, model_type, train_instance_segmentation)
+    run_training(checkpoint_name, model_type)
     export_model(checkpoint_name, model_type)
 
 
