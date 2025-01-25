@@ -10,6 +10,8 @@
 - Provide the filepath to downloaded model checkpoints to `Embedding Settings` drop-down -> `custom weights path` and start annotating your images.
 - Visit the documentation for more details on annotation workflows.
 
+> NOTE: We plan to integrate our model with `micro-sam` soon!
+
 ### 2. [`napari-sam`](https://github.com/MIC-DKFZ/napari-sam) (napari-based annotation tool):
 
 > Expects some minor code changes to provide custom filepaths to finetuned models.
