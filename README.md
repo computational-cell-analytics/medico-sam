@@ -22,7 +22,7 @@ We recommend to first setup an environment with the necessary requirements:
 To create one of these environments and install `medico_sam` into it follow these steps
 
 1. Clone the repository: `git clone https://github.com/computational-cell-analytics/medico-sam`
-2. Enter it: `cd micro-sam`
+2. Enter it: `cd medico-sam`
 3. Create the respective environment: `conda env create -f <ENV_FILE>.yaml`
 4. Activate the environment: `conda activate sam`
 5. Install `medico_sam`: `pip install -e .`
