@@ -15,13 +15,13 @@ Based on these components, `medico_sam` enables fast interactive and automatic a
 How to install `medico-sam` python library from source?
 
 We recommend to first setup an environment with the necessary requirements:
-- environment.yaml: to set up an environment on Linux or Mac OS.
-- environment_cpu_win.yaml: to set up an environment on windows with CPU support.
-- environment_gpu_win.yaml: to set up an environment on windows with GPU support.
+- `environment.yaml`: to set up an environment on Linux or Mac OS.
+- `environment_cpu_win.yaml`: to set up an environment on windows with CPU support.
+- `environment_gpu_win.yaml`: to set up an environment on windows with GPU support.
 
 To create one of these environments and install `medico_sam` into it follow these steps
 
-1. Clone the repository: `git clone https://github.com/computational-cell-analytics/micro-sam`
+1. Clone the repository: `git clone https://github.com/computational-cell-analytics/medico-sam`
 2. Enter it: `cd micro-sam`
 3. Create the respective environment: `conda env create -f <ENV_FILE>.yaml`
 4. Activate the environment: `conda activate sam`
