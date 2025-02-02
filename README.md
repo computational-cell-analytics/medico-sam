@@ -8,7 +8,7 @@ MedicoSAM implements interactive annotation and (automatic) semantic segmentatio
   - Apply Segment Anything to 2d and 3d data or fine-tune it on your data.
   - Supports semantic segmentation for 2d and 3d data.
 
-Based on these components, `medico_sam` enables fast interactive and automatic annotation for medical images:
+Based on these components, `medico_sam` enables fast interactive and automatic annotation for medical images.
 
 ## Installation
 
