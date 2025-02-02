@@ -3,11 +3,11 @@
 <a href="https://github.com/computational-cell-analytics/medico-sam"><img src="https://github.com/computational-cell-analytics/medico-sam/blob/master/docs/logos/logo.png" width="200" align="right">
 
 MedicoSAM implements interactive annotation and (automatic) semantic segmentation for medical images. It is built on top of Segment Anything by Meta AI and specializes it for biomedical imaging data. Its core components are:
-- The `medico_sam` publicly available model for interactive data annotation in 2d and 3d data.
+- The `medico_sam` publicly available model for interactive data annotation in 2d and 3d data that are fine-tuned on publicly available medical images.
 - The `medico_sam` library provides training frameworks, inspired by [Segment Anything for Microscopy](https://computational-cell-analytics.github.io/micro-sam/micro_sam.html), for downstream tasks:
-  - Supports semantic segmentation for 2d and 3d data.   
   - Apply Segment Anything to 2d and 3d data or fine-tune it on your data.
-- The `medico_sam` models that are fine-tuned on publicly available medical images.
+  - Supports semantic segmentation for 2d and 3d data.
+
 Based on these components, `medico_sam` enables fast interactive and automatic annotation for medical images:
 
 ## Installation
