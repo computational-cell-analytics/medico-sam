@@ -33,6 +33,7 @@ def finetune_semantic_sam_3d(num_classes: int):
 
     # get the trainable segment anything model
     model = sam_3d_wrapper.get_sam_3d_model(
+        model_type=model_type,
         device=device,
         n_classes=num_classes,
         image_size=patch_shape[-1],
