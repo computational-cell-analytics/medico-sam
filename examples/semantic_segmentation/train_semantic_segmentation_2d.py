@@ -1,7 +1,10 @@
 import os
-from typing import Union, Tuple
+from typing import Union, Tuple, Literal
 
 import torch
+
+from torch_em.data import MinInstanceSampler
+from torch_em.data.datasets import get_oimhs_loader
 
 import micro_sam.training as sam_training
 from micro_sam.training.util import ConvertToSemanticSamInputs
@@ -9,13 +12,28 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 from medico_sam.util import LinearWarmUpScheduler
 
 
-DATA_ROOT = "data"
+# DATA_ROOT = "data"
+DATA_ROOT = "/media/anwai/ANWAI/data"
 
 
-def get_data_loaders(data_path: Union[os.PathLike, str], patch_shape: Tuple[int, int]):
+def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train", "val"], patch_shape: Tuple[int, int]):
     """
     """
-    return train_loader, val_loader
+    # Get the dataloader.
+    loader = get_oimhs_loader(
+        path=data_path,
+        batch_size=1,
+        patch_shape=patch_shape,
+        split=split,
+        resize_inputs=True,
+        download=True,
+        sampler=MinInstanceSampler(),
+        raw_identity=sam_training.identity,
+        pin_memory=True,
+        shuffle=True,
+    )
+
+    return loader
 
 
 def finetune_semantic_sam_2d(num_classes: int):
@@ -48,7 +66,8 @@ def finetune_semantic_sam_2d(num_classes: int):
     scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
 
     # Get the dataloaders
-    train_loader, val_loader = get_data_loaders(data_path=DATA_ROOT, patch_shape=patch_shape)
+    train_loader = get_data_loaders(os.path.join(DATA_ROOT, "oimhs"), "train", patch_shape)
+    val_loader = get_data_loaders(os.path.join(DATA_ROOT, "oimhs"), "val", patch_shape)
 
     # this class creates all the training data for a batch (inputs and labels)
     convert_inputs = ConvertToSemanticSamInputs()

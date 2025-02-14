@@ -1,22 +1,41 @@
 import os
-from typing import Union, Tuple
+from typing import Union, Tuple, Literal
 
 import torch
+
+from torch_em.data import MinInstanceSampler
+from torch_em.data.datasets import get_oasis_loader
 
 import micro_sam.training as sam_training
 from micro_sam.models import sam_3d_wrapper
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
 from medico_sam.util import LinearWarmUpScheduler
+from medico_sam.transform import RawTrafoFor3dInputs
 
 
-DATA_ROOT = "data"
+# DATA_ROOT = "data"
+DATA_ROOT = "/media/anwai/ANWAI/data"
 
 
-def get_data_loaders(data_path: Union[os.PathLike, str], patch_shape: Tuple[int, int]):
+def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train", "val"], patch_shape: Tuple[int, int]):
     """
     """
-    return train_loader, val_loader
+    # Get the dataloader.
+    loader = get_oasis_loader(
+        path=data_path,
+        batch_size=1,
+        patch_shape=patch_shape,
+        split=split,
+        resize_inputs=True,
+        download=True,
+        sampler=MinInstanceSampler(),
+        raw_transform=RawTrafoFor3dInputs(),
+        pin_memory=True,
+        shuffle=True,
+    )
+
+    return loader
 
 
 def finetune_semantic_sam_3d(num_classes: int):
@@ -26,7 +45,7 @@ def finetune_semantic_sam_3d(num_classes: int):
     # training settings:
     model_type = "vit_b"  # override this to your desired choice of Segment Anything model.
     checkpoint_path = None  # override this to start training from a custom checkpoint
-    num_classes = ...  # 1 background class and 'n' semantic foreground classes
+    num_classes = 5  # 1 background class and 'n' semantic foreground classes
     device = "cuda" if torch.cuda.is_available() else "cpu"  # device to train the model on.
     checkpoint_name = "_semantic_sam"  # the name for storing the checkpoints.
     patch_shape = (32, 512, 512)  # the patch shape for 3d semantic segmentation training
@@ -48,7 +67,8 @@ def finetune_semantic_sam_3d(num_classes: int):
     scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
 
     # Get the dataloaders
-    train_loader, val_loader = get_data_loaders(data_path=DATA_ROOT, patch_shape=patch_shape)
+    train_loader = get_data_loaders(os.path.join(DATA_ROOT, "oasis"), "train", patch_shape)
+    val_loader = get_data_loaders(os.path.join(DATA_ROOT, "oasis"), "val", patch_shape)
 
     # this class creates all the training data for a batch (inputs and labels)
     convert_inputs = ConvertToSemanticSamInputs()
