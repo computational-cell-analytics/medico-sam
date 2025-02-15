@@ -38,7 +38,7 @@ def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train",
     return loader
 
 
-def finetune_semantic_sam_3d(num_classes: int):
+def finetune_semantic_sam_3d():
     """Scripts for training a 3d semantic segmentation model on medical datasets."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
 
@@ -89,3 +89,11 @@ def finetune_semantic_sam_3d(num_classes: int):
         dice_weight=0.5,
     )
     trainer.fit(epochs=n_epochs)
+
+
+def main():
+    finetune_semantic_sam_3d()
+
+
+if __name__ == "__main__":
+    main()
