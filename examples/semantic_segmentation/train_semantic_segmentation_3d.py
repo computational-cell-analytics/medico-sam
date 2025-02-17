@@ -19,7 +19,17 @@ DATA_ROOT = "/media/anwai/ANWAI/data"
 
 
 def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train", "val"], patch_shape: Tuple[int, int]):
-    """
+    """Return train or val data loader for finetuning SAM for 3d semantic segmentation.
+
+    The data loader must be a torch data loader that returns `x, y` tensors,
+    where `x` is the image data and `y` are the labels.
+    The labels have to be in a label mask semantic segmentation format.
+    i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
+    Important: the ID 0 is reserved for backgrund, and the other IDs must map to different classes.
+
+    Here, we use `torch_em` based data loader, for creating a suitable data loader from
+    OIMHS data. You can either see `torch_em.data.datasets.medical.get_oimhs_loader` for adapting
+    this on your own data or write a suitable torch dataloader yourself.
     """
     # Get the dataloader.
     loader = get_oasis_loader(

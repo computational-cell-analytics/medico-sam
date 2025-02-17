@@ -15,10 +15,10 @@ DATA_FOLDER = "data"
 def get_dataloader(split, patch_shape, batch_size):
     """Return train or val data loader for finetuning SAM.
 
-    The data loader must be a torch data loader that retuns `x, y` tensors,
+    The data loader must be a torch data loader that returns `x, y` tensors,
     where `x` is the image data and `y` are the labels.
     The labels have to be in a label mask instance segmentation format.
-    I.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
+    i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive
 
     Here, we use `torch_em.default_segmentation_loader` for creating a suitable data loader from
