@@ -14,8 +14,7 @@ from medico_sam.util import LinearWarmUpScheduler
 from medico_sam.transform import RawTrafoFor3dInputs
 
 
-# DATA_ROOT = "data"
-DATA_ROOT = "/media/anwai/ANWAI/data"
+DATA_ROOT = "data"
 
 
 def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train", "val"], patch_shape: Tuple[int, int]):
