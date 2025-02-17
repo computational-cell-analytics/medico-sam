@@ -12,7 +12,8 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 from medico_sam.util import LinearWarmUpScheduler
 
 
-DATA_ROOT = "data"
+# DATA_ROOT = "data"
+DATA_ROOT = "/media/anwai/ANWAI/data"
 
 
 def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train", "val"], patch_shape: Tuple[int, int]):
@@ -23,6 +24,11 @@ def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train",
     The labels have to be in a label mask semantic segmentation format.
     i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reserved for backgrund, and the other IDs must map to different classes.
+
+    NOTE: The spatial shapes of images and corresponding labels are expected to be:
+    `images: (B, C, Y, X)`, `labels: (B, 1, Y, X)` to train the 2d semantic segmentation model,
+    where C corresponds to the number of channels in input data.
+    (eg. the OCT images used in the example below are images with three channels)
 
     Here, we use `torch_em` based data loader, for creating a suitable data loader from
     OIMHS data. You can either see `torch_em.data.datasets.medical.get_oimhs_loader` for adapting

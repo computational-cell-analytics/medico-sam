@@ -26,6 +26,9 @@ def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train",
     i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reserved for backgrund, and the other IDs must map to different classes.
 
+    NOTE: The spatial shapes of images and corresponding labels are expected to be:
+    `images: (B, 3, C, Y, X)`, `labels: (B, 1, C, Y, X)` to train the 3d semantic segmentation model.
+
     Here, we use `torch_em` based data loader, for creating a suitable data loader from
     OIMHS data. You can either see `torch_em.data.datasets.medical.get_oimhs_loader` for adapting
     this on your own data or write a suitable torch dataloader yourself.
