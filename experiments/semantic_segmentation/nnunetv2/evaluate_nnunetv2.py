@@ -94,9 +94,17 @@ def check_predictions(root_dir, dataset_name, fold, is_3d=False):
         print(f"No probabilities found for '{dataset_name}'. We can't debug this further.")
 
     for fpath in prob_paths:
+        # Get the probabilities
         prob = np.load(fpath)
-        print(fpath)
-        breakpoint()
+
+        # Get the foreground channel only
+        prob = prob["probabilities"][0].squeeze()
+
+        # Visualize the probabilities
+        import napari
+        v = napari.Viewer()
+        v.add_image(prob)
+        napari.run()
 
 
 def main(args):
