@@ -85,6 +85,20 @@ def evaluate_predictions(root_dir, dataset_name, fold, is_3d=False):
     print(fscores)
 
 
+def check_predictions(root_dir, dataset_name, fold, is_3d=False):
+    prob_paths = sorted(
+        glob(os.path.join(root_dir, "predictionTs", f"fold_{fold}", "*.npz"))
+    )
+
+    if len(prob_paths) == 0:
+        print(f"No probabilities found for '{dataset_name}'. We can't debug this further.")
+
+    for fpath in prob_paths:
+        prob = np.load(fpath)
+        print(fpath)
+        breakpoint()
+
+
 def main(args):
     if args.dataset in DATASET_MAPPING_2D:
         dmap_base = DATASET_MAPPING_2D
@@ -98,7 +112,11 @@ def main(args):
     _, dataset_name = dmap_base[args.dataset]
 
     root_dir = os.path.join(NNUNET_ROOT, "nnUNet_raw", dataset_name)
-    evaluate_predictions(root_dir, args.dataset, args.fold, is_3d)
+
+    if args.debug:  # Simply visualize the probabilities, if stored.
+        check_predictions(root_dir, args.dataset, args.fold, is_3d)
+    else:
+        evaluate_predictions(root_dir, args.dataset, args.fold, is_3d)
 
 
 if __name__ == "__main__":
@@ -106,5 +124,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, required=True)
     parser.add_argument("--fold", type=str, default="0")
+    parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)
