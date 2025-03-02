@@ -86,22 +86,44 @@ def evaluate_predictions(root_dir, dataset_name, fold, is_3d=False):
 
 
 def check_predictions(root_dir, dataset_name, fold, is_3d=False):
-    prob_paths = sorted(
-        glob(os.path.join(root_dir, "predictionTs", f"fold_{fold}", "*.npz"))
-    )
+    raise NotImplementedError("This is a development functionality.")
+
+    prob_paths = sorted(glob("/media/anwai/ANWAI/norm_experiments/nnunet_predictions/*.npz"))
+    data_dir = f"/media/anwai/ANWAI/data/{dataset_name}"
 
     if len(prob_paths) == 0:
         print(f"No probabilities found for '{dataset_name}'. We can't debug this further.")
+        return
 
     for fpath in prob_paths:
-        # Get the probabilities
-        prob = np.load(fpath)
 
-        # Get the foreground channel only
-        prob = prob["probabilities"][0].squeeze()
+        import napari
+        import nibabel as nib
+        from pathlib import Path
+        from skimage.transform import rescale
+
+        # Get the inputs and visualize them
+        image = nib.load(os.path.join(data_dir, "imagesTs", f"{Path(fpath).stem}_0000.nii.gz")).get_fdata()
+        gt = nib.load(os.path.join(data_dir, "labelsTs", f"{Path(fpath).stem}.nii.gz")).get_fdata()
+
+        image = rescale(image, scale=0.5, anti_aliasing=True, preserve_range=True).astype(image.dtype)
+        gt = rescale(gt, scale=0.5, order=0, anti_aliasing=False, preserve_range=True).astype("uint8")
+
+        v = napari.Viewer()
+        v.add_image(image)
+        v.add_labels(gt)
+        napari.run()
+
+        # Get the probabilities
+        prob = np.load(fpath)["probabilities"]
+
+        # Check one channel only
+        prob = prob[1]
+
+        # Change the depth and downscale the probabilities.
+        prob = rescale(prob, scale=0.5, anti_aliasing=True).astype(prob.dtype)
 
         # Visualize the probabilities
-        import napari
         v = napari.Viewer()
         v.add_image(prob)
         napari.run()
