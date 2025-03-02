@@ -114,7 +114,13 @@ def main(args):
             image_paths=test_image_paths, gt_paths=test_label_paths, split="test", **kwargs
         )
 
-        nnunet.predict_nnunetv2(fold=args.fold, dataset_name=nnunet_dataset_name, dataset_id=dataset_id, dim=dim)
+        nnunet.predict_nnunetv2(
+            fold=args.fold,
+            dataset_name=nnunet_dataset_name,
+            dataset_id=dataset_id,
+            dim=dim,
+            save_probabilities=True,
+        )
 
     print("The process has finished.")
 
