@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import nibabel as nib
 import imageio.v3 as imageio
+from scipy.ndimage import binary_dilation
+from skimage.segmentation import find_boundaries
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -98,8 +100,6 @@ def check_predictions(dataset_name):
         _image, _gt = _image[:576, :1536], _gt[:576, :1536]
 
         # Get the boundaries
-        from scipy.ndimage import binary_dilation
-        from skimage.segmentation import find_boundaries
         _gt = find_boundaries(_gt == 1).astype(_gt.dtype)
         _gt = binary_dilation(_gt, iterations=6)
 
