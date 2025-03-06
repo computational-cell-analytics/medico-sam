@@ -100,14 +100,25 @@ def check_predictions(dataset_name):
         _image, _gt = _image[:576, :1536], _gt[:576, :1536]
 
         # Get the boundaries
-        _gt = find_boundaries(_gt == 1).astype(_gt.dtype)
-        _gt = binary_dilation(_gt, iterations=6)
+        border_overlay = False
+        if border_overlay:
+            _gt = find_boundaries(_gt == 1).astype(_gt.dtype)
+            _gt = binary_dilation(_gt, iterations=6)
 
         # Create overlay
         _image = _image.astype(np.float32) / _image.max()
         _image_rgb = np.stack([_image] * 3, axis=-1)
-        overlayed_image = _image_rgb.copy()
-        overlayed_image[_gt == 1] = np.array([0.12, 0.56, 1.0])
+
+        # Either use alpha blending for overlay or additive blending.
+        alpha_blending = True
+        if alpha_blending:
+            color = np.array([0.12, 0.56, 1.0])
+            alpha = 0.5
+            overlayed_image = _image_rgb.copy()
+            overlayed_image[_gt == 1] = (1 - alpha) * _image_rgb[_gt == 1] + alpha * color
+        else:
+            overlayed_image = _image_rgb.copy()
+            overlayed_image[_gt == 1] = np.array([0.12, 0.56, 1.0])
 
         plt.imshow(overlayed_image)
         _get_additional_params()
