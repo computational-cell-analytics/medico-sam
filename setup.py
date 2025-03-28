@@ -14,4 +14,5 @@ setup(
     author=['Anwai Archit', 'Constantin Pape'],
     url='https://user.informatik.uni-goettingen.de/~pape41/',
     packages=['medico_sam'],
+    license="MIT",
 )
