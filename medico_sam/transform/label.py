@@ -2,6 +2,14 @@ import numpy as np
 from math import ceil, floor
 
 
+# TODO: In future, combine all label transforms into one (?)
+class LabelTransformJointTraining:
+    def __call__(self, labels):
+        # First channel for interactive segmentation.
+        # Second channel for binary semantic segmentation.
+        return np.concatenate([labels, labels > 0], axis=0)
+
+
 class LabelTrafoToBinary:
     def __init__(self, switch_last_axes=False):
         self.switch_last_axes = switch_last_axes

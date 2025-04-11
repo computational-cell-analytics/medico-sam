@@ -1,7 +1,22 @@
 import numpy as np
 from math import ceil, floor
 
-from torch_em.transform.raw import normalize
+from torch_em.transform.raw import normalize, normalize_percentile
+
+
+# TODO: In future, combine all raw transforms into one (?)
+class RawTrafnsformJointTraining:
+    def __init__(self, modality: str = "CT"):
+        self.modality = modality
+
+    def __call__(self, raw: np.ndarray):
+        if self.modality == "CT":
+            raw = normalize_percentile(raw)  # Percentile normalization.
+            raw = raw * 255  # Convert to 8-bit.
+        else:
+            raise NotImplementedError
+
+        return raw
 
 
 class RawTrafoFor3dInputs:
