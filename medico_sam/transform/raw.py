@@ -5,7 +5,7 @@ from torch_em.transform.raw import normalize, normalize_percentile
 
 
 # TODO: In future, combine all raw transforms into one (?)
-class RawTrafnsformJointTraining:
+class RawTransformJointTraining:
     def __init__(self, modality: str = "CT"):
         self.modality = modality
 

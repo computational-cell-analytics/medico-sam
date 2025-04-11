@@ -10,7 +10,7 @@ from micro_sam.instance_segmentation import get_unetr
 from micro_sam.training import joint_sam_trainer as joint_trainers
 from micro_sam.training.util import get_trainable_sam_model, ConvertToSamInputs
 
-from medico_sam.transform import LabelTransformJointTraining, RawTrafnsformJointTraining
+from medico_sam.transform import LabelTransformJointTraining, RawTransformJointTraining
 
 
 def get_dataloaders(patch_shape, data_path):
@@ -26,7 +26,7 @@ def get_dataloaders(patch_shape, data_path):
     Important: the ID 0 is reserved for background, and the IDs must be consecutive.
     """
     label_transform = LabelTransformJointTraining()
-    raw_transform = RawTrafnsformJointTraining(modality="CT")
+    raw_transform = RawTransformJointTraining(modality="CT")
     sampler = MinTwoInstanceSampler()
 
     train_loader = get_curvas_loader(
