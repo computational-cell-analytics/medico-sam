@@ -105,7 +105,7 @@ def finetune_curvas(args):
     # all the stuff we need for training.
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path)
     optimizer = torch.optim.AdamW(model_params, lr=lr)
-    scheduler_kwargs = {"mode": "min", "factor": 0.9, "patience": 10, "verbose": True}
+    scheduler_kwargs = {"mode": "min", "factor": 0.9, "patience": 10}
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, **scheduler_kwargs)
 
     # The trainer which performs training and validation.
