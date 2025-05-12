@@ -32,7 +32,7 @@ def get_dataloaders(patch_shape, data_path):
     train_loader = get_curvas_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=4,
+        batch_size=2,
         split="train",
         ndim=2,
         resize_inputs=True,
@@ -150,7 +150,7 @@ def main():
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(1e5),
+        "--iterations", type=int, default=int(2.5e4),
         help="For how many iterations should the model be trained? By default 100k."
     )
     parser.add_argument(
