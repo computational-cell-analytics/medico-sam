@@ -14,6 +14,7 @@ from micro_sam.instance_segmentation import get_decoder
 
 from medico_sam.util import get_medico_sam_model
 from medico_sam.transform import RawTransformJointTraining
+from medico_sam.evaluation.evaluation import calculate_dice_score
 from medico_sam.evaluation.inference import _run_semantic_segmentation_for_image_3d
 
 
@@ -29,7 +30,6 @@ def run_curvas_inference(output_channels, threshold=0.5):
         image_encoder=predictor.model.image_encoder,
         decoder_state=state["decoder_state"],
         out_channels=1,
-        flexible_load_checkpoint=False,
     )
 
     # Get medico-sam model.
@@ -48,6 +48,7 @@ def run_curvas_inference(output_channels, threshold=0.5):
 
         # Load images in expected format.
         image = read_image(image_path).transpose(2, 0, 1)
+        gt = read_image(gt_path).transpose(2, 0, 1)
 
         # Normalize inputs
         raw_transform = RawTransformJointTraining(modality="CT")
@@ -62,7 +63,9 @@ def run_curvas_inference(output_channels, threshold=0.5):
             halo=(8, 0, 0),
         )
 
-        breakpoint()
+        # Evaluate predictions compared to the ground-truth
+        dice_score = calculate_dice_score(input_=gt, target=outputs)
+        print(dice_score)
 
 
 def main():

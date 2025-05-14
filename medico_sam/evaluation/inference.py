@@ -195,7 +195,7 @@ def _run_semantic_segmentation_for_image_3d(
     prediction_path: Optional[Union[os.PathLike, str]],
     patch_shape: Tuple[int, int, int],
     halo: Tuple[int, int, int],
-):
+) -> np.ndarray:
     device = next(model.parameters()).device
     block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
 
@@ -235,6 +235,8 @@ def _run_semantic_segmentation_for_image_3d(
     if prediction_path is not None:
         # save the segmentations
         write_image(prediction_path, output, compression="zlib")
+
+    return output
 
 
 def run_semantic_segmentation_3d(
