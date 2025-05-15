@@ -10,7 +10,7 @@ from torch_em.data.datasets.medical import curvas
 from tukra.io import read_image
 
 from micro_sam.util import get_sam_model
-from micro_sam.instance_segmentation import get_decoder, get_unetr
+from micro_sam.instance_segmentation import get_unetr
 
 from medico_sam.util import get_medico_sam_model
 from medico_sam.transform import RawTransformJointTraining
@@ -23,6 +23,7 @@ def get_model(output_channels, checkpoint_path, default_unetr=True):
     predictor, state = get_sam_model(model_type="vit_b", checkpoint_path=checkpoint_path, return_state=True)
 
     if default_unetr:
+        # Get the 2d UNETR model.
         model = get_unetr(
             image_encoder=predictor.model.image_encoder,
             decoder_state=state["decoder_state"],
@@ -30,28 +31,22 @@ def get_model(output_channels, checkpoint_path, default_unetr=True):
         )
 
     else:
-        # Get the UNETR decoder.
-        decoder = get_decoder(
-            image_encoder=predictor.model.image_encoder,
-            decoder_state=state["decoder_state"],
-            out_channels=output_channels,
-        )
-
-        # Get medico-sam model.
+        # Get the 3d medico-sam model with UNETR decoder.
         model = get_medico_sam_model(
             model_type="vit_b",
             checkpoint_path=checkpoint_path,
             device="cuda",
             use_sam3d=True,  # NOTE: currently, the 3d model has been selected.
             image_size=512,
-            decoder=decoder,
+            decoder_choice="unetr",
+            n_classes=output_channels,
         )
 
     return model
 
 
 def run_curvas_inference(output_channels):
-    default_unetr = True  # whether to use 2d unet or sam+unetr volumetric setup.
+    default_unetr = False  # whether to use 2d unet or sam+unetr volumetric setup.
     data_dir = "/mnt/vast-nhr/projects/cidas/cca/data/curvas/"
     checkpoint_path = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/joint-training/checkpoints/vit_b/curvas_sam/best.pt"  # noqa
 
@@ -70,6 +65,8 @@ def run_curvas_inference(output_channels):
         raw_transform = RawTransformJointTraining(modality="CT")
         image = raw_transform(image)
 
+        breakpoint()
+
         # Get predictions.
         if default_unetr:
             image = torch.from_numpy(image).to("cuda")
@@ -78,14 +75,14 @@ def run_curvas_inference(output_channels):
                 for per_slice in tqdm(image, desc="Run predictions")
             ]
             outputs = torch.stack(outputs, axis=0)
-            outputs = (outputs.numpy() > 0.7).astype("uint8")  # setting a threshold at 0.5
+            outputs = (outputs.numpy() > 0.5).astype("uint8")  # setting a threshold at 0.5
 
         else:
             outputs = _run_semantic_segmentation_for_image_3d(
                 model=model,
                 image=image,
                 prediction_path=None,
-                patch_shape=(16, 512, 512),
+                patch_shape=(32, 512, 512),
                 halo=(8, 0, 0),
             )
 
