@@ -65,8 +65,6 @@ def run_curvas_inference(output_channels):
         raw_transform = RawTransformJointTraining(modality="CT")
         image = raw_transform(image)
 
-        breakpoint()
-
         # Get predictions.
         if default_unetr:
             image = torch.from_numpy(image).to("cuda")
