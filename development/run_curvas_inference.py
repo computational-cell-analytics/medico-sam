@@ -46,7 +46,7 @@ def get_model(output_channels, checkpoint_path, default_unetr=True):
 
 
 def run_curvas_inference(output_channels):
-    default_unetr = False  # whether to use 2d unet or sam+unetr volumetric setup.
+    default_unetr = True  # whether to use 2d unet or sam+unetr volumetric setup.
     data_dir = "/mnt/vast-nhr/projects/cidas/cca/data/curvas/"
     checkpoint_path = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/joint-training/checkpoints/vit_b/curvas_sam/best.pt"  # noqa
 
@@ -60,6 +60,7 @@ def run_curvas_inference(output_channels):
         # Load images in expected format.
         image = read_image(image_path).transpose(2, 0, 1)
         gt = read_image(gt_path).transpose(2, 0, 1)
+        gt = gt > 0  # Binarize labels.
 
         # Normalize inputs
         raw_transform = RawTransformJointTraining(modality="CT")
