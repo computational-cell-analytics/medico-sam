@@ -21,6 +21,7 @@ def finetune_semantic_sam(args):
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
+    decoder = args.decoder
 
     if dataset in DATASETS_2D:
         patch_shape = (1024, 1024)  # the patch shape for 2d semantic segmentation training
@@ -49,7 +50,7 @@ def finetune_semantic_sam(args):
             image_size=patch_shape[-1],
             checkpoint_path=checkpoint_path,
             lora_rank=args.lora_rank,
-            decoder_choice="unetr",
+            decoder_choice=decoder,
         )
         model.to(device)
         if args.lora_rank is not None:
@@ -121,6 +122,9 @@ def main():
     )
     parser.add_argument(
         "--dice_weight", type=float, default=0.5, help="The weight for dice loss with combined cross entropy loss."
+    )
+    parser.add_argument(
+        "--decoder", type=str, default="unetr", help="The choice of segmentation decoder for semantic segmentation."
     )
 
     args = parser.parse_args()

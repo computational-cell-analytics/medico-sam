@@ -172,6 +172,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         )
 
     elif dataset_name == "curvas":
+        kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
         train_loader = medical.get_curvas_loader(
