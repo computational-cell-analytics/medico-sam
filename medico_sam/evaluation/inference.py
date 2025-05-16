@@ -192,10 +192,10 @@ def run_semantic_segmentation(
 def _run_semantic_segmentation_for_image_3d(
     model: torch.nn.Module,
     image: np.ndarray,
-    prediction_path: Union[os.PathLike, str],
+    prediction_path: Optional[Union[os.PathLike, str]],
     patch_shape: Tuple[int, int, int],
     halo: Tuple[int, int, int],
-):
+) -> np.ndarray:
     device = next(model.parameters()).device
     block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
 
@@ -232,8 +232,11 @@ def _run_semantic_segmentation_for_image_3d(
     # Lastly, we resize the predictions back to the original shape.
     output = resize_transform.convert_transformed_inputs_to_original_shape(output)
 
-    # save the segmentations
-    write_image(prediction_path, output, compression="zlib")
+    if prediction_path is not None:
+        # save the segmentations
+        write_image(prediction_path, output, compression="zlib")
+
+    return output
 
 
 def run_semantic_segmentation_3d(

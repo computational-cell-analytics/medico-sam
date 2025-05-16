@@ -64,7 +64,7 @@ def finetune_medical_generalist(args):
 
     # all the stuff we need for training
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9, verbose=True)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
     train_loader, val_loader = get_dataloaders(data_path=args.input_path, patch_shape=patch_shape)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)

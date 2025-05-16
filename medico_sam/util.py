@@ -103,6 +103,7 @@ def get_medico_sam_model(
         use_sam_med2d: Whether to use SAM-Med2d model for initializing the checkpoints.
         use_sam3d: Whether to use SAM-3d model for initializing the checkpoints.
         encoder_adapter: Whether the encuder in SAM-Med2d has adapter modules.
+        kwargs: Additional arguments for the suitable 'get_*_model' function.
 
     Returns:
         The segment anything predictor.
