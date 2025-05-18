@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 from torch_em.data.datasets import medical
 from torch_em.data import MinInstanceSampler
 from torch_em.transform.augmentation import get_augmentations
@@ -25,6 +27,7 @@ DATASETS_3D = [
     "micro_usp",
     # NEW datasets (I would keep all experiments here on around and report the relevant ones)
     "curvas",
+    "amos",
 ]
 
 MODELS_ROOT = "/mnt/vast-nhr/projects/cidas/cca/models"
@@ -181,16 +184,39 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
             path=data_path, batch_size=1, split="val", n_samples=200, resize_inputs=True, **kwargs
         )
 
+    elif dataset_name == "amos":
+        kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
+        kwargs["raw_transform"] = RawTrafoFor3dInputs()
+        kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
+        train_loader = medical.amos.get_amos_loader(
+            path=data_path, batch_size=2, split="train", resize_inputs=True,
+            label_transform=filter_valid_labels, **kwargs,
+        )
+        val_loader = medical.amos.get_amos_loader(
+            path=data_path, batch_size=1, split="val", resize_inputs=True,
+            label_transform=filter_valid_labels, **kwargs
+        )
+
     else:
         raise ValueError(f"'{dataset_name}' is not a valid dataset name.")
 
     return train_loader, val_loader
 
 
+def filter_valid_labels(labels):
+    out = np.zeros_like(labels)
+
+    out[(labels == 3) | (labels == 4)] = 1  # Merge and map kidneys to one id.
+    out[labels == 7] = 2  # Map liver id
+    out[labels == 11] = 3  # Map pancreas id
+
+    return out
+
+
 def get_num_classes(dataset_name):
     if dataset_name in ["oimhs", "oasis"]:
         num_classes = 5
-    elif dataset_name in ["osic_pulmofib", "leg_3d_us", "curvas"]:
+    elif dataset_name in ["osic_pulmofib", "leg_3d_us", "curvas", "amos"]:
         num_classes = 4
     elif dataset_name in [
         "piccolo", "cbis_ddsm", "dca1", "isic", "hil_toothseg",  # 2d datasets
