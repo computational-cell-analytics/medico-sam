@@ -187,8 +187,12 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "amos":
         kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
+
+        # HACK: try stuff
         kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[3, 4, 7, 11], min_fraction=25)
-        kwargs["label_transform"] = filter_valid_labels
+        # kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
+
+        # kwargs["label_transform"] = filter_valid_labels
         train_loader = medical.amos.get_amos_loader(
             path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
         )
@@ -200,8 +204,11 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         for ds in val_loader.dataset.datasets:
             ds.max_sampling_attempts = 1000
 
+        import torch
         for x, y in train_loader:
-            print(x.shape, y.shape)
+            print(y.shape, torch.unique(y))
+
+        breakpoint()
 
     else:
         raise ValueError(f"'{dataset_name}' is not a valid dataset name.")
