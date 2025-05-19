@@ -3,8 +3,8 @@ import os
 import numpy as np
 
 from torch_em.data.datasets import medical
-from torch_em.data import MinInstanceSampler
 from torch_em.transform.augmentation import get_augmentations
+from torch_em.data import MinInstanceSampler, MinSemanticLabelForegroundSampler
 
 
 DATASETS_2D = [
@@ -187,15 +187,21 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "amos":
         kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
-        kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
+        kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[3, 4, 7, 11], min_fraction=25)
+        kwargs["label_transform"] = filter_valid_labels
         train_loader = medical.amos.get_amos_loader(
-            path=data_path, batch_size=2, split="train", resize_inputs=True,
-            label_transform=filter_valid_labels, **kwargs,
+            path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
         )
         val_loader = medical.amos.get_amos_loader(
-            path=data_path, batch_size=1, split="val", resize_inputs=True,
-            label_transform=filter_valid_labels, **kwargs
+            path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs
         )
+        for ds in train_loader.dataset.datasets:
+            ds.max_sampling_attempts = 1000
+        for ds in val_loader.dataset.datasets:
+            ds.max_sampling_attempts = 1000
+
+        for x, y in train_loader:
+            print(x.shape, y.shape)
 
     else:
         raise ValueError(f"'{dataset_name}' is not a valid dataset name.")
