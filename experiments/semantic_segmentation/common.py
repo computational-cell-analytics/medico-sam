@@ -189,26 +189,15 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
 
         # HACK: try stuff
-        kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[3, 4, 7, 11], min_fraction=25)
-        # kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
+        kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[2, 3, 6, 10], min_fraction=25)
 
-        # kwargs["label_transform"] = filter_valid_labels
+        kwargs["label_transform"] = filter_valid_labels
         train_loader = medical.amos.get_amos_loader(
             path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
         )
         val_loader = medical.amos.get_amos_loader(
             path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs
         )
-        for ds in train_loader.dataset.datasets:
-            ds.max_sampling_attempts = 1000
-        for ds in val_loader.dataset.datasets:
-            ds.max_sampling_attempts = 1000
-
-        import torch
-        for x, y in train_loader:
-            print(y.shape, torch.unique(y))
-
-        breakpoint()
 
     else:
         raise ValueError(f"'{dataset_name}' is not a valid dataset name.")
@@ -219,9 +208,9 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
 def filter_valid_labels(labels):
     out = np.zeros_like(labels)
 
-    out[(labels == 3) | (labels == 4)] = 1  # Merge and map kidneys to one id.
-    out[labels == 7] = 2  # Map liver id
-    out[labels == 11] = 3  # Map pancreas id
+    out[(labels == 2) | (labels == 3)] = 1  # Merge and map kidneys to one id.
+    out[labels == 6] = 2  # Map liver id
+    out[labels == 10] = 3  # Map pancreas id
 
     return out
 
