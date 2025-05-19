@@ -187,10 +187,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "amos":
         kwargs["transform"] = get_augmentations(ndim=3, transforms=["RandomHorizontalFlip3D", "RandomDepthicalFlip3D"])
         kwargs["raw_transform"] = RawTrafoFor3dInputs()
-
-        # HACK: try stuff
         kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[2, 3, 6, 10], min_fraction=25)
-
         kwargs["label_transform"] = filter_valid_labels
         train_loader = medical.amos.get_amos_loader(
             path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
