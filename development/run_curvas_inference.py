@@ -55,7 +55,7 @@ def get_dataset_paths(dataset_name):
     if dataset_name == "curvas":
         image_paths, gt_paths = medical.curvas.get_curvas_paths(path=os.path.join(data_dir, "curvas"), split="test")
     elif dataset_name == "amos":
-        # NOTE: right kidney: 3, left kidney: 4, liver: 7, pancreas: 11 (ids for the relevant classes)
+        # NOTE: right kidney: 2, left kidney: 3, liver: 6, pancreas: 10 (ids for the relevant classes)
         image_paths, gt_paths = medical.amos.get_amos_paths(
             path=os.path.join(data_dir, "amos"), split="val", modality="CT",
         )
