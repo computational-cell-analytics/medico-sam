@@ -8,6 +8,7 @@ import numpy as np
 
 import torch
 
+from torch_em.util import load_model
 from torch_em.data.datasets import medical
 from torch_em.transform.generic import ResizeLongestSideInputs
 
@@ -24,7 +25,7 @@ from medico_sam.evaluation.inference import _run_semantic_segmentation_for_image
 
 def get_model(output_channels, checkpoint_path, simple_unetr=True):
     # Get SAM model.
-    predictor, state = get_sam_model(model_type="vit_b", checkpoint_path=checkpoint_path, return_state=True)
+    predictor, state = get_sam_model(model_type="vit_b", return_state=True)
 
     if simple_unetr:
         # Get the 2d UNETR model.
@@ -38,13 +39,16 @@ def get_model(output_channels, checkpoint_path, simple_unetr=True):
         # Get the 3d medico-sam model with UNETR decoder.
         model = get_medico_sam_model(
             model_type="vit_b",
-            checkpoint_path=checkpoint_path,
             device="cuda",
-            use_sam3d=True,  # NOTE: currently, the 3d model has been selected.
+            use_sam3d=True,  # Selecting the 3d model.
             image_size=512,
-            decoder_choice="unetr",
+            decoder_choice="unetr",  # Choose the UNETR decoder
             n_classes=output_channels,
         )
+        model = load_model(checkpoint=checkpoint_path, model=model, device="cuda")
+
+    model.eval()
+    model.to("cuda")
 
     return model
 
@@ -54,6 +58,7 @@ def get_dataset_paths(dataset_name):
 
     if dataset_name == "curvas":
         image_paths, gt_paths = medical.curvas.get_curvas_paths(path=os.path.join(data_dir, "curvas"), split="test")
+
     elif dataset_name == "amos":
         # NOTE: right kidney: 2, left kidney: 3, liver: 6, pancreas: 10 (ids for the relevant classes)
         image_paths, gt_paths = medical.amos.get_amos_paths(
@@ -61,6 +66,7 @@ def get_dataset_paths(dataset_name):
         )
         # HACK: use the first 10 images for trying out stuff
         image_paths, gt_paths = image_paths[:10], gt_paths[:10]
+
     else:
         raise ValueError
 
@@ -69,9 +75,15 @@ def get_dataset_paths(dataset_name):
 
 def run_curvas_inference(output_channels):
     # Stuff for running inference properly.
-    simple_unetr = True  # whether to use 2d unet or sam+unetr volumetric setup.
-    dataset_name = "amos"
-    checkpoint_path = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/joint-training/checkpoints/vit_b/curvas_sam/best.pt"  # noqa
+    simple_unetr = False  # whether to use 2d unet or sam+unetr volumetric setup.
+    dataset_name = "amos"  # curvas / amos
+
+    # CURVAS (joint training)
+    # checkpoint_path = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/joint-training/checkpoints/vit_b/curvas_sam/best.pt"  # noqa
+    # CURVAS (semantic segmentation).
+    # checkpoint_path = "/mnt/vast-nhr/home/nimanwai/medico-sam/experiments/semantic_segmentation/experiment_curvas/checkpoints/vit_b_3d_all/curvas_semanticsam/best.pt"  # noqa
+    # AMOS (semantic segmentation).
+    checkpoint_path = "/mnt/vast-nhr/home/nimanwai/medico-sam/experiments/semantic_segmentation/experiment_amos/checkpoints/vit_b_3d_all/amos_semanticsam/best.pt"  # noqa
 
     # Get the semantic segmentation model
     model = get_model(output_channels, checkpoint_path, simple_unetr=simple_unetr)
@@ -97,7 +109,7 @@ def run_curvas_inference(output_channels):
 
             label_transform = ResizeLongestSideInputs(target_shape=(512, 512), is_label=True)
             gt = label_transform(gt)
-            gt = np.isin(gt, [3, 4, 7, 11]).astype("uint8")  # valid class ids we want for this task.
+            gt = np.isin(gt, [2, 3, 6, 10]).astype("uint8")  # valid class ids we want for this task.
 
         # Get predictions.
         if simple_unetr:
@@ -114,8 +126,8 @@ def run_curvas_inference(output_channels):
                 model=model,
                 image=image,
                 prediction_path=None,
-                patch_shape=(32, 512, 512),
-                halo=(8, 0, 0),
+                patch_shape=(16, 512, 512),
+                halo=(4, 0, 0),
             )
 
         # Evaluate predictions compared to the ground-truth
@@ -132,7 +144,8 @@ def run_curvas_inference(output_channels):
 
 
 def main():
-    run_curvas_inference(output_channels=1)  # zero-shot binary (all-class) segmentation.
+    # run_curvas_inference(output_channels=1)  # zero-shot binary (all-class) segmentation.
+    run_curvas_inference(output_channels=4)  # zero-shot binary (all-class) segmentation.
 
 
 if __name__ == "__main__":
