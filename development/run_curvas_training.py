@@ -73,7 +73,9 @@ def get_dataloaders(dataset_name, split):
             sampler=MinInstanceSampler(min_num_instances=4),
             split=split,
             shuffle=True,
+            n_samples=800,
             num_workers=16,
+            download=True,
         )
 
     elif dataset_name == "amos":

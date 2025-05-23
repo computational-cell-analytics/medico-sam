@@ -25,15 +25,11 @@ from medico_sam.evaluation.inference import _run_semantic_segmentation_for_image
 
 def get_model(output_channels, checkpoint_path, simple_unetr=True):
     # Get SAM model.
-    predictor, state = get_sam_model(model_type="vit_b", return_state=True)
+    predictor = get_sam_model(model_type="vit_b")
 
     if simple_unetr:
         # Get the 2d UNETR model.
-        model = get_unetr(
-            image_encoder=predictor.model.image_encoder,
-            decoder_state=state["decoder_state"],
-            out_channels=output_channels,
-        )
+        model = get_unetr(image_encoder=predictor.model.image_encoder, out_channels=output_channels)
 
     else:
         # Get the 3d medico-sam model with UNETR decoder.
@@ -45,8 +41,8 @@ def get_model(output_channels, checkpoint_path, simple_unetr=True):
             decoder_choice="unetr",  # Choose the UNETR decoder
             n_classes=output_channels,
         )
-        model = load_model(checkpoint=checkpoint_path, model=model, device="cuda")
 
+    model = load_model(checkpoint=checkpoint_path, model=model, device="cuda")
     model.eval()
     model.to("cuda")
 
@@ -75,15 +71,13 @@ def get_dataset_paths(dataset_name):
 
 def run_curvas_inference(output_channels):
     # Stuff for running inference properly.
-    simple_unetr = False  # whether to use 2d unet or sam+unetr volumetric setup.
+    simple_unetr = True  # whether to use 2d unet or sam+unetr volumetric setup.
     dataset_name = "amos"  # curvas / amos
 
     # CURVAS (joint training)
     # checkpoint_path = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/joint-training/checkpoints/vit_b/curvas_sam/best.pt"  # noqa
-    # CURVAS (semantic segmentation).
-    # checkpoint_path = "/mnt/vast-nhr/home/nimanwai/medico-sam/experiments/semantic_segmentation/experiment_curvas/checkpoints/vit_b_3d_all/curvas_semanticsam/best.pt"  # noqa
-    # AMOS (semantic segmentation).
-    checkpoint_path = "/mnt/vast-nhr/home/nimanwai/medico-sam/experiments/semantic_segmentation/experiment_amos/checkpoints/vit_b_3d_all/amos_semanticsam/best.pt"  # noqa
+    # AMOS (downstream semantic segmentation).
+    checkpoint_path = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/downstream_semantic_segmentation/checkpoints/amos_without_decoder/best.pt"  # noqa
 
     # Get the semantic segmentation model
     model = get_model(output_channels, checkpoint_path, simple_unetr=simple_unetr)
@@ -118,7 +112,8 @@ def run_curvas_inference(output_channels):
                 model(per_slice[None, None]).detach().cpu().squeeze()
                 for per_slice in tqdm(image_tensor, desc="Run predictions")
             ]
-            outputs = torch.stack(outputs, axis=0)
+            outputs = torch.stack(outputs, dim=0)
+            outputs = torch.argmax(outputs, dim=1)
             outputs = (outputs.numpy() > 0.5).astype("uint8")  # setting a threshold at 0.5
 
         else:
