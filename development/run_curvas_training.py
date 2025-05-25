@@ -75,7 +75,6 @@ def get_dataloaders(dataset_name, split):
             shuffle=True,
             n_samples=800,
             num_workers=16,
-            download=True,
         )
 
     elif dataset_name == "amos":
@@ -90,6 +89,7 @@ def get_dataloaders(dataset_name, split):
             sampler=MinSemanticLabelForegroundSampler(semantic_ids=[2, 3, 6, 10], min_fraction=25),
             split=split,
             shuffle=True,
+            n_samples=800,
             num_workers=16,
         )
 
