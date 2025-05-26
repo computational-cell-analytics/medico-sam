@@ -76,7 +76,7 @@ def submit_slurm(args, tmp_folder):
         datasets = all_datasets
 
     if args.checkpoint is not None:
-        checkpoints = {"experiment": args.checkpoint}
+        checkpoints = {"custom experiment": args.checkpoint}
     else:
         checkpoints = {
             # default SAM model
@@ -88,8 +88,8 @@ def submit_slurm(args, tmp_folder):
             # MedSAM's original model.
             checkpoints["medsam"] = "medsam/original/medsam_vit_b.pth"
             # our finetuned models.
-            checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt",  # noqa
-            checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
+            checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt"  # noqa
+            checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt"  # noqa
 
     lora_choices = [True, False]
     for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):

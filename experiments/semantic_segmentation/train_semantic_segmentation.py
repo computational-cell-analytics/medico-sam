@@ -20,8 +20,8 @@ def finetune_semantic_sam(args):
     dataset = args.dataset
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
-    freeze_parts = args.freeze  # override this to freeze different parts of the model
     num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
+    decoder = args.decoder
 
     if dataset in DATASETS_2D:
         patch_shape = (1024, 1024)  # the patch shape for 2d semantic segmentation training
@@ -34,7 +34,6 @@ def finetune_semantic_sam(args):
             model_type=model_type,
             device=device,
             checkpoint_path=checkpoint_path,
-            freeze=freeze_parts,
             flexible_load_checkpoint=True,
             num_multimask_outputs=num_classes,
             peft_kwargs=peft_kwargs if args.lora_rank is not None else None,
@@ -43,20 +42,21 @@ def finetune_semantic_sam(args):
         checkpoint_name = f"{args.model_type}/{dataset}_semanticsam"
 
     elif dataset in DATASETS_3D:
-        patch_shape = (32, 512, 512)  # the patch shape for 3d semantic segmentation training
+        patch_shape = (16, 512, 512)  # the patch shape for 3d semantic segmentation training
         model = sam_3d_wrapper.get_sam_3d_model(
+            model_type=model_type,
             device=device,
             n_classes=num_classes,
             image_size=patch_shape[-1],
             checkpoint_path=checkpoint_path,
-            freeze_encoder=args.lora_rank is None and (freeze_parts and "image_encoder" in freeze_parts),
             lora_rank=args.lora_rank,
+            decoder_choice=decoder,
         )
         model.to(device)
         if args.lora_rank is not None:
             ft_name = f"lora_{args.lora_rank}"
         else:
-            ft_name = "frozen" if (freeze_parts and "image_encoder" in freeze_parts) else "all"
+            ft_name = "all"
         checkpoint_name = f"{model_type}_3d_{ft_name}/{args.dataset}_semanticsam"
 
     else:
@@ -114,9 +114,6 @@ def main():
         "--iterations", type=int, default=int(1e5), help="For how many iterations should the model be trained?"
     )
     parser.add_argument(
-        "--freeze", type=str, nargs="+", default=None, help="Which parts of the model to freeze for finetuning."
-    )
-    parser.add_argument(
         "-c", "--checkpoint", type=str, default=None, help="The pretrained weights to initialize the model."
     )
     parser.add_argument(
@@ -125,6 +122,9 @@ def main():
     )
     parser.add_argument(
         "--dice_weight", type=float, default=0.5, help="The weight for dice loss with combined cross entropy loss."
+    )
+    parser.add_argument(
+        "--decoder", type=str, default="unetr", help="The choice of segmentation decoder for semantic segmentation."
     )
 
     args = parser.parse_args()

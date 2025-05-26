@@ -1,5 +1,18 @@
 import numpy as np
 from math import ceil, floor
+from skimage.measure import label as connected_components
+
+
+# TODO: In future, combine all label transforms into one (?)
+class LabelTransformJointTraining:
+    def __call__(self, labels):
+
+        # Ensure all objects are with individual ids.
+        labels = connected_components(labels).astype(labels.dtype)
+
+        # First channel for interactive segmentation.
+        # Second channel for binary semantic segmentation.
+        return np.concatenate([labels, labels > 0], axis=0)
 
 
 class LabelTrafoToBinary:

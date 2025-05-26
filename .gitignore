@@ -171,6 +171,9 @@ logs/
 *.svg
 *.mha
 *.tif
+*.h5
+*.zarr
+*.sh
 gpu_jobs/
 figures/
 
