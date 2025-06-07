@@ -6,16 +6,11 @@ from torch_em.transform.raw import normalize, normalize_percentile
 
 # TODO: In future, combine all raw transforms into one (?)
 class RawTransformJointTraining:
-    def __init__(self, modality: str = "CT"):
-        self.modality = modality
 
     def __call__(self, raw: np.ndarray):
-        if self.modality == "CT":
-            raw = normalize_percentile(raw)  # Percentile normalization.
-            raw = raw * 255  # Convert to 8-bit.
-        else:
-            raise NotImplementedError
-
+        raw = normalize_percentile(raw)  # Percentile normalization.
+        raw = np.clip(raw, 0, 1)  # Ensure values between range 0 and 1.
+        raw = raw * 255  # Convert to 8-bit.
         return raw
 
 

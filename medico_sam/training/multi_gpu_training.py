@@ -33,7 +33,11 @@ def _train_impl(
     setup(rank, world_size)
 
     model, state = model_callable(return_state=True, **model_kwargs)
-    unetr = get_unetr(image_encoder=model.sam.image_encoder, decoder_state=state.get("decoder_state", None))
+    unetr = get_unetr(
+        image_encoder=model.sam.image_encoder,
+        decoder_state=state.get("decoder_state", None),
+        out_channels=2,
+    )
 
     model.to(rank)
     unetr.to(rank)
@@ -62,7 +66,7 @@ def _train_impl(
         rank=rank,
         **kwargs
     )
-    trainer.fit(iterations=iterations)
+    trainer.fit(iterations=iterations, save_every_kth_epoch=1)
 
     cleanup()
 
