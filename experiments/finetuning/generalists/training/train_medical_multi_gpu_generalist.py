@@ -50,6 +50,7 @@ def finetune_medical_generalist(args):
         "raw_transform": raw_transform,
         "label_transform": label_transform,
         "sampler": sampler,
+        "n_samples": 1000,
     }
 
     loader_kwargs = {

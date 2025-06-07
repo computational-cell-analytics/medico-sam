@@ -24,19 +24,18 @@ def get_dataloaders(data_path, patch_shape):
     train_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=2,
-        num_workers=64,
+        batch_size=7,
+        num_workers=16,
         shuffle=True,
         raw_transform=raw_transform,
         label_transform=label_transform,
         sampler=sampler,
-        n_samples=1000,
     )
     val_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
         batch_size=1,
-        num_workers=64,
+        num_workers=16,
         shuffle=True,
         raw_transform=raw_transform,
         label_transform=label_transform,
