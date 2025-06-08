@@ -5,14 +5,22 @@ from skimage.measure import label as connected_components
 
 # TODO: In future, combine all label transforms into one (?)
 class LabelTransformJointTraining:
+    def __init__(self, ensure_cc: bool = False):
+        self.ensure_cc = ensure_cc
+
     def __call__(self, labels):
 
-        # Ensure all objects are with individual ids.
-        labels = connected_components(labels).astype(labels.dtype)
+        if self.ensure_cc:
+            # Ensure all objects are with individual ids.
+            labels = connected_components(labels).astype(labels.dtype)
+
+        if labels.ndim == 2:  # Add an empty dimension.
+            labels = labels[None]
 
         # First channel for interactive segmentation.
-        # Second channel for binary semantic segmentation.
-        return np.concatenate([labels, labels > 0], axis=0)
+        # Second channel for background semantic segmentation.
+        # Third channel for foreground semantic segmentation.
+        return np.concatenate([labels, labels == 0, labels != 0], axis=0)
 
 
 class LabelTrafoToBinary:

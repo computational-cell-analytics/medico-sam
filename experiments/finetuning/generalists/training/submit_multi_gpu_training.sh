@@ -12,4 +12,4 @@
 
 source ~/.bashrc
 mamba activate sam
-python train_medical_multi_gpu_generalist.py -s /scratch/share/cidas/cca/models/medico-sam/multi_gpu
+python train_medical_multi_gpu_generalist.py -s /mnt/vast-nhr/projects/cidas/cca/models/medico-sam/v2/multi_gpu

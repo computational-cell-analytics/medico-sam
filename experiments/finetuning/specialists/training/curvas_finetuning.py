@@ -26,7 +26,7 @@ def get_dataloaders(patch_shape, data_path):
     Important: the ID 0 is reserved for background, and the IDs must be consecutive.
     """
     label_transform = LabelTransformJointTraining()
-    raw_transform = RawTransformJointTraining(modality="CT")
+    raw_transform = RawTransformJointTraining()
     sampler = MinTwoInstanceSampler()
 
     train_loader = get_curvas_loader(
@@ -93,7 +93,7 @@ def finetune_curvas(args):
         image_encoder=model.sam.image_encoder,
         decoder_state=state.get("decoder_state", None),
         device=device,
-        out_channels=1,
+        out_channels=2,
     )
 
     # Get the parameters for SAM and the decoder from UNETR.
@@ -130,7 +130,7 @@ def finetune_curvas(args):
         instance_loss=semantic_seg_loss,
         instance_metric=semantic_seg_loss,
         early_stopping=None,
-        mask_prob=0.5,
+        mask_prob=0.5,  # (optional) overwrite to provide the probability of using mask inputs while training
     )
     trainer.fit(iterations=args.iterations)
 
@@ -146,15 +146,15 @@ def main():
         help="The model type to use for fine-tuning. Either vit_t, vit_b, vit_l or vit_h."
     )
     parser.add_argument(
-        "--save_root", "-s",
+        "--save_root", "-s", default=None,
         help="Where to save the checkpoint and logs. By default they will be saved where this script is run."
     )
     parser.add_argument(
-        "--iterations", type=int, default=int(2.5e4),
-        help="For how many iterations should the model be trained? By default 100k."
+        "--iterations", type=int, default=int(3e5),
+        help="For how many iterations should the model be trained? By default 300k."
     )
     parser.add_argument(
-        "--export_path", "-e",
+        "--export_path", "-e", type=str, default=None,
         help="Where to export the finetuned model to. The exported model can be used in the annotation tools."
     )
     parser.add_argument(
