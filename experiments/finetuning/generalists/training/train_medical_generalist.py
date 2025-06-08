@@ -4,7 +4,7 @@ import argparse
 import torch
 
 from torch_em.loss import DiceLoss
-from torch_em.data import MinInstanceSampler
+from torch_em.data import MinTwoInstanceSampler
 from torch_em.data.datasets.medical import get_sa_med2d_loader
 
 import micro_sam.training as sam_training
@@ -19,7 +19,7 @@ from medico_sam.transform import LabelTransformJointTraining, RawTransformJointT
 def get_dataloaders(data_path, patch_shape):
     raw_transform = RawTransformJointTraining()
     label_transform = LabelTransformJointTraining()
-    sampler = MinInstanceSampler()
+    sampler = MinTwoInstanceSampler()
 
     train_loader = get_sa_med2d_loader(
         path=data_path,
