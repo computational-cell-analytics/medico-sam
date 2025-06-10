@@ -32,7 +32,7 @@ def get_dataloaders(patch_shape, data_path):
     train_loader = get_curvas_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=2,
+        batch_size=7,
         split="train",
         ndim=2,
         resize_inputs=True,
