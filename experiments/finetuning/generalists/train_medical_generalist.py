@@ -12,7 +12,7 @@ from micro_sam.util import export_custom_sam_model
 from micro_sam.instance_segmentation import get_unetr
 from micro_sam.training import joint_sam_trainer as joint_trainers
 
-
+from medico_sam.datasets import get_sa_med2d_rois
 from medico_sam.transform import LabelTransformJointTraining, RawTransformJointTraining
 
 
@@ -30,6 +30,7 @@ def get_dataloaders(data_path, patch_shape):
         raw_transform=raw_transform,
         label_transform=label_transform,
         sampler=sampler,
+        rois=get_sa_med2d_rois(data_path, split="train", fraction=0.1),
     )
     val_loader = get_sa_med2d_loader(
         path=data_path,
@@ -40,7 +41,7 @@ def get_dataloaders(data_path, patch_shape):
         raw_transform=raw_transform,
         label_transform=label_transform,
         sampler=sampler,
-        n_samples=100,
+        rois=get_sa_med2d_rois(data_path, split="val", fraction=0.1),
     )
 
     return train_loader, val_loader
