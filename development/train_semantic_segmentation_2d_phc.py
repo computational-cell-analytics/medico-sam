@@ -17,8 +17,7 @@ from micro_sam.training.util import ConvertToSemanticSamInputs
 from medico_sam.util import LinearWarmUpScheduler
 
 
-# DATA_ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"  # Image-label pairs from GitHub simply dropped here.
-DATA_ROOT = "/home/anwai/data"
+DATA_ROOT = "/mnt/vast-nhr/projects/cidas/cca/data"  # Image-label pairs from GitHub simply dropped here.
 
 LABEL_MAP = {
     (0, 0, 0): 0,
@@ -44,6 +43,7 @@ def get_data_loaders(data_path, split, patch_shape):
             imageio.imwrite(str(Path(curr_lpath).with_suffix(".tif")), flabel, compression="zlib")
         label_paths = natsorted(glob(os.path.join(data_path, "label_*.tif")))
 
+    # Create a simple split logic.
     if split == "train":  # Train on first two images
         image_paths, label_paths = image_paths[:2], label_paths[:2]
     else:  # Validate on the last image.
@@ -62,6 +62,8 @@ def get_data_loaders(data_path, split, patch_shape):
         patch_shape=patch_shape,
         raw_transform=sam_training.identity,
         sampler=MinInstanceSampler(min_num_instances=4),
+        n_samples=100,
+        num_workers=16,
     )
 
     return loader

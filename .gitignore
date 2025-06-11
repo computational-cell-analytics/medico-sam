@@ -177,3 +177,4 @@ figures/
 # torch-em stuff
 checkpoints/
 logs/
+*.sh
