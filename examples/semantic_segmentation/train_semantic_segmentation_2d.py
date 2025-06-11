@@ -53,12 +53,12 @@ def get_data_loaders(data_path: Union[os.PathLike, str], split: Literal["train",
 def finetune_semantic_sam_2d():
     """Scripts for training a 2d semantic segmentation model on medical datasets."""
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
+    device = "cuda" if torch.cuda.is_available() else "cpu"  # device to train the model on.
 
     # training settings:
     model_type = "vit_b"  # override this to your desired choice of Segment Anything model.
     checkpoint_path = None  # override this to start training from a custom checkpoint
     num_classes = 5  # 1 background class and 'n' semantic foreground classes
-    device = "cuda" if torch.cuda.is_available() else "cpu"  # device to train the model on.
     checkpoint_name = "oimhs_semantic_sam"  # the name for storing the checkpoints.
     patch_shape = (1024, 1024)  # the patch shape for 2d semantic segmentation training
 
