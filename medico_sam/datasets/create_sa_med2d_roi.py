@@ -6,7 +6,7 @@ import numpy as np
 
 from elf.io import open_file
 
-from torch_em.data.datasets.medical.sa_med2d import get_sa_med2d_paths, SHARD_SIZE
+from torch_em.data.datasets.medical.sa_med2d import get_sa_med2d_paths
 
 
 BRAIN_DATASETS = [
@@ -57,7 +57,7 @@ def get_sa_med2d_rois(
 
     # We undersample the brain-related datasets: down to only 10% per bulky datasets!
     sample_sizes = [
-        (size * 0.1) if name[:-3] in BRAIN_DATASETS else size for name, size in sample_sizes.items()
+        int(size * 0.1) if name[:-3] in BRAIN_DATASETS else size for name, size in sample_sizes.items()
     ]
 
     # We take the first 80% samples and set them for the 'train' split.
@@ -69,8 +69,8 @@ def get_sa_med2d_rois(
     # We get only a fraction of the dataset, if desired.
     if fraction is not None:
         assert fraction > 0 and fraction <= 1, fraction
-        train_sample_sizes = [max(min_samples, int(s * fraction)) for s in train_sample_sizes]
-        val_sample_sizes = [max(min_samples, int(s * fraction)) for s in val_sample_sizes]
+        train_sample_sizes = [int(s * fraction) if s > min_samples else s for s in train_sample_sizes]
+        val_sample_sizes = [int(s * fraction)if s > min_samples else s for s in val_sample_sizes]
 
     # Now, we can finally get the rois.
     train_rois = [(np.s_[:ts],) for ts in train_sample_sizes]
