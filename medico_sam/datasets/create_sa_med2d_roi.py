@@ -34,7 +34,7 @@ def get_sa_med2d_rois(
     path: Union[str, os.PathLike],
     split: Literal["train", "val"],
     fraction: Optional[float] = None,
-    min_samples: int = 20,
+    min_samples: int = 500,
 ):
     """Create RoIs for the SA-Med2d dataset.
 
@@ -42,7 +42,7 @@ def get_sa_med2d_rois(
         path: The filepath where the dataset is stored.
         split: The choice of data split. Either 'train' or 'val'.
         fraction: The fraction of dataset to choose. By default, returns the entire dataset.
-        min_samples: The minimum number of samples to reserve, if dataset is too small.
+        min_samples: The minimum number of samples to reserve from fractioning, if dataset is too small.
 
     Returns:
         The RoIs per sub-dataset for the entire dataset.
@@ -57,8 +57,7 @@ def get_sa_med2d_rois(
 
     # We undersample the brain-related datasets: down to only 10% per bulky datasets!
     sample_sizes = [
-        (size * 0.1) if size == SHARD_SIZE and name[:-3] in BRAIN_DATASETS
-        else size for name, size in sample_sizes.items()
+        (size * 0.1) if name[:-3] in BRAIN_DATASETS else size for name, size in sample_sizes.items()
     ]
 
     # We take the first 80% samples and set them for the 'train' split.
@@ -70,8 +69,8 @@ def get_sa_med2d_rois(
     # We get only a fraction of the dataset, if desired.
     if fraction is not None:
         assert fraction > 0 and fraction <= 1, fraction
-        train_sample_sizes = [int(s * fraction) if s > min_samples else s for s in train_sample_sizes]
-        val_sample_sizes = [int(s * fraction) if s > min_samples else s for s in val_sample_sizes]
+        train_sample_sizes = [max(min_samples, int(s * fraction)) for s in train_sample_sizes]
+        val_sample_sizes = [max(min_samples, int(s * fraction)) for s in val_sample_sizes]
 
     # Now, we can finally get the rois.
     train_rois = [(np.s_[:ts],) for ts in train_sample_sizes]
