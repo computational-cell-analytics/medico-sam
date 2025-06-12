@@ -3,13 +3,14 @@ import argparse
 import torch
 
 from torch_em.loss import DiceLoss
-from torch_em.data import MinInstanceSampler
+from torch_em.data import MinTwoInstanceSampler
 from torch_em.data.datasets.medical import get_sa_med2d_dataset
 
 import micro_sam.training as sam_training
 
 from segment_anything.utils.transforms import ResizeLongestSide
 
+from medico_sam.datasets import get_sa_med2d_rois
 from medico_sam.training.multi_gpu_training import train_multi_gpu
 from medico_sam.transform import LabelTransformJointTraining, RawTransformJointTraining
 
@@ -23,7 +24,8 @@ def finetune_medical_generalist(args):
     patch_shape = (1, 512, 512)  # the patch shape for training
     n_objects_per_batch = args.n_objects  # this is the number of objects per batch that will be sampled (default: 25)
     freeze_parts = args.freeze  # override this to freeze one or more of these backbones
-    checkpoint_name = f"{args.model_type}/medical_generalist_sam_multi_gpu"
+    fraction = args.fraction  # override this to train on a certain fraction of the training set.
+    checkpoint_name = f"{args.model_type}/medical_generalist_sam_multi_gpu" + (f"_{fraction}" if fraction else "")
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(
@@ -33,7 +35,7 @@ def finetune_medical_generalist(args):
     # dataset and respective kwargs
     raw_transform = RawTransformJointTraining()
     label_transform = LabelTransformJointTraining()
-    sampler = MinInstanceSampler()
+    sampler = MinTwoInstanceSampler()
 
     train_dataset_class = get_sa_med2d_dataset
     val_dataset_class = get_sa_med2d_dataset
@@ -43,6 +45,7 @@ def finetune_medical_generalist(args):
         "raw_transform": raw_transform,
         "label_transform": label_transform,
         "sampler": sampler,
+        "rois": get_sa_med2d_rois(args.input_path, split="train", fraction=fraction),
     }
     val_dataset_kwargs = {
         "path": args.input_path,
@@ -50,7 +53,7 @@ def finetune_medical_generalist(args):
         "raw_transform": raw_transform,
         "label_transform": label_transform,
         "sampler": sampler,
-        "n_samples": 1000,
+        "rois": get_sa_med2d_rois(args.input_path, split="val", fraction=0.1),  # validating on 10% of the val-split
     }
 
     loader_kwargs = {
@@ -121,6 +124,10 @@ def main():
     )
     parser.add_argument(
         "--n_objects", type=int, default=5, help="The number of instances (objects) per batch used for finetuning."
+    )
+    parser.add_argument(
+        "--fraction", type=float, default=None,
+        help="The fraction of training data to train on. By default, trains on the entire training set."
     )
     args = parser.parse_args()
     finetune_medical_generalist(args)
