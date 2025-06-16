@@ -12,7 +12,8 @@ dependencies:
     # or, to enforce a CPU installation, change to
     # - "pytorch=*=cpu*"
     - pytorch >=2.5
-    - zarr <3
+    - zarr
+    - torch_em >=0.7.11
     - pip
     - pip:
         - https://github.com/anwai98/tukra.git
