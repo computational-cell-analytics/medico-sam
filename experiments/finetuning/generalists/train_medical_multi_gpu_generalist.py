@@ -3,7 +3,7 @@ import argparse
 import torch
 
 from torch_em.loss import DiceLoss
-from torch_em.data import MinTwoInstanceSampler
+from torch_em.data import MinInstanceSampler
 from torch_em.data.datasets.medical import get_sa_med2d_dataset
 
 import micro_sam.training as sam_training
@@ -35,7 +35,7 @@ def finetune_medical_generalist(args):
     # dataset and respective kwargs
     raw_transform = RawTransformJointTraining()
     label_transform = LabelTransformJointTraining()
-    sampler = MinTwoInstanceSampler()
+    sampler = MinInstanceSampler()
 
     train_dataset_class = get_sa_med2d_dataset
     val_dataset_class = get_sa_med2d_dataset
@@ -76,9 +76,9 @@ def finetune_medical_generalist(args):
         iterations=args.iterations,
         find_unused_parameters=True,
         optimizer_callable=torch.optim.AdamW,
-        optimizer_kwargs={"lr": 5e-5},
+        optimizer_kwargs={"lr": 1e-5},
         lr_scheduler_callable=torch.optim.lr_scheduler.StepLR,
-        lr_scheduler_kwargs={"step_size": 1, "gamma": 0.9},
+        lr_scheduler_kwargs={"step_size": 2, "gamma": 0.9},
         # trainer params
         trainer_callable=sam_training.JointSamTrainer,
         name=checkpoint_name,
