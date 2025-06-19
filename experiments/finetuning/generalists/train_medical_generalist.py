@@ -73,7 +73,7 @@ def finetune_medical_generalist(args):
     model.to(device)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
-    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.05)
+    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
     # Get the UNETR.
     unetr = get_unetr(
