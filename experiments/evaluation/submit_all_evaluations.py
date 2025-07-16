@@ -97,6 +97,20 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         else:
             raise ValueError(n_gpus)
 
+    elif experiment_set.startswith("generalist_v2"):  # This is our v2 model trained in joint training fashion.
+        if experiment_set.endswith("half"):
+            checkpoint = os.path.join(
+                ROOT, "models/medico-sam/v2/multi_gpu/checkpoints",
+                model_type, "medical_generalist_sam_multi_gpu_0.5/model.pt"
+            )
+        elif experiment_set.endswith("full"):
+            checkpoint = os.path.join(
+                ROOT, "models/medico-sam/v2/multi_gpu/checkpoints",
+                model_type, "medical_generalist_sam_multi_gpu/model.pt"
+            )
+        else:
+            raise ValueError(experiment_set)
+
     elif experiment_set == "simplesam":
         if n_gpus == 1:
             checkpoint = os.path.join(
@@ -178,7 +192,8 @@ def submit_slurm(args):
 
         # NOTE: v1 was the first version of evaluation with all datasets having inference as expected
         # v2 are the additional experiments for iterative prompting with masks.
-        experiment_folder = os.path.join(ROOT, "experiments", "v2", ename, dataset_name, model_type)
+        # v3 are all the experiments for interactive segmentation (iterative prompting with masks) for joint trained models.  # noqa
+        experiment_folder = os.path.join(ROOT, "experiments", "v3", ename, dataset_name, model_type)
     else:
         experiment_folder = args.experiment_path
 

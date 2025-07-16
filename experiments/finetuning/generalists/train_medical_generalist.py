@@ -4,7 +4,7 @@ import argparse
 import torch
 
 from torch_em.loss import DiceLoss
-from torch_em.data import MinTwoInstanceSampler
+from torch_em.data import MinInstanceSampler
 from torch_em.data.datasets.medical import get_sa_med2d_loader
 
 import micro_sam.training as sam_training
@@ -19,7 +19,7 @@ from medico_sam.transform import LabelTransformJointTraining, RawTransformJointT
 def get_dataloaders(data_path, patch_shape):
     raw_transform = RawTransformJointTraining()
     label_transform = LabelTransformJointTraining()
-    sampler = MinTwoInstanceSampler()
+    sampler = MinInstanceSampler()
 
     train_loader = get_sa_med2d_loader(
         path=data_path,
@@ -31,6 +31,7 @@ def get_dataloaders(data_path, patch_shape):
         label_transform=label_transform,
         sampler=sampler,
         rois=get_sa_med2d_rois(data_path, split="train", fraction=0.1),
+        n_samples=1000,
     )
     val_loader = get_sa_med2d_loader(
         path=data_path,
@@ -42,6 +43,7 @@ def get_dataloaders(data_path, patch_shape):
         label_transform=label_transform,
         sampler=sampler,
         rois=get_sa_med2d_rois(data_path, split="val", fraction=0.1),
+        n_samples=1000,
     )
 
     return train_loader, val_loader
@@ -71,7 +73,7 @@ def finetune_medical_generalist(args):
     model.to(device)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
-    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.05)
+    convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
     # Get the UNETR.
     unetr = get_unetr(
@@ -88,8 +90,8 @@ def finetune_medical_generalist(args):
             model_params.append(params)
 
     # all the stuff we need for training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.9)
     train_loader, val_loader = get_dataloaders(data_path=args.input_path, patch_shape=patch_shape)
 
     # Trainer which performs the joint training and validation (implemented using "torch_em")
