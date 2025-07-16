@@ -11,7 +11,9 @@ DATASETS = [
 ]
 EXPERIMENTS = [
     "vanilla", "generalist_1", "generalist_8", "simplesam_1", "simplesam_8",
-    "medsam-self_1", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter"
+    "medsam-self_1", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
+    # NOTE: NEW MODELS
+    "generalist_v2_half", "generalist_v2_full",
 ]
 
 
