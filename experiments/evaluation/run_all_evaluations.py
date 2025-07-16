@@ -5,15 +5,16 @@ import itertools
 
 CMD = "python submit_all_evaluations.py "
 DATASETS = [
-    "idrid", "camus", "uwaterloo_skin", "montgomery", "sega",
-    "piccolo", "cbis_ddsm", "dca1", "papila", "jnu-ifm", "siim_acr",
-    "isic", "m2caiseg", "btcv",
+    "camus", "uwaterloo_skin", "montgomery", "sega",
+    "duke_liver", "cbis_ddsm", "piccolo", "dca1",
+    "papila", "jnu-ifm", "siim_acr", "m2caiseg",
+    "toothfairy", "spider", "han-seg", "microusp",
 ]
 EXPERIMENTS = [
     "vanilla", "generalist_1", "generalist_8", "simplesam_1", "simplesam_8",
     "medsam-self_1", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
     # NOTE: NEW MODELS
-    "generalist_v2_half", "generalist_v2_full",
+    "generalistv2-half", "generalistv2-full",
 ]
 
 
@@ -26,7 +27,7 @@ def run_eval_process(cmd):
         outs, errs = proc.communicate()
 
 
-def run_specific_experiment(dataset_name, model_type, experiment_set, dry):
+def run_specific_experiment(dataset_name, model_type, experiment_set, use_masks, dry):
     esplits = experiment_set.split("_")
     if len(esplits) > 1:
         experiment_set, gpu = esplits
@@ -34,6 +35,9 @@ def run_specific_experiment(dataset_name, model_type, experiment_set, dry):
     cmd = CMD + f"-d {dataset_name} " + f"-m {model_type} " + f"-e {experiment_set}"
     if len(esplits) > 1:
         cmd += f" --gpus {gpu}"
+
+    if use_masks:
+        cmd += " --use_masks"
 
     if dry:
         cmd += " --dry"
@@ -43,23 +47,24 @@ def run_specific_experiment(dataset_name, model_type, experiment_set, dry):
     run_eval_process(_cmd)
 
 
-def run_one_setup(model_choice, all_dataset_list, all_experiment_set_list, dry):
+def run_one_setup(model_choice, all_dataset_list, all_experiment_set_list, use_masks, dry):
     for (dataset_name, experiment_set) in itertools.product(all_dataset_list, all_experiment_set_list):
-        run_specific_experiment(dataset_name, model_choice, experiment_set, dry)
+        run_specific_experiment(dataset_name, model_choice, experiment_set, use_masks, dry)
         breakpoint()
 
 
-def for_medical_generalist(dataset, experiment, dry):
+def for_medical_generalist(dataset, experiment, use_masks, dry):
     run_one_setup(
         model_choice="vit_b",
         all_dataset_list=DATASETS if dataset is None else [dataset],
         all_experiment_set_list=EXPERIMENTS if experiment is None else [experiment],
+        use_masks=use_masks,
         dry=dry,
     )
 
 
 def main(args):
-    for_medical_generalist(args.dataset, args.experiment, args.dry)
+    for_medical_generalist(args.dataset, args.experiment, args.use_masks, args.dry)
 
 
 if __name__ == "__main__":
@@ -67,6 +72,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-e", "--experiment", type=str, default=None)
+    parser.add_argument("--use_masks", action="store_true")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
     main(args)
