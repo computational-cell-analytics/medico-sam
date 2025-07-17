@@ -81,7 +81,7 @@ def finetune_semantic_sam(args):
             final_activation="Sigmoid",
         )
 
-        # TODO: Puzzle in the 2d decoder weights!
+        # Puzzling in the pretrained 2d decoder weights!
         if decoder_state:
             # We remove `out_conv`-related parameters and let it initialize from scratch.
             for k in list(state["decoder_state"].keys()):
@@ -122,7 +122,7 @@ def finetune_semantic_sam(args):
         device="cuda",
         learning_rate=learning_rate,
         scheduler_kwargs=scheduler_kwargs,
-        log_image_interval=100,
+        log_image_interval=10,
         mixed_precision=True,
         compile_model=False,
         loss=CustomCombinedLoss(num_classes=num_classes),
