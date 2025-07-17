@@ -65,10 +65,10 @@ def submit_to_slurm(dataset_name, experiment_folder, prompt_choice, dry_run):
             # default SAM model
             "sam": None,
             # our finetuned models
+            "simplesam": "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
             # NOTE: Next two models are our old models.
             # "medico-sam-8g": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",  # noqa
             # "medico-sam-1g": "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt",
-            "simplesam": "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt",  # noqa
             # NOTE: Next two models are our (new) v2 models.
             "medico-samv2-half": "medico-sam/v2/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu_0.5/model.pt ",  # noqa
             "medico-samv2-full": "medico-sam/v2/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/model.pt",

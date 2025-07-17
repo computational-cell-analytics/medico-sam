@@ -25,7 +25,7 @@ def write_batch_script(
 #SBATCH --job-name=semsam_{dataset_name}
 
 source ~/.bashrc
-micromamba activate sam \n"""
+micromamba activate super \n"""
 
     # python script
     python_script = "python train_semantic_segmentation.py "
@@ -82,13 +82,16 @@ def submit_slurm(args, tmp_folder):
             # default SAM model
             "sam": None,
             # our finetuned models
-            "medico-sam-8g": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",
+            # NOTE: Next one model is the old medico-sam model.
+            # "medico-sam-8g": "medico-sam/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/best_exported.pt",  # noqa
+            # NOTE: Next one model is the new medico-sam (all data) generalist model.
+            "medico-samv2-full": "medico-sam/v2/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu/model.pt",
         }
         if not args.uno:  # i.e. we train 1 image models with the best chosen models only.
             # MedSAM's original model.
             checkpoints["medsam"] = "medsam/original/medsam_vit_b.pth"
             # our finetuned models.
-            checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt"  # noqa
+            # checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt"  # noqa
             checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt"  # noqa
 
     lora_choices = [True, False]

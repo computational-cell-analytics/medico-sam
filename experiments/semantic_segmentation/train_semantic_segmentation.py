@@ -2,11 +2,14 @@ import argparse
 
 import torch
 
+from micro_sam.util import get_sam_model, _load_checkpoint
 import micro_sam.training as sam_training
 from micro_sam.models import peft_sam, sam_3d_wrapper
+from micro_sam.instance_segmentation import get_unetr
 from micro_sam.training.util import ConvertToSemanticSamInputs
 
 from medico_sam.util import LinearWarmUpScheduler
+from medico_sam.models.unetr3d import SimpleUNETR3D
 
 
 def finetune_semantic_sam(args):
@@ -21,46 +24,79 @@ def finetune_semantic_sam(args):
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
-    decoder = args.decoder
 
-    if dataset in DATASETS_2D:
-        patch_shape = (1024, 1024)  # the patch shape for 2d semantic segmentation training
-        peft_kwargs = {
-            "peft_module": peft_sam.LoRASurgery,  # the chosen PEFT method (LoRA) for finetuning
-            "rank": args.lora_rank,  # whether to use LoRA for finetuning and the rank used for LoRA
-        }
-        # get the trainable segment anything model
-        model = sam_training.get_trainable_sam_model(
+    if dataset in DATASETS_2D:  # training 2d semantic segmentation models with additional segmentation decoder.
+        # Get the basic 2d UNETR model.
+        predictor, state = get_sam_model(
             model_type=model_type,
-            device=device,
             checkpoint_path=checkpoint_path,
-            flexible_load_checkpoint=True,
-            num_multimask_outputs=num_classes,
-            peft_kwargs=peft_kwargs if args.lora_rank is not None else None,
+            return_state=True,
+            peft_kwargs=None if args.lora_rank is None else {
+                "peft_module": peft_sam.LoRASurgery,  # the chosen PEFT method (LoRA) for finetuning
+                "rank": args.lora_rank,  # whether to use LoRA for finetuning and the rank used for LoRA
+            },
         )
-        model.to(device)
-        checkpoint_name = f"{args.model_type}/{dataset}_semanticsam"
+        decoder_state = state.get("decoder_state", None)
+
+        # We remove `out_conv`-related parameters and let it initialize from scratch.
+        if decoder_state:
+            for k in list(state["decoder_state"].keys()):
+                if k.startswith("out_conv"):
+                    del decoder_state[k]
+
+        # the patch shape for 2d semantic segmentation training
+        patch_shape = (1024, 1024)
+
+        # Finally, get the 2d UNETR model.
+        model = get_unetr(
+            image_encoder=predictor.model.image_encoder,
+            decoder_state=decoder_state,
+            out_channels=num_classes,
+            flexible_load_checkpoint=True,
+        )
 
     elif dataset in DATASETS_3D:
-        patch_shape = (16, 512, 512)  # the patch shape for 3d semantic segmentation training
-        model = sam_3d_wrapper.get_sam_3d_model(
-            model_type=model_type,
+        # Get the 3d wrapped SAM image encoder.
+        sam_3d = sam_3d_wrapper.get_sam_3d_model(
             device=device,
             n_classes=num_classes,
-            image_size=patch_shape[-1],
-            checkpoint_path=checkpoint_path,
+            image_size=512,
             lora_rank=args.lora_rank,
-            decoder_choice=decoder,
+            model_type=model_type,
+            checkpoint_path=checkpoint_path,
         )
-        model.to(device)
-        if args.lora_rank is not None:
-            ft_name = f"lora_{args.lora_rank}"
-        else:
-            ft_name = "all"
-        checkpoint_name = f"{model_type}_3d_{ft_name}/{args.dataset}_semanticsam"
+        state, _ = _load_checkpoint(checkpoint_path=checkpoint_path)
+        decoder_state = state.get("decoder_state", None)
+
+        # We remove `out_conv`-related parameters and let it initialize from scratch.
+        if decoder_state:
+            for k in list(state["decoder_state"].keys()):
+                if k.startswith("out_conv"):
+                    del decoder_state[k]
+
+        # TODO: Puzzle in the 2d decoder weights!
+
+        # the patch shape for 3d semantic segmentation training
+        patch_shape = (16, 512, 512)
+
+        # Finally, get the 3d UNETR model.
+        model = SimpleUNETR3D(
+            # backbone="sam",
+            encoder=sam_3d.sam_model.image_encoder,
+            # use_sam_stats=True,
+            # use_skip_connection=False,
+            # resize_input=True,
+            # use_conv_transpose=False,
+            # NOTE: Below are parameters for 3d model.
+            # num_classes=num_classes,
+            # final_activation="Sigmoid",
+        )
 
     else:
-        raise ValueError(f"'{dataset}' is not a valid dataset name.")
+        raise ValueError(f"'{dataset}' is not a valid dataset name or not part of our experiments yet.")
+
+    model.to(device)
+    checkpoint_name = f"{model_type}/{dataset}_semanticsam"
 
     # all the stuff we need for training
     learning_rate = 1e-4
@@ -123,10 +159,6 @@ def main():
     parser.add_argument(
         "--dice_weight", type=float, default=0.5, help="The weight for dice loss with combined cross entropy loss."
     )
-    parser.add_argument(
-        "--decoder", type=str, default="unetr", help="The choice of segmentation decoder for semantic segmentation."
-    )
-
     args = parser.parse_args()
     finetune_semantic_sam(args)
 
