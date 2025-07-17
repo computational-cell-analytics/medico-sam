@@ -81,7 +81,7 @@ class SimpleUNETR3D(nn.Module):
         )
 
         # And final classification head.
-        self.out_conv = nn.Conv2d(features_decoder[-1], out_channels, 1)
+        self.classifier = nn.Conv3d(fusion_channels, out_channels, 1)
         self.final_activation = self._get_activation(final_activation)
 
     def _get_activation(self, activation):
@@ -106,8 +106,14 @@ class SimpleUNETR3D(nn.Module):
 
     def resize_longest_side(self, image: torch.Tensor) -> torch.Tensor:
         target_size = self.get_preprocess_shape(image.shape[3], image.shape[4], self.encoder.img_size)
-        print(target_size)
-        return F.interpolate(image, target_size, mode="bilinear", align_corners=False, antialias=True)
+
+        # We resize along the batch dimension and stack it back together due to 4d input limitation of interpolation.
+        target_image = torch.stack(
+            [F.interpolate(im, target_size, mode="bilinear", align_corners=False, antialias=True) for im in image],
+            dim=0,
+        )
+
+        return target_image
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
         """@private
@@ -115,8 +121,8 @@ class SimpleUNETR3D(nn.Module):
         device = x.device
 
         # Normalize the input to SAM statistics
-        pixel_mean = torch.Tensor([123.675, 116.28, 103.53]).view(1, -1, 1, 1).to(device)
-        pixel_std = torch.Tensor([58.395, 57.12, 57.375]).view(1, -1, 1, 1).to(device)
+        pixel_mean = torch.Tensor([123.675, 116.28, 103.53]).view(1, -1, 1, 1, 1).to(device)
+        pixel_std = torch.Tensor([58.395, 57.12, 57.375]).view(1, -1, 1, 1, 1).to(device)
 
         # Resize the inputs.
         x = self.resize_longest_side(x)
@@ -132,14 +138,18 @@ class SimpleUNETR3D(nn.Module):
     def postprocess_masks(
         self, masks: torch.Tensor, input_size: Tuple[int, int], original_size: Tuple[int, int],
     ) -> torch.Tensor:
-        masks = F.interpolate(
-            masks,
-            (self.encoder.img_size, self.encoder.img_size),
-            mode="bilinear",
-            align_corners=False
+        masks = torch.stack(
+            [
+                F.interpolate(
+                    mask, (self.encoder.img_size, self.encoder.img_size), mode="bilinear", align_corners=False
+                ) for mask in masks
+            ], dim=0,
         )
-        masks = masks[..., : input_size[0], : input_size[1]]
-        masks = F.interpolate(masks, original_size, mode="bilinear", align_corners=False)
+        masks = masks[..., :input_size[0], :input_size[1]]
+        masks = torch.stack(
+            [F.interpolate(mask, original_size, mode="bilinear", align_corners=False) for mask in masks],
+            dim=0,
+        )
         return masks
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -152,14 +162,22 @@ class SimpleUNETR3D(nn.Module):
         Returns:
             The 3d UNETR output.
         """
-        original_shape = x.shape[-2:]
+        # Get original shape information.
+        B, C, D, H, W = x.shape
+        original_shape = (H, W)
 
         # Reshape the inputs to the shape expected by the encoder
         # and normalize the inputs if normalization is part of the model.
         x, input_shape = self.preprocess(x)
 
+        # Following the Sam3DWrapper heuristics, transpose the axes so that depth axis is first and channel
+        # is second (expected by the adapted transformer)
+        x = x.transpose(1, 2)
+        assert x.shape[1] == D
+        x = x.contiguous().view(-1, C, H, W)  # Performs B*Z to work with 2d convolutions!
+
         # Run the image encoder
-        encoder_outputs = self.encoder(x)
+        encoder_outputs = self.encoder(x, d_size=D)  # 'd_size' corresponds to the z-dimension.
         z12 = encoder_outputs
 
         # And the decoder part
@@ -177,7 +195,7 @@ class SimpleUNETR3D(nn.Module):
         x = torch.cat([x, z0], dim=1)
         x = self.decoder_head(x)
 
-        # The 3d fusion block
+        # 3d fusion block
         x = x.view(B, D, -1, *x.shape[-2:]).permute(0, 2, 1, 3, 4)
         x = self.fusion_3d(x)
 

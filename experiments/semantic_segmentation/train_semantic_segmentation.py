@@ -2,13 +2,12 @@ import argparse
 
 import torch
 
-from micro_sam.util import get_sam_model, _load_checkpoint
-import micro_sam.training as sam_training
+import torch_em
+
 from micro_sam.models import peft_sam, sam_3d_wrapper
 from micro_sam.instance_segmentation import get_unetr
-from micro_sam.training.util import ConvertToSemanticSamInputs
+from micro_sam.util import get_sam_model, _load_checkpoint
 
-from medico_sam.util import LinearWarmUpScheduler
 from medico_sam.models.unetr3d import SimpleUNETR3D
 
 
@@ -80,16 +79,11 @@ def finetune_semantic_sam(args):
         patch_shape = (16, 512, 512)
 
         # Finally, get the 3d UNETR model.
+        print(num_classes)
         model = SimpleUNETR3D(
-            # backbone="sam",
             encoder=sam_3d.sam_model.image_encoder,
-            # use_sam_stats=True,
-            # use_skip_connection=False,
-            # resize_input=True,
-            # use_conv_transpose=False,
-            # NOTE: Below are parameters for 3d model.
-            # num_classes=num_classes,
-            # final_activation="Sigmoid",
+            out_channels=num_classes,
+            final_activation="Sigmoid",
         )
 
     else:
@@ -100,31 +94,25 @@ def finetune_semantic_sam(args):
 
     # all the stuff we need for training
     learning_rate = 1e-4
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.1)
-    mscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.9, patience=5)
-    scheduler = LinearWarmUpScheduler(optimizer, warmup_epochs=4, main_scheduler=mscheduler)
+    scheduler_kwargs = {"mode": "min", "factor": 0.9, "patience": 5}
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
-    # this class creates all the training data for a batch (inputs, prompts and labels)
-    convert_inputs = ConvertToSemanticSamInputs()
-
-    # the trainer which performs the semantic segmentation training and validation (implemented using "torch_em")
-    trainer = sam_training.SemanticSamTrainer(
+    # And the trainer for semantic segmentation and validation (based on `torch-em`).
+    trainer = torch_em.default_segmentation_trainer(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
         val_loader=val_loader,
         model=model,
-        optimizer=optimizer,
-        device=device,
-        lr_scheduler=scheduler,
+        device="cuda",
+        learning_rate=learning_rate,
+        scheduler_kwargs=scheduler_kwargs,
         log_image_interval=100,
         mixed_precision=True,
-        convert_inputs=convert_inputs,
-        num_classes=num_classes,
         compile_model=False,
-        dice_weight=args.dice_weight,
+        loss=CustomCombinedLoss(num_classes=num_classes),
+        metric=CustomDiceLoss(num_classes=num_classes),
     )
     trainer.fit(iterations=int(args.iterations), overwrite_training=False)
 
