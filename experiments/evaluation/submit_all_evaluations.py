@@ -33,7 +33,7 @@ def write_batch_script(
 #SBATCH --job-name={inference_setup}
 
 source ~/.bashrc
-micromamba activate sam \n"""
+micromamba activate super \n"""
 
     # python script
     inference_script_path = os.path.join(Path(__file__).parent, f"{inference_setup}.py")
@@ -97,7 +97,8 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         else:
             raise ValueError(n_gpus)
 
-    elif experiment_set.startswith("generalist_v2"):  # This is our v2 model trained in joint training fashion.
+    elif experiment_set.startswith("generalistv2"):  # This is our v2 model trained in joint training fashion.
+        # NOTE: Run the model export scripts for this first before getting started with evaluations!
         if experiment_set.endswith("half"):
             checkpoint = os.path.join(
                 ROOT, "models/medico-sam/v2/multi_gpu/checkpoints",
