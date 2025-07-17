@@ -12,10 +12,10 @@ class SimpleUNETR3D(nn.Module):
     """Simple design for getting spatial context using 3d convolutions on top of pretrained 2d UNETR decoder.
 
     Args:
-        encoder:
-        out_channels:
-        fusion_channels:
-        final_activation:
+        encoder: The image encoder, adapted for 3d inputs.
+        out_channels: The total number of output classes.
+        fusion_channels: The depth of 3d fusion block taking pretrained 2d features as inputs.
+        final_activation: The final activation block.
     """
 
     def __init__(
@@ -107,7 +107,6 @@ class SimpleUNETR3D(nn.Module):
     def resize_longest_side(self, image: torch.Tensor) -> torch.Tensor:
         target_size = self.get_preprocess_shape(image.shape[3], image.shape[4], self.encoder.img_size)
 
-        # We resize along the batch dimension and stack it back together due to 4d input limitation of interpolation.
         target_image = torch.stack(
             [F.interpolate(im, target_size, mode="bilinear", align_corners=False, antialias=True) for im in image],
             dim=0,

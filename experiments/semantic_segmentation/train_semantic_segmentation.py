@@ -1,4 +1,5 @@
 import argparse
+import warnings
 
 import torch
 
@@ -7,7 +8,9 @@ import torch_em
 from micro_sam.models import peft_sam, sam_3d_wrapper
 from micro_sam.instance_segmentation import get_unetr
 from micro_sam.util import get_sam_model, _load_checkpoint
+from micro_sam.training.semantic_sam_trainer import CustomDiceLoss
 
+from medico_sam.loss import CustomCombinedLoss
 from medico_sam.models.unetr3d import SimpleUNETR3D
 
 
@@ -24,6 +27,7 @@ def finetune_semantic_sam(args):
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
 
+    # TODO: Refactor the code below in future to `get_semantic_sam_model` function.
     if dataset in DATASETS_2D:  # training 2d semantic segmentation models with additional segmentation decoder.
         # Get the basic 2d UNETR model.
         predictor, state = get_sam_model(
@@ -67,24 +71,34 @@ def finetune_semantic_sam(args):
         state, _ = _load_checkpoint(checkpoint_path=checkpoint_path)
         decoder_state = state.get("decoder_state", None)
 
-        # We remove `out_conv`-related parameters and let it initialize from scratch.
-        if decoder_state:
-            for k in list(state["decoder_state"].keys()):
-                if k.startswith("out_conv"):
-                    del decoder_state[k]
-
-        # TODO: Puzzle in the 2d decoder weights!
-
         # the patch shape for 3d semantic segmentation training
         patch_shape = (16, 512, 512)
 
         # Finally, get the 3d UNETR model.
-        print(num_classes)
         model = SimpleUNETR3D(
             encoder=sam_3d.sam_model.image_encoder,
             out_channels=num_classes,
             final_activation="Sigmoid",
         )
+
+        # TODO: Puzzle in the 2d decoder weights!
+        if decoder_state:
+            # We remove `out_conv`-related parameters and let it initialize from scratch.
+            for k in list(state["decoder_state"].keys()):
+                if k.startswith("out_conv"):
+                    del decoder_state[k]
+
+            # Next, let's get the current state_dict
+            unetr_state_dict = model.state_dict()
+            for k, v in unetr_state_dict.items():
+                if not k.startswith("encoder"):  # Only touch stuff for everything besides image encoder.
+                    if k in decoder_state:  # Whether to allow reinitialization of params, if not found.
+                        unetr_state_dict[k] = decoder_state[k]
+                    else:  # Otherwise, allow it to reinitialize.
+                        warnings.warn(f"Could not find '{k}' in the pretrained state dict. Hence, we reinitialize it.")
+                        unetr_state_dict[k] = v
+
+            model.load_state_dict(unetr_state_dict)
 
     else:
         raise ValueError(f"'{dataset}' is not a valid dataset name or not part of our experiments yet.")
