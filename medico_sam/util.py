@@ -148,9 +148,9 @@ def get_medico_sam_model(
 
 def get_semantic_sam_model(
     model_type: str,
-    checkpoint_path: Union[os.PathLike, str],
     num_classes: int,
     ndim: int,
+    checkpoint_path: Optional[Union[os.PathLike, str]] = None,
     peft_kwargs: Optional[Dict] = None,
     device: Optional[Union[str, torch.device]] = None,
 ):

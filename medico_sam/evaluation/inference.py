@@ -14,7 +14,6 @@ from torch_em.util.prediction import predict_with_halo
 from torch_em.transform.generic import ResizeLongestSideInputs
 
 from micro_sam import util
-from micro_sam.training.util import ConvertToSemanticSamInputs
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
 
 from tukra.io import read_image, write_image
@@ -201,7 +200,7 @@ def _run_semantic_segmentation_for_image_3d(
 
     def preprocess(x):
         x = 255 * normalize(x)
-        x = np.stack([x] * 3)
+        x = np.stack([x] * 3, axis=0)
         return x
 
     # First, we reshape the YX dimension for 3d inputs
@@ -210,10 +209,7 @@ def _run_semantic_segmentation_for_image_3d(
 
     # Custom prepared function to infer per tile.
     def prediction_function(net, inp):
-        convert_inputs = ConvertToSemanticSamInputs()
-        batched_inputs = convert_inputs(inp[0], torch.zeros_like(inp[0]))
-        batched_outputs = net(batched_inputs, multimask_output=True)
-        masks = torch.stack([out["masks"][0] for out in batched_outputs])
+        masks = net(inp.squeeze(0))
         masks = torch.argmax(masks, dim=1)
         return masks
 
@@ -244,8 +240,8 @@ def run_semantic_segmentation_3d(
     image_paths: List[Union[str, os.PathLike]],
     prediction_dir: Union[str, os.PathLike],
     semantic_class_map: Dict[str, int],
-    patch_shape: Tuple[int, int, int] = (32, 512, 512),
-    halo: Tuple[int, int, int] = (8, 0, 0),
+    patch_shape: Tuple[int, int, int] = (16, 512, 512),
+    halo: Tuple[int, int, int] = (4, 0, 0),
     image_key: Optional[str] = None,
     is_multiclass: bool = False,
     make_channels_first: bool = False,

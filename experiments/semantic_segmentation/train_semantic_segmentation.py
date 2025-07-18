@@ -24,7 +24,6 @@ def finetune_semantic_sam(args):
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
 
-    # TODO: Refactor the code below in future to `get_semantic_sam_model` function.
     if dataset in DATASETS_2D:  # training 2d semantic segmentation models with additional segmentation decoder.
         # the patch shape for 2d semantic segmentation training
         patch_shape = (1024, 1024)
