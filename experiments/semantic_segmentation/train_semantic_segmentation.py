@@ -108,7 +108,7 @@ def finetune_semantic_sam(args):
 
     # all the stuff we need for training
     learning_rate = 1e-4
-    scheduler_kwargs = {"mode": "min", "factor": 0.9, "patience": 5}
+    scheduler_kwargs = {"mode": "min", "factor": 0.9, "patience": 10}
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
@@ -119,7 +119,7 @@ def finetune_semantic_sam(args):
         train_loader=train_loader,
         val_loader=val_loader,
         model=model,
-        device="cuda",
+        device=device,
         learning_rate=learning_rate,
         scheduler_kwargs=scheduler_kwargs,
         log_image_interval=10,
