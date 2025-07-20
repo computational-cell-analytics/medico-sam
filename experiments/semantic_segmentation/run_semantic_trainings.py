@@ -104,7 +104,8 @@ def submit_slurm(args, tmp_folder):
             dataset_name=per_dataset,
             save_root=os.path.join(
                 args.save_root,
-                "semantic_sam" + "_uno" if args.uno else "",
+                "semantic_sam" + ("_uno" if args.uno else ""),
+                "v2",  # NOTE: v2 models are the UNETR style models.
                 "lora_finetuning" if use_lora else "full_finetuning"
             ),
             checkpoint=checkpoint,
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
     parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models")
-    parser.add_argument("--iterations", type=int, default=int(1e5))
+    parser.add_argument("--iterations", type=int, default=int(5e4))
     parser.add_argument("--uno", action="store_true")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()

@@ -175,6 +175,7 @@ def get_semantic_sam_model(
             return_state=True,
             peft_kwargs=peft_kwargs,
             device=device,
+            flexible_load_checkpoint=True,
         )
 
         # Fetch the decoder_state, if available.

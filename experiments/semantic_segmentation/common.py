@@ -65,7 +65,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
         kwargs["transform"] = get_augmentations(ndim=2, transforms=["RandomHorizontalFlip"])
         train_loader = medical.get_oimhs_loader(
-            path=data_path, batch_size=8, split="train", resize_inputs=True, **kwargs
+            path=data_path, batch_size=6, split="train", resize_inputs=True, **kwargs
         )
         val_loader = medical.get_oimhs_loader(path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs)
 
@@ -75,21 +75,21 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "isic":
         kwargs["label_transform"] = LabelTrafoToBinary()
         train_loader = medical.get_isic_loader(
-            path=data_path, batch_size=8, split="train", resize_inputs=True, **kwargs
+            path=data_path, batch_size=6, split="train", resize_inputs=True, **kwargs
         )
         val_loader = medical.get_isic_loader(path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs)
 
     elif dataset_name == "dca1":
         kwargs["label_transform"] = LabelTrafoToBinary()
         train_loader = medical.get_dca1_loader(
-            path=data_path, batch_size=8, split="train", n_samples=400, resize_inputs=True, **kwargs
+            path=data_path, batch_size=6, split="train", n_samples=400, resize_inputs=True, **kwargs
         )
         val_loader = medical.get_dca1_loader(path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs)
 
     elif dataset_name == "cbis_ddsm":
         kwargs["label_transform"] = LabelTrafoToBinary()
         train_loader = medical.get_cbis_ddsm_loader(
-            path=data_path, batch_size=8, split="Train", task="Mass", resize_inputs=True, **kwargs
+            path=data_path, batch_size=6, split="Train", task="Mass", resize_inputs=True, **kwargs
         )
         val_loader = medical.get_cbis_ddsm_loader(
             path=data_path, batch_size=1, split="Val", task="Mass", resize_inputs=True, **kwargs
@@ -98,7 +98,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "piccolo":
         kwargs["label_transform"] = LabelTrafoToBinary()
         train_loader = medical.get_piccolo_loader(
-            path=data_path, batch_size=8, split="train", resize_inputs=True, **kwargs
+            path=data_path, batch_size=6, split="train", resize_inputs=True, **kwargs
         )
         val_loader = medical.get_piccolo_loader(
             path=data_path, batch_size=1, split="validation",  resize_inputs=True, **kwargs
@@ -107,7 +107,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     elif dataset_name == "hil_toothseg":
         kwargs["label_transform"] = LabelTrafoToBinary()
         train_loader = medical.get_hil_toothseg_loader(
-            path=data_path, batch_size=8, resize_inputs=True, split="train", **kwargs
+            path=data_path, batch_size=6, resize_inputs=True, split="train", **kwargs
         )
         val_loader = medical.get_hil_toothseg_loader(
             path=data_path, batch_size=1, resize_inputs=True, split="val", **kwargs
