@@ -10,7 +10,9 @@ import matplotlib.colors as mcolors
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/v1/"
 
 EXPERIMENTS = [
-    "vanilla", "generalist_8", "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
+    "vanilla",
+    "generalistv2-half", "generalistv2-full",  # "generalist_8",
+    "simplesam_8", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",
 ]
 
 MODEL = "vit_b"
@@ -36,7 +38,9 @@ DATASET_MAPS = {
 
 MODEL_MAPS = {
     "vanilla": "SAM",
-    "generalist_8": r"$\bf{MedicoSAM}$",
+    "generalistv2-half": "MedicoSAM*",
+    "generalistv2-full": r"$\bf{MedicoSAM}$",
+    # "generalist_8": r"$\bf{MedicoSAM}$",
     "simplesam_8": "Simple FT*",
     "medsam-self_8": "MedSAM*",
     "medsam": "MedSAM",
@@ -123,7 +127,12 @@ def _get_vanilla_sam_res_with_mask(dataset_name, get_all=False):
 
 def _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_all=False):
     res_per_class = []
-    for res_dir in glob(os.path.join(ROOT, experiment_name, dataset_name, MODEL, "results", "*")):
+
+    root_dir = ROOT
+    if experiment_name.startswith("generalist"):
+        root_dir = root_dir.replace("v1", "v3")
+
+    for res_dir in glob(os.path.join(root_dir, experiment_name, dataset_name, MODEL, "results", "*")):
         semantic_class = os.path.split(res_dir)[-1]
 
         ib_results = pd.read_csv(os.path.join(res_dir, "iterative_prompts_start_box.csv"))
@@ -181,7 +190,7 @@ def _make_per_experiment_plots(dataframes, datasets):
         _order = [
             "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8",
             "sam2.1",  # "sam2.0",
-            "generalist_8",
+            "generalistv2-half", "generalistv2-full",  # "generalist_8",
         ]
         df['experiment'] = pd.Categorical(df['experiment'], categories=_order, ordered=True)
         df = df.sort_values('experiment')
@@ -233,27 +242,27 @@ def _make_per_experiment_plots(dataframes, datasets):
     fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
 
     plt.text(
-        x=-28.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-32.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=24
     )
 
     plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.3, wspace=0.2)
-    plt.savefig("./fig_3_interactive_segmentation_per_dataset.png", bbox_inches="tight")
-    plt.savefig("./fig_3_interactive_segmentation_per_dataset.svg", bbox_inches="tight")
+    plt.savefig("./fig_3_interactive_segmentation_per_dataset.png", bbox_inches="tight", dpi=600)
+    plt.savefig("./fig_3_interactive_segmentation_per_dataset.svg", bbox_inches="tight", dpi=600)
     plt.close()
 
 
 def _make_per_model_average_plots(dataframes):
     all_data = pd.concat(dataframes, ignore_index=True)
     desired_experiments = [
-        'vanilla', 'generalist_8', 'medsam', "sam2.1",  # "sam2.0"
+        "vanilla", "generalistv2-full", "medsam", "sam2.1",  # "sam2.0"
     ]
     filtered_data = all_data[all_data['experiment'].isin(desired_experiments)]
 
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
     _order = [
-        "vanilla", "medsam", "sam2.1", "generalist_8"
+        "vanilla", "medsam", "sam2.1", "generalistv2-full"
     ]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
@@ -304,7 +313,8 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
     _order = [
-        "vanilla", "sam2.1", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8", "generalist_8"
+        "vanilla", "sam2.1", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8",
+        "generalistv2-half", "generalistv2-full",  # "generalist_8"
     ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)
     avg_df = avg_df.sort_values('experiment')
@@ -396,8 +406,8 @@ def _figure_3b():
 
 def main():
     _figure_1b()
-    _figure_3a()
-    _figure_3b()
+    # _figure_3a()
+    # _figure_3b()
 
 
 if __name__ == "__main__":
