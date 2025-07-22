@@ -2,8 +2,12 @@ import os
 from glob import glob
 from natsort import natsorted
 
+import torch
+
+from torch_em.util import load_model
+
 from medico_sam.evaluation import inference
-from medico_sam.util import get_medico_sam_model
+from medico_sam.util import get_semantic_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
 from util import get_default_arguments, _clear_files, MULTICLASS_SEMANTIC
@@ -29,13 +33,11 @@ DATASET_MAPPING_2D = {
 }
 
 
-def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, predictor, is_multiclass):
+def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, model, is_multiclass):
     prediction_root = os.path.join(exp_folder, "semantic_segmentation")
-    embedding_folder = None  # NOTE: computes embeddings on-the-fly now
     inference.run_semantic_segmentation(
-        predictor=predictor,
+        model=model,
         image_paths=image_paths,
-        embedding_dir=embedding_folder,
         prediction_dir=prediction_root,
         semantic_class_map=semantic_class_maps,
         is_multiclass=is_multiclass,
@@ -54,22 +56,31 @@ def get_2d_dataset_paths(dataset_name):
 def main():
     args = get_default_arguments()
 
+    checkpoint = args.checkpoint
+
+    # We do some simple checks: 1) verify whether the model was trained until the end of iterations,
+    # and 2) when was the best model achieved.
+
     image_paths, gt_paths, semantic_class_maps = get_2d_dataset_paths(dataset_name=args.dataset)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # get the predictor to perform inference
-    predictor = get_medico_sam_model(
-        model_type=args.model,
-        checkpoint_path=args.checkpoint,
-        flexible_load_checkpoint=True,
-        num_multimask_outputs=(len(semantic_class_maps.keys()) + 1),
-        peft_kwargs={"rank": args.lora_rank} if args.lora_rank is not None else None,
+    model = get_semantic_sam_model(
+        model_type="vit_b",
+        num_classes=len(semantic_class_maps) + 1,
+        ndim=2,
+        peft_kwargs=None if args.lora_rank is None else {"rank": args.lora_rank},
+        device=device,
     )
+    model = load_model(checkpoint, device="cuda", model=model)
+    model.to(device)
+    model.eval()
 
     prediction_root = _run_semantic_segmentation(
         image_paths=image_paths,
         semantic_class_maps=semantic_class_maps,
         exp_folder=args.experiment_folder,
-        predictor=predictor,
+        model=model,
         is_multiclass=args.dataset in MULTICLASS_SEMANTIC,
     )
 

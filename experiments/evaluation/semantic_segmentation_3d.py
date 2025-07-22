@@ -53,7 +53,7 @@ def main():
         model_type="vit_b",
         num_classes=len(semantic_class_maps) + 1,
         ndim=3,
-        peft_kwargs={"rank": args.lora_rank},
+        peft_kwargs=None if args.lora_rank is None else {"rank": args.lora_rank},
         device=device,
     )
     model = load_model(args.checkpoint, device="cuda", model=model)
