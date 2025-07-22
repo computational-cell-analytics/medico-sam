@@ -19,7 +19,7 @@ NNUNET_RESULTS = {
     "osic_pulmofib": [0.4984, 0.8858, 0.7850],
     # "leg_3d_us": [0.8943, 0.9059, 0.8865],
     "oasis": [0.9519, 0.9689, 0.9773, 0.9656],
-    # "micro_usp": [0.8402],
+    "micro_usp": [0.8402],
     "lgg_mri": [0.8875],
     "duke_liver": [0.9117],
 }
@@ -87,7 +87,6 @@ def get_results(dataset_name):
 def _make_per_dataset_plot():
     results = {}
     for dataset, nnunet_scores in NNUNET_RESULTS.items():
-        print(dataset)
         scores = get_results(dataset)
         results[dataset] = {"nnunet": np.mean(nnunet_scores)}
         for df_val in scores.iloc:
