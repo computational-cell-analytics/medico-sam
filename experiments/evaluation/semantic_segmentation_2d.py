@@ -58,9 +58,6 @@ def main():
 
     checkpoint = args.checkpoint
 
-    # We do some simple checks: 1) verify whether the model was trained until the end of iterations,
-    # and 2) when was the best model achieved.
-
     image_paths, gt_paths, semantic_class_maps = get_2d_dataset_paths(dataset_name=args.dataset)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 

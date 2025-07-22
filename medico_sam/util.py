@@ -201,7 +201,7 @@ def get_semantic_sam_model(
             device=device,
             n_classes=num_classes,
             image_size=512,  # HACK: Hard-coded to volumes of size (512, 512) in YX dimensions.
-            lora_rank=peft_kwargs.get("rank", None),
+            lora_rank=None if peft_kwargs is None else peft_kwargs.get("rank", None),
             model_type=model_type,
             checkpoint_path=checkpoint_path,
         )
