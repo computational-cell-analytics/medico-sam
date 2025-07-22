@@ -33,7 +33,7 @@ DATASETS_3D = [
 MODELS_ROOT = "/mnt/vast-nhr/projects/cidas/cca/models"
 
 
-def get_dataloaders(patch_shape, data_path, dataset_name):
+def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False):
     """This returns the medical data loaders implemented in torch_em:
     https://github.com/constantinpape/torch-em/blob/main/torch_em/data/datasets/medical/
 
@@ -43,6 +43,8 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
     i.e. a tensor of the same spatial shape as `x`, with each object mask having its own ID.
     Important: the ID 0 is reseved for background, and the IDs must be consecutive.
     """
+    from torch_em.transform.raw import standardize
+
     import micro_sam.training as sam_training
 
     from medico_sam.transform.raw import RawTrafoFor3dInputs, RawResizeTrafoFor3dInputs
@@ -54,7 +56,8 @@ def get_dataloaders(patch_shape, data_path, dataset_name):
         "shuffle": True,
         "pin_memory": True,
         "sampler": MinInstanceSampler(),
-        "raw_transform": sam_training.identity,
+        # NOTE: Below is done to normalize images for external models to train from scratch!
+        "raw_transform": standardize if benchmark_models else sam_training.identity,
         "download": True,
     }
 
@@ -226,3 +229,15 @@ def get_num_classes(dataset_name):
         raise ValueError
 
     return num_classes
+
+
+def get_in_channels(dataset):
+    if dataset in [
+        "hil_toothseg", "cbis_ddsm", "dca1",
+        "osic_pulmofib", "leg_3d_us", "micro_usp", "lgg_mri", "duke_liver", "oasis",
+    ]:
+        return 1
+    elif dataset in ["oimhs", "isic", "piccolo"]:
+        return 3
+    else:
+        raise ValueError
