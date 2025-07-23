@@ -24,7 +24,8 @@ def submit_slurm(tmp_folder, dry):
     """
     from common import DATASETS_2D, DATASETS_3D, MODELS_ROOT
 
-    datasets = DATASETS_2D  # TODO: Add 3d datasets once 2d results seem atleast okayish!
+    # datasets = [*DATASETS_3D, *DATASETS_2D]
+    datasets = DATASETS_3D
     save_root = os.path.join(MODELS_ROOT, "swinunetr")
 
     for dataset in datasets:
@@ -38,6 +39,7 @@ def submit_slurm(tmp_folder, dry):
 #SBATCH -A gzz0001
 #SBATCH -c 16
 #SBATCH --mem 64G
+#SBATCH --constraint=80gb
 #SBATCH --job-name=swinunetr_{dataset}
 
 source ~/.bashrc
@@ -65,7 +67,7 @@ def main():
     if os.path.exists(tmp_folder):
         shutil.rmtree(tmp_folder)
 
-    submit_slurm(tmp_folder, dry=True)
+    submit_slurm(tmp_folder, dry=False)
 
 
 if __name__ == "__main__":
