@@ -124,7 +124,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         )
         kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(patch_shape, switch_last_axes=True, binary=False)
         train_loader = medical.get_osic_pulmofib_loader(
-            path=data_path, batch_size=1, n_samples=100, split="train", resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, n_samples=100, split="train", resize_inputs=True, **kwargs,
         )
         val_loader = medical.get_osic_pulmofib_loader(
             path=data_path, batch_size=1, resize_inputs=True, split="val", **kwargs,
@@ -137,7 +137,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         )
         kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape, switch_last_axes=True)
         train_loader = medical.get_duke_liver_loader(
-            path=data_path, batch_size=1, split="train", resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
         )
         val_loader = medical.get_duke_liver_loader(
             path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs,
@@ -147,7 +147,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=5)
         kwargs["raw_transform"] = RawTrafoFor3dInputs(benchmark_models=benchmark_models)
         train_loader = medical.get_oasis_loader(
-            path=data_path, batch_size=1, split="train", resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
         )
         val_loader = medical.get_oasis_loader(path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs)
 
@@ -157,7 +157,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         )
         kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
         train_loader = medical.get_lgg_mri_loader(
-            path=data_path, batch_size=1, split="train", channels="flair", n_samples=100, resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, split="train", channels="flair", n_samples=100, resize_inputs=True, **kwargs,
         )
         val_loader = medical.get_lgg_mri_loader(
             path=data_path, batch_size=1, split="val", channels="flair", resize_inputs=True, **kwargs,
@@ -167,7 +167,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
         kwargs["raw_transform"] = RawTrafoFor3dInputs(benchmark_models=benchmark_models)
         train_loader = medical.get_leg_3d_us_loader(
-            path=data_path, batch_size=1, split="train", n_samples=100,  resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, split="train", n_samples=100,  resize_inputs=True, **kwargs,
         )
         val_loader = medical.get_leg_3d_us_loader(
             path=data_path, batch_size=1, split="val", n_samples=10, resize_inputs=True, **kwargs,
@@ -179,7 +179,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         )
         kwargs["label_transform"] = LabelResizeTrafoFor3dInputs(desired_shape=patch_shape)
         train_loader = medical.get_micro_usp_loader(
-            path=data_path, batch_size=1, split="train", n_samples=100, resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, split="train", n_samples=100, resize_inputs=True, **kwargs,
         )
         val_loader = medical.get_micro_usp_loader(
             path=data_path, batch_size=1, split="val", n_samples=10, resize_inputs=True, **kwargs,
@@ -190,7 +190,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         kwargs["raw_transform"] = RawTrafoFor3dInputs(benchmark_models=benchmark_models)
         kwargs["sampler"] = MinInstanceSampler(min_num_instances=4)
         train_loader = medical.get_curvas_loader(
-            path=data_path, batch_size=1, split="train", n_samples=200, resize_inputs=True, **kwargs)
+            path=data_path, batch_size=2, split="train", n_samples=200, resize_inputs=True, **kwargs)
         val_loader = medical.get_curvas_loader(
             path=data_path, batch_size=1, split="val", n_samples=200, resize_inputs=True, **kwargs,
         )
@@ -201,7 +201,7 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         kwargs["sampler"] = MinSemanticLabelForegroundSampler(semantic_ids=[2, 3, 6, 10], min_fraction=25)
         kwargs["label_transform"] = filter_valid_labels
         train_loader = medical.amos.get_amos_loader(
-            path=data_path, batch_size=1, split="train", resize_inputs=True, **kwargs,
+            path=data_path, batch_size=2, split="train", resize_inputs=True, **kwargs,
         )
         val_loader = medical.amos.get_amos_loader(
             path=data_path, batch_size=1, split="val", resize_inputs=True, **kwargs,

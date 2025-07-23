@@ -188,9 +188,9 @@ def _run_semantic_segmentation_for_image_3d(
     block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
 
     def preprocess(x):
-        x = 255 * normalize(x)
+        x = normalize(x) * 255
         x = np.stack([x] * 3, axis=0)
-        return x
+        return x    
 
     # First, we reshape the YX dimension for 3d inputs
     resize_transform = ResizeLongestSideInputs(target_shape=(512, 512))

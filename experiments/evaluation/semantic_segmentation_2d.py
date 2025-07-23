@@ -69,7 +69,7 @@ def main():
         peft_kwargs=None if args.lora_rank is None else {"rank": args.lora_rank},
         device=device,
     )
-    model = load_model(checkpoint, device="cuda", model=model)
+    model = load_model(checkpoint, device=device, model=model)
     model.to(device)
     model.eval()
 

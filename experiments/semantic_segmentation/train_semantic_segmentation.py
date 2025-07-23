@@ -23,43 +23,41 @@ def finetune_semantic_sam(args):
     model_type = args.model_type
     checkpoint_path = args.checkpoint  # override this to start training from a custom checkpoint
     num_classes = get_num_classes(dataset)  # 1 background class and 'n' semantic foreground classes
+    init_decoder_weights = args.init_decoder_weights  # initializes the pretrained decoder weights, if available.
 
     if dataset in DATASETS_2D:  # training 2d semantic segmentation models with additional segmentation decoder.
-        # the patch shape for 2d semantic segmentation training
-        patch_shape = (1024, 1024)
-
-        # Get 2d semantic segmentation model based on UNETR.
-        model = get_semantic_sam_model(
-            model_type=model_type,
-            checkpoint_path=checkpoint_path,
-            num_classes=num_classes,
-            ndim=2,
-            device=device,
-            peft_kwargs=None if args.lora_rank is None else {
-                "peft_module": peft_sam.LoRASurgery,  # the chosen PEFT method (LoRA) for finetuning
-                "rank": args.lora_rank,  # whether to use LoRA for finetuning and the rank used for LoRA
-            },
-        )
+        # Get parameters for 2d semantic segmentation model based on UNETR.
+        patch_shape = (1024, 1024)  # the patch shape for 2d semantic segmentation training
+        ndim = 2
+        peft_kwargs = None if args.lora_rank is None else {
+            "peft_module": peft_sam.LoRASurgery,  # the chosen PEFT method (LoRA) for finetuning
+            "rank": args.lora_rank,  # whether to use LoRA for finetuning and the rank used for LoRA
+        }
 
     elif dataset in DATASETS_3D:
-        # the patch shape for 3d semantic segmentation training
-        patch_shape = (16, 512, 512)
-
-        # Get 3d semantic segmentation model based on UNETR.
-        model = get_semantic_sam_model(
-            model_type=model_type,
-            checkpoint_path=checkpoint_path,
-            num_classes=num_classes,
-            ndim=3,
-            peft_kwargs={"rank": args.lora_rank},
-            device=device,
-        )
+        # Get parameters for 3d semantic segmentation model based on UNETR.
+        patch_shape = (16, 512, 512)  # the patch shape for 3d semantic segmentation training
+        ndim = 3
+        peft_kwargs = {"rank": args.lora_rank}
 
     else:
         raise ValueError(f"'{dataset}' is not a valid dataset name or not part of our experiments yet.")
 
+    model = get_semantic_sam_model(
+        model_type=model_type,
+        checkpoint_path=checkpoint_path,
+        num_classes=num_classes,
+        ndim=ndim,
+        peft_kwargs=peft_kwargs,
+        device=device,
+        init_decoder_weights=init_decoder_weights,
+    )
+
     model.to(device)
     checkpoint_name = f"{model_type}/{dataset}_semanticsam"
+
+    if init_decoder_weights:
+        checkpoint_name += "_init_decoder"
 
     # all the stuff we need for training
     learning_rate = 1e-4
@@ -115,6 +113,9 @@ def main():
     )
     parser.add_argument(
         "--dice_weight", type=float, default=0.5, help="The weight for dice loss with combined cross entropy loss."
+    )
+    parser.add_argument(
+        "--init_decoder_weights", action="store_true", help="Whether to initialize decoder weights."
     )
     args = parser.parse_args()
     finetune_semantic_sam(args)

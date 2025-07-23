@@ -22,8 +22,7 @@ class RawTrafoFor3dInputs:
         self.benchmark_models = benchmark_models
 
     def _normalize_inputs(self, raw):
-        raw = normalize(raw)
-        raw = raw * 255
+        raw = normalize(raw) * 255
         return raw
 
     def _set_channels_for_inputs(self, raw):

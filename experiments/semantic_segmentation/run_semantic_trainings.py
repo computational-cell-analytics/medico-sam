@@ -8,7 +8,7 @@ from common import DATASETS_2D, DATASETS_3D, MODELS_ROOT
 
 
 def write_batch_script(
-    out_path, dataset_name, save_root, checkpoint, ckpt_name, use_lora, dry, iterations, uno,
+    out_path, dataset_name, save_root, checkpoint, ckpt_name, use_lora, dry, iterations, uno, init_decoder,
 ):
     "Writing scripts with different medico-sam finetunings."
     batch_script = f"""#!/bin/bash
@@ -43,6 +43,9 @@ micromamba activate super \n"""
 
     if use_lora:  # whether to use lora for finetuning for semantic segmentation
         python_script += "--lora_rank 16 "
+
+    if init_decoder:
+        python_script += "--init_decoder_weights "
 
     batch_script += python_script  # let's add the python script to the bash script
 
@@ -91,30 +94,43 @@ def submit_slurm(args, tmp_folder):
             # MedSAM's original model.
             checkpoints["medsam"] = "medsam/original/medsam_vit_b.pth"
             # our finetuned models.
+            # NOTE: Next one model is the old medico-sam model.
             # checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt"  # noqa
+            # NOTE: Next one model is the new medico-sam (half data) generalist model.
+            checkpoints["medico-samv2-half"] = "medico-sam/v2/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu_0.5/model.pt"  # noqa
             checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt"  # noqa
 
     lora_choices = [True, False]
     for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(MODELS_ROOT, checkpoints[ckpt_name])
 
-        print(f"Running for experiment name '{ckpt_name}'")
-        write_batch_script(
-            out_path=get_batch_script_names(tmp_folder),
-            dataset_name=per_dataset,
-            save_root=os.path.join(
-                args.save_root,
-                "semantic_sam" + ("_uno" if args.uno else ""),
-                "v2",  # NOTE: v2 models are the UNETR style models.
-                "lora_finetuning" if use_lora else "full_finetuning"
-            ),
-            checkpoint=checkpoint,
-            ckpt_name=ckpt_name,
-            use_lora=use_lora,
-            dry=args.dry,
-            iterations=args.iterations,
-            uno=args.uno,
-        )
+        init_decoder_weights = ckpt_name.startswith("medico-sam")
+
+        def _write_script(init_decoder=False):
+            print(
+                f"Running for experiment name '{ckpt_name}'" + (" with 'init decoder'" if init_decoder else "")
+            )
+            write_batch_script(
+                out_path=get_batch_script_names(tmp_folder),
+                dataset_name=per_dataset,
+                save_root=os.path.join(
+                    args.save_root,
+                    "semantic_sam" + ("_uno" if args.uno else ""),
+                    "v2",  # NOTE: v2 models are the UNETR style models.
+                    "lora_finetuning" if use_lora else "full_finetuning"
+                ),
+                checkpoint=checkpoint,
+                ckpt_name=ckpt_name,
+                use_lora=use_lora,
+                dry=args.dry,
+                iterations=args.iterations,
+                uno=args.uno,
+                init_decoder=init_decoder,
+            )
+
+        _write_script()
+        if init_decoder_weights:
+            _write_script(init_decoder=True)
 
 
 def main(args):

@@ -153,6 +153,7 @@ def get_semantic_sam_model(
     checkpoint_path: Optional[Union[os.PathLike, str]] = None,
     peft_kwargs: Optional[Dict] = None,
     device: Optional[Union[str, torch.device]] = None,
+    init_decoder_weights: bool = True,
 ):
     """Get the Segment Anything Model for semantic segmentation (with additional convolution decoder attached).
 
@@ -163,6 +164,7 @@ def get_semantic_sam_model(
         num_classes: ...
         peft_kwargs: ...
         device: ...
+        init_decoder_weights: Whether to initialize pretrained decoder weights for semantic segmentation.
 
     Returns:
         ...
@@ -178,14 +180,17 @@ def get_semantic_sam_model(
             flexible_load_checkpoint=True,
         )
 
-        # Fetch the decoder_state, if available.
-        decoder_state = state.get("decoder_state", None)
+        if init_decoder_weights:
+            # Fetch the decoder_state, if available.
+            decoder_state = state.get("decoder_state", None)
 
-        # We remove `out_conv`-related parameters and let it initialize from scratch.
-        if decoder_state:
-            for k in list(state["decoder_state"].keys()):
-                if k.startswith("out_conv"):
-                    del decoder_state[k]
+            # We remove `out_conv`-related parameters and let it initialize from scratch.
+            if decoder_state:
+                for k in list(state["decoder_state"].keys()):
+                    if k.startswith("out_conv"):
+                        del decoder_state[k]
+        else:
+            decoder_state = None
 
         # Finally, get the 2d UNETR model.
         model = get_unetr(
@@ -212,8 +217,6 @@ def get_semantic_sam_model(
         else:
             state, _ = _load_checkpoint(checkpoint_path=checkpoint_path)
 
-        decoder_state = state.get("decoder_state", None)
-
         # Finally, get the 3d UNETR model.
         model = SimpleUNETR3D(
             encoder=sam_3d.sam_model.image_encoder,
@@ -221,24 +224,29 @@ def get_semantic_sam_model(
             final_activation="Sigmoid",
         )
 
-        # Puzzling in the pretrained 2d decoder weights!
-        if decoder_state:
-            # We remove `out_conv`-related parameters and let it initialize from scratch.
-            for k in list(state["decoder_state"].keys()):
-                if k.startswith("out_conv"):
-                    del decoder_state[k]
+        if init_decoder_weights:
+            decoder_state = state.get("decoder_state", None)
 
-            # Next, let's get the current state_dict
-            unetr_state_dict = model.state_dict()
-            for k, v in unetr_state_dict.items():
-                if not k.startswith("encoder"):  # Only touch stuff for everything besides image encoder.
-                    if k in decoder_state:  # Whether to allow reinitialization of params, if not found.
-                        unetr_state_dict[k] = decoder_state[k]
-                    else:  # Otherwise, allow it to reinitialize.
-                        warnings.warn(f"Could not find '{k}' in the pretrained state dict. Hence, we reinitialize it.")
-                        unetr_state_dict[k] = v
+            # Puzzling in the pretrained 2d decoder weights!
+            if decoder_state:
+                # We remove `out_conv`-related parameters and let it initialize from scratch.
+                for k in list(state["decoder_state"].keys()):
+                    if k.startswith("out_conv"):
+                        del decoder_state[k]
 
-            model.load_state_dict(unetr_state_dict)
+                # Next, let's get the current state_dict
+                unetr_state_dict = model.state_dict()
+                for k, v in unetr_state_dict.items():
+                    if not k.startswith("encoder"):  # Only touch stuff for everything besides image encoder.
+                        if k in decoder_state:  # Whether to allow reinitialization of params, if not found.
+                            unetr_state_dict[k] = decoder_state[k]
+                        else:  # Otherwise, allow it to reinitialize.
+                            warnings.warn(
+                                f"Could not find '{k}' in the pretrained state dict. Hence, we reinitialize it."
+                            )
+                            unetr_state_dict[k] = v
+
+                model.load_state_dict(unetr_state_dict)
 
     else:
         raise ValueError("Seems like an invalid ndim value.")

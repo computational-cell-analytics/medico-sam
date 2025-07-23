@@ -38,7 +38,7 @@ DATASET_MAPS = {
     "oasis": "OASIS (Brain Tissue in MRI)",
     "micro_usp": "MicroUSP (Prostate in Micro-Ultrasound)",
     "lgg_mri": "LGG MRI (Low-Grade Glioma in Brain MRI)",
-    "duke_liver": "Duke Liver (Liver in MRI)",
+    "duke_liver": "DLDS (Liver in MRI)",
 }
 
 DATASETS_2D = ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]
