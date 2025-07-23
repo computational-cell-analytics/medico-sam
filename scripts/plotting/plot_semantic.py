@@ -17,7 +17,7 @@ NNUNET_RESULTS = {
 
     # 3d
     "osic_pulmofib": [0.4984, 0.8858, 0.7850],
-    # "leg_3d_us": [0.8943, 0.9059, 0.8865],
+    "leg_3d_us": [0.8943, 0.9059, 0.8865],
     "oasis": [0.9519, 0.9689, 0.9773, 0.9656],
     "micro_usp": [0.8402],
     "lgg_mri": [0.8875],
@@ -161,7 +161,7 @@ def _make_per_dataset_plot():
         ax.title.set_color("#212427")
 
     plt.text(
-        x=-2.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20
+        x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
     )
 
     plt.subplots_adjust(hspace=0.45, wspace=0.1)

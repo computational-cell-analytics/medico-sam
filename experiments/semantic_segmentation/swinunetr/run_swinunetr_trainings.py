@@ -24,8 +24,7 @@ def submit_slurm(tmp_folder, dry):
     """
     from common import DATASETS_2D, DATASETS_3D, MODELS_ROOT
 
-    # datasets = [*DATASETS_3D, *DATASETS_2D]
-    datasets = DATASETS_3D
+    datasets = [*DATASETS_3D, *DATASETS_2D]
     save_root = os.path.join(MODELS_ROOT, "swinunetr")
 
     for dataset in datasets:
