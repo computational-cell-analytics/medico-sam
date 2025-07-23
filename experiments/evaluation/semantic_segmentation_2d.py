@@ -55,7 +55,6 @@ def get_2d_dataset_paths(dataset_name):
 
 def main():
     args = get_default_arguments()
-
     checkpoint = args.checkpoint
 
     image_paths, gt_paths, semantic_class_maps = get_2d_dataset_paths(dataset_name=args.dataset)

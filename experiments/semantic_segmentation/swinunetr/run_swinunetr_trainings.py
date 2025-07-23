@@ -30,7 +30,7 @@ def submit_slurm(tmp_folder, dry):
     for dataset in datasets:
         # Now, get the template batch script.
         batch_script = f"""#!/bin/bash
-#SBATCH -t 2-00:00:00
+#SBATCH -t 4-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH -p grete:shared
@@ -39,6 +39,7 @@ def submit_slurm(tmp_folder, dry):
 #SBATCH -c 16
 #SBATCH --mem 64G
 #SBATCH --constraint=80gb
+#SBATCH --qos=96h
 #SBATCH --job-name=swinunetr_{dataset}
 
 source ~/.bashrc

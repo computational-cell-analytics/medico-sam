@@ -24,6 +24,24 @@ NNUNET_RESULTS = {
     "duke_liver": [0.9117],
 }
 
+SWINUNETR_RESULTS = {
+    # 2d
+    "oimhs": ...,
+    "isic": ...,
+    "dca1": ...,
+    "cbis_ddsm": ...,
+    "piccolo": ...,
+    "hil_toothseg": ...,
+
+    # 3d
+    "osic_pulmofib": ...,
+    "leg_3d_us": ...,
+    "oasis": ...,
+    "micro_usp": ...,
+    "lgg_mri": ...,
+    "duke_liver": ...,
+}
+
 DATASET_MAPS = {
     # 2d
     "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",

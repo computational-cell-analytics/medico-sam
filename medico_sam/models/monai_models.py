@@ -2,6 +2,8 @@ from typing import Tuple
 
 import torch.nn as nn
 
+from monai.networks.nets import SwinUNETR
+
 
 def get_monai_models(
     image_size: Tuple[int, ...],
@@ -20,15 +22,13 @@ def get_monai_models(
     Returns:
         The SwinUNETR model.
     """
-    from monai.networks.nets import SwinUNETR
-
     model = SwinUNETR(
         img_size=image_size,
         in_channels=in_channels,
         out_channels=out_channels,
         feature_size=48,
         spatial_dims=ndim,  # Defines the architecture's input type.
-        use_checkpoint=False,
+        use_checkpoint=True,
     )
 
     return model

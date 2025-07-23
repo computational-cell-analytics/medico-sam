@@ -190,7 +190,7 @@ def _run_semantic_segmentation_for_image_3d(
     def preprocess(x):
         x = normalize(x) * 255
         x = np.stack([x] * 3, axis=0)
-        return x    
+        return x
 
     # First, we reshape the YX dimension for 3d inputs
     resize_transform = ResizeLongestSideInputs(target_shape=(512, 512))
