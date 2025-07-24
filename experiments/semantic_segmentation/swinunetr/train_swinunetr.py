@@ -23,7 +23,7 @@ def train_swinunetr(args):
     The scripts below are inspired from
     https://github.com/Project-MONAI/tutorials/blob/main/3d_segmentation/swin_unetr_btcv_segmentation_3d.ipynb.
 
-    NOTE: I just copy-pasted the code because I didn't want to optimize the code / make it better at all.
+    NOTE: I just copy-pasted the code. I didn't want to optimize the code / make it better at all.
     """
     from common import get_num_classes, DATASETS_2D, DATASETS_3D, get_dataloaders, get_in_channels
 
