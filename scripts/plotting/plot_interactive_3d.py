@@ -23,7 +23,8 @@ MODEL_MAPS = {
     "sam2.1": "SAM2 (2.1)",
     "medsam": "MedSAM",
     "simplesam": "SimpleFT",
-    "medico-sam-8g": r"$\bf{MedicoSAM}$",
+    # "medico-sam-8g": r"$\bf{MedicoSAM}$",
+    "medico-samv2-full": r"$\bf{MedicoSAM}$",
 }
 
 

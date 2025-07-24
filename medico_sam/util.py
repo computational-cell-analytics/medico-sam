@@ -2,8 +2,9 @@
 """
 
 import os
+import warnings
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 
 import pooch
 
@@ -11,6 +12,12 @@ import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
 from segment_anything import SamPredictor
+
+from micro_sam.instance_segmentation import get_unetr
+from micro_sam.util import get_sam_model, _load_checkpoint
+from micro_sam.models import sam_3d_wrapper
+
+from .models.unetr3d import SimpleUNETR3D
 
 
 # this is the default model used in medico_sam
@@ -137,6 +144,114 @@ def get_medico_sam_model(
         model_kwargs = {**model_kwargs, **kwargs}
 
     return _fetch_model(**model_kwargs)
+
+
+def get_semantic_sam_model(
+    model_type: str,
+    num_classes: int,
+    ndim: int,
+    checkpoint_path: Optional[Union[os.PathLike, str]] = None,
+    peft_kwargs: Optional[Dict] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    init_decoder_weights: bool = True,
+):
+    """Get the Segment Anything Model for semantic segmentation (with additional convolution decoder attached).
+
+    Args:
+        model_type: ...
+        checkpoint_path: ...
+        ndim: ...
+        num_classes: ...
+        peft_kwargs: ...
+        device: ...
+        init_decoder_weights: Whether to initialize pretrained decoder weights for semantic segmentation.
+
+    Returns:
+        ...
+    """
+    if ndim == 2:
+        # Get the basic 2d UNETR model.
+        predictor, state = get_sam_model(
+            model_type=model_type,
+            checkpoint_path=checkpoint_path,
+            return_state=True,
+            peft_kwargs=peft_kwargs,
+            device=device,
+            flexible_load_checkpoint=True,
+        )
+
+        if init_decoder_weights:
+            # Fetch the decoder_state, if available.
+            decoder_state = state.get("decoder_state", None)
+
+            # We remove `out_conv`-related parameters and let it initialize from scratch.
+            if decoder_state:
+                for k in list(state["decoder_state"].keys()):
+                    if k.startswith("out_conv"):
+                        del decoder_state[k]
+        else:
+            decoder_state = None
+
+        # Finally, get the 2d UNETR model.
+        model = get_unetr(
+            image_encoder=predictor.model.image_encoder,
+            decoder_state=decoder_state,
+            out_channels=num_classes,
+            flexible_load_checkpoint=True,
+        )
+
+    elif ndim == 3:
+        # Get the 3d wrapped SAM image encoder.
+        sam_3d = sam_3d_wrapper.get_sam_3d_model(
+            device=device,
+            n_classes=num_classes,
+            image_size=512,  # HACK: Hard-coded to volumes of size (512, 512) in YX dimensions.
+            lora_rank=None if peft_kwargs is None else peft_kwargs.get("rank", None),
+            model_type=model_type,
+            checkpoint_path=checkpoint_path,
+        )
+
+        # Fetch the decoder_state, if available.
+        if checkpoint_path is None:
+            state = {}
+        else:
+            state, _ = _load_checkpoint(checkpoint_path=checkpoint_path)
+
+        # Finally, get the 3d UNETR model.
+        model = SimpleUNETR3D(
+            encoder=sam_3d.sam_model.image_encoder,
+            out_channels=num_classes,
+            final_activation="Sigmoid",
+        )
+
+        if init_decoder_weights:
+            decoder_state = state.get("decoder_state", None)
+
+            # Puzzling in the pretrained 2d decoder weights!
+            if decoder_state:
+                # We remove `out_conv`-related parameters and let it initialize from scratch.
+                for k in list(state["decoder_state"].keys()):
+                    if k.startswith("out_conv"):
+                        del decoder_state[k]
+
+                # Next, let's get the current state_dict
+                unetr_state_dict = model.state_dict()
+                for k, v in unetr_state_dict.items():
+                    if not k.startswith("encoder"):  # Only touch stuff for everything besides image encoder.
+                        if k in decoder_state:  # Whether to allow reinitialization of params, if not found.
+                            unetr_state_dict[k] = decoder_state[k]
+                        else:  # Otherwise, allow it to reinitialize.
+                            warnings.warn(
+                                f"Could not find '{k}' in the pretrained state dict. Hence, we reinitialize it."
+                            )
+                            unetr_state_dict[k] = v
+
+                model.load_state_dict(unetr_state_dict)
+
+    else:
+        raise ValueError("Seems like an invalid ndim value.")
+
+    return model
 
 
 #

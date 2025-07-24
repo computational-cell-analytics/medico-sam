@@ -24,6 +24,24 @@ NNUNET_RESULTS = {
     "duke_liver": [0.9117],
 }
 
+SWINUNETR_RESULTS = {
+    # 2d
+    "oimhs": ...,
+    "isic": ...,
+    "dca1": ...,
+    "cbis_ddsm": ...,
+    "piccolo": ...,
+    "hil_toothseg": ...,
+
+    # 3d
+    "osic_pulmofib": ...,
+    "leg_3d_us": ...,
+    "oasis": ...,
+    "micro_usp": ...,
+    "lgg_mri": ...,
+    "duke_liver": ...,
+}
+
 DATASET_MAPS = {
     # 2d
     "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
@@ -38,7 +56,7 @@ DATASET_MAPS = {
     "oasis": "OASIS (Brain Tissue in MRI)",
     "micro_usp": "MicroUSP (Prostate in Micro-Ultrasound)",
     "lgg_mri": "LGG MRI (Low-Grade Glioma in Brain MRI)",
-    "duke_liver": "Duke Liver (Liver in MRI)",
+    "duke_liver": "DLDS (Liver in MRI)",
 }
 
 DATASETS_2D = ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]
@@ -49,15 +67,15 @@ MODEL_MAPS = {
     "nnunet": "nnUNet",
     "full/sam": "SAM",
     "lora/sam": "SAM\n(LoRA)",
-    "full/medico-sam-8g": "MedicoSAM",
-    "lora/medico-sam-8g": "MedicoSAM\n(LoRA)",
+    "full/medico-samv2-full": "MedicoSAM",
+    "lora/medico-samv2-full": "MedicoSAM\n(LoRA)",
     "full/medsam": "MedSAM",
     "lora/medsam": "MedSAM\n(LoRA)",
     "full/simplesam": "Simple FT",
     "lora/simplesam": "Simple FT\n(LoRA)",
 }
 
-ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam/v2"
 
 
 def get_results(dataset_name):
@@ -105,7 +123,7 @@ def _make_per_dataset_plot():
             "full/sam", "lora/sam",
             "full/medsam", "lora/medsam",
             "full/simplesam", "lora/simplesam",
-            "full/medico-sam-8g", "lora/medico-sam-8g",
+            "full/medico-samv2-full", "lora/medico-samv2-full",
         ]
         scores, neu_methods_list = [], []
         for _method in methods_list:
@@ -122,8 +140,8 @@ def _make_per_dataset_plot():
             bar_colors[idx] = top_colors[rank]
             edge_colors[idx] = "none"
 
-        if "full/medico-sam-8g" in neu_methods_list:
-            index = neu_methods_list.index("full/medico-sam-8g")
+        if "full/medico-samv2-full" in neu_methods_list:
+            index = neu_methods_list.index("full/medico-samv2-full")
             if index not in sorted_indices[:3]:
                 edge_colors[index] = "black"
                 edge_styles[index] = "dashed"
@@ -161,7 +179,7 @@ def _make_per_dataset_plot():
         ax.title.set_color("#212427")
 
     plt.text(
-        x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20
+        x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
     )
 
     plt.subplots_adjust(hspace=0.45, wspace=0.1)
@@ -176,7 +194,7 @@ def _plot_absolute_mean_per_experiment(dim):
         "lora/sam", "full/sam",
         "lora/medsam", "full/medsam",
         "lora/simplesam", "full/simplesam",
-        "lora/medico-sam-8g", "full/medico-sam-8g",
+        "lora/medico-samv2-full", "full/medico-samv2-full",
     ]
 
     results = {}
@@ -254,8 +272,8 @@ def main():
     _make_per_dataset_plot()
 
     # For figure 1
-    _plot_absolute_mean_per_experiment(dim="2d")
-    _plot_absolute_mean_per_experiment(dim="3d")
+    # _plot_absolute_mean_per_experiment(dim="2d")
+    # _plot_absolute_mean_per_experiment(dim="3d")
 
 
 if __name__ == "__main__":

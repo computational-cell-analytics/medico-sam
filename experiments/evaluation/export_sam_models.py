@@ -8,7 +8,8 @@ import torch.version
 
 
 def export_sam_models(checkpoint_path):
-    prefix = "module.sam."  # DDP prefix to be filtered out.
+    enc_prefix = "module.sam."  # DDP prefix to be filtered out.
+    dec_prefix = "module."
 
     # 1. Load model state.
     # 2. Convert weight keys to match the sam expectation.
@@ -16,8 +17,12 @@ def export_sam_models(checkpoint_path):
     decoder_state = state["decoder_state"]
 
     # Make them dictionaries.
-    model_state = OrderedDict([(k[len(prefix):] if k.startswith(prefix) else k, v) for k, v in model_state.items()])
-    decoder_state = OrderedDict([(k[len(prefix):] if k.startswith(prefix) else k, v) for k, v in decoder_state.items()])
+    model_state = OrderedDict(
+        [(k[len(enc_prefix):] if k.startswith(enc_prefix) else k, v) for k, v in model_state.items()]
+    )
+    decoder_state = OrderedDict(
+        [(k[len(dec_prefix):] if k.startswith(dec_prefix) else k, v) for k, v in decoder_state.items()]
+    )
 
     # And now save all stuff
     torch.save(

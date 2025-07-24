@@ -23,7 +23,6 @@ def _get_slurm_template(job_name, env_name):
 #SBATCH -c 16
 #SBATCH --mem 64G
 #SBATCH -p grete:shared
-#SBATCH --constraint=80gb
 #SBATCH -G A100:1
 #SBATCH -A gzz0001
 #SBATCH --qos=96h
