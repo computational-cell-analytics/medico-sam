@@ -66,13 +66,11 @@ DATASETS_3D = ["osic_pulmofib", "leg_3d_us", "oasis", "micro_usp", "lgg_mri", "d
 MODEL_MAPS = {
     "nnunet": "nnUNet",
     "full/sam": "SAM",
-    "lora/sam": "SAM\n(LoRA)",
-    "full/medico-samv2-full": "MedicoSAM",
-    "lora/medico-samv2-full": "MedicoSAM\n(LoRA)",
+    "full/medico-samv2-half/wo_decoder": "MedicoSAM*",
+    "full/medico-samv2-full/w_decoder": "MedicoSAM (d)",  # TODO: update connotations.
+    "full/medico-samv2-full/wo_decoder": "MedicoSAM",
     "full/medsam": "MedSAM",
-    "lora/medsam": "MedSAM\n(LoRA)",
-    "full/simplesam": "Simple FT",
-    "lora/simplesam": "Simple FT\n(LoRA)",
+    "full/simplesam": "Simple FT*",
 }
 
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam/v2"
@@ -80,7 +78,7 @@ ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam/v2"
 
 def get_results(dataset_name):
     all_res, all_comb_names = [], []
-    for rpath in sorted(glob(os.path.join(ROOT, "*", "*", "inference", dataset_name, "results", "**", "*.csv"))):
+    for rpath in sorted(glob(os.path.join(ROOT, "*", "*", "inference", dataset_name, "*", "results", "**", "*.csv"))):
         psplits = rpath[len(ROOT) + 1:].rsplit("/")
         ft_name, mname = psplits[0], psplits[1]
         ft_name = ft_name.split("_")[0]
@@ -89,14 +87,18 @@ def get_results(dataset_name):
             continue
 
         res = pd.read_csv(rpath)
-        combination_name = f"{ft_name}/{mname}"
         score = res.iloc[0]["dice"]
-        if f"{ft_name}_{mname}" in all_comb_names:
-            idx = all_comb_names.index(f"{ft_name}_{mname}")
+
+        combination_name = f"{ft_name}/{mname}"
+        if mname.startswith("medico-sam"):
+            combination_name += f"/{psplits[-4]}"
+
+        if combination_name in all_comb_names:
+            idx = all_comb_names.index(combination_name)
             all_res[idx].at[0, "dice"].append(score)
         else:
             all_res.append(pd.DataFrame.from_dict([{"name": combination_name, "dice": [score]}]))
-            all_comb_names.append(f"{ft_name}_{mname}")
+            all_comb_names.append(combination_name)
 
     all_res = pd.concat(all_res, ignore_index=True)
     return all_res
@@ -120,10 +122,12 @@ def _make_per_dataset_plot():
 
     for ax, (dataset, methods) in zip(axes, results.items()):
         methods_list = [
-            "full/sam", "lora/sam",
-            "full/medsam", "lora/medsam",
-            "full/simplesam", "lora/simplesam",
-            "full/medico-samv2-full", "lora/medico-samv2-full",
+            "full/sam",
+            "full/medsam",
+            "full/simplesam",
+            "full/medico-samv2-half/wo_decoder",
+            "full/medico-samv2-full/wo_decoder",
+            "full/medico-samv2-full/w_decoder",
         ]
         scores, neu_methods_list = [], []
         for _method in methods_list:
@@ -140,8 +144,8 @@ def _make_per_dataset_plot():
             bar_colors[idx] = top_colors[rank]
             edge_colors[idx] = "none"
 
-        if "full/medico-samv2-full" in neu_methods_list:
-            index = neu_methods_list.index("full/medico-samv2-full")
+        if "full/medico-samv2-full/w_decoder" in neu_methods_list:
+            index = neu_methods_list.index("full/medico-samv2-full/w_decoder")
             if index not in sorted_indices[:3]:
                 edge_colors[index] = "black"
                 edge_styles[index] = "dashed"
@@ -166,7 +170,7 @@ def _make_per_dataset_plot():
         ax.tick_params(axis='y', labelsize=14)
 
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
-            if method == "full/medico-sam-8g":
+            if method == "full/medico-samv2-full/w_decoder":
                 label.set_fontweight("bold")
 
         fontdict = {"fontsize": 18}
@@ -179,7 +183,7 @@ def _make_per_dataset_plot():
         ax.title.set_color("#212427")
 
     plt.text(
-        x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
+        x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
     )
 
     plt.subplots_adjust(hspace=0.45, wspace=0.1)
@@ -191,10 +195,11 @@ def _make_per_dataset_plot():
 def _plot_absolute_mean_per_experiment(dim):
     methods = [
         "nnunet",
-        "lora/sam", "full/sam",
-        "lora/medsam", "full/medsam",
-        "lora/simplesam", "full/simplesam",
-        "lora/medico-samv2-full", "full/medico-samv2-full",
+        "full/sam",  # "lora/sam",
+        "full/medsam",  # "lora/medsam",
+        "full/simplesam",  # "lora/simplesam",
+        "full/medico-samv2-full",  # "lora/medico-samv2-full",
+        "full/medico-samv2-half",  # "lora/medico-samv2-half",
     ]
 
     results = {}

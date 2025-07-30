@@ -21,7 +21,6 @@ def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lor
 #SBATCH -A gzz0001
 #SBATCH -c 16
 #SBATCH --mem 64G
-#SBATCH --constraint=80gb
 #SBATCH --job-name=semsam_{dataset}
 
 source ~/.bashrc
@@ -71,11 +70,18 @@ def submit_slurm(args):
     lora_choices = [True, False]
     model_types = [
         "sam",
-        "medico-samv2-full",  # "medico-sam-8g", "medico-sam-1g",
+        "medico-samv2-full",
+        "medico-samv2-half",  # "medico-sam-8g", "medico-sam-1g",
         "simplesam", "medsam"
     ]
+    init_decoder_choices = [True, False]
 
-    for (per_dataset, model_type, use_lora) in itertools.product(datasets, model_types, lora_choices):
+    for (per_dataset, model_type, use_lora, init_decoder) in itertools.product(
+        datasets, model_types, lora_choices, init_decoder_choices
+    ):
+        if init_decoder and not model_type.startswith("medico-sam"):
+            continue
+
         mchoice = "vit_b"
 
         base_dir = os.path.join(
@@ -85,7 +91,11 @@ def submit_slurm(args):
             "lora_finetuning" if use_lora else "full_finetuning",
             model_type
         )
-        checkpoint = os.path.join(base_dir, "checkpoints", mchoice, f"{per_dataset}_semanticsam", "best.pt")
+        checkpoint = os.path.join(
+            base_dir, "checkpoints", mchoice,
+            f"{per_dataset}_semanticsam" + ("_init_decoder" if init_decoder else ""),
+            "best.pt"
+        )
         assert os.path.exists(checkpoint), checkpoint
 
         print(f"Running for {per_dataset}: {model_type}")
@@ -93,7 +103,9 @@ def submit_slurm(args):
             dataset=per_dataset,
             out_path=get_batch_script_names(tmp_folder),
             checkpoint=checkpoint,
-            experiment_folder=os.path.join(base_dir, "inference", per_dataset),
+            experiment_folder=os.path.join(
+                base_dir, "inference", per_dataset, ("w_decoder" if init_decoder else "wo_decoder")
+            ),
             use_lora=use_lora,
             dry=args.dry,
         )
