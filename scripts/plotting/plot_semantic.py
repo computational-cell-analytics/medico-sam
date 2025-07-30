@@ -69,7 +69,7 @@ MODEL_MAPS = {
     "swinunetr": "SwinUNETR",
     "full/sam": "SAM",
     "full/medico-samv2-half/wo_decoder": "MedicoSAM*",
-    "full/medico-samv2-full/w_decoder": "MedicoSAM (d)",  # TODO: update connotations.
+    "full/medico-samv2-full/w_decoder": r"MedicoSAM$_{\mathrm{Dec}}$",
     "full/medico-samv2-full/wo_decoder": "MedicoSAM",
     "full/medsam": "MedSAM",
     "full/simplesam": "Simple FT*",
@@ -114,7 +114,8 @@ def _make_per_dataset_plot():
         for df_val in scores.iloc:
             name = df_val["name"]
             dice = df_val["dice"]
-            results[dataset][name] = np.mean(dice)
+            score = np.mean(dice)
+            results[dataset][name] = score
 
     fig, axes = plt.subplots(4, 3, figsize=(35, 30))
     axes = axes.flatten()
@@ -198,15 +199,17 @@ def _make_per_dataset_plot():
 def _plot_absolute_mean_per_experiment(dim):
     methods = [
         "nnunet",
-        "full/sam",  # "lora/sam",
-        "full/medsam",  # "lora/medsam",
-        "full/simplesam",  # "lora/simplesam",
-        "full/medico-samv2-full",  # "lora/medico-samv2-full",
-        "full/medico-samv2-half",  # "lora/medico-samv2-half",
+        "swinunetr",
+        "full/sam",
+        "full/medsam",
+        "full/simplesam",
+        "full/medico-samv2-half/wo_decoder",
+        "full/medico-samv2-full/wo_decoder",
+        "full/medico-samv2-full/w_decoder",
     ]
 
     results = {}
-    for dataset, nnunet_scores in NNUNET_RESULTS.items():
+    for (dataset, nnunet_scores), (_, swinunetr_scores) in zip(NNUNET_RESULTS.items(), SWINUNETR_RESULTS.items()):
         if dim == "3d" and dataset not in DATASETS_3D:
             continue
 
@@ -214,25 +217,30 @@ def _plot_absolute_mean_per_experiment(dim):
             continue
 
         scores = get_results(dataset)
-        for method in methods:
-            if method == "nnunet":
-                res = np.mean(nnunet_scores)
-            else:
-                res = scores.loc[scores["name"] == method].iloc[0]["dice"]
-                res = np.mean(res)
+        results[dataset] = {"nnunet": np.mean(nnunet_scores), "swinunetr": np.mean(swinunetr_scores)}
+        for df_val in scores.iloc:
+            name = df_val["name"]
+            dice = df_val["dice"]
+            score = np.mean(dice)
+            results[dataset][name] = score
 
-            if method in results:
-                results[method] = np.mean([results[method], res])
-            else:
-                results[method] = res
+    # Calculate average over methods.
+    method_sums = {}
+    method_counts = {}
+
+    for dataset, curr_methods in results.items():
+        for method, score in curr_methods.items():
+            method_sums[method] = method_sums.get(method, 0) + score
+            method_counts[method] = method_counts.get(method, 0) + 1
+
+    method_avgs = {m: method_sums[m] / method_counts[m] for m in method_sums}
 
     fig, ax = plt.subplots(figsize=(22, 15))
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
-    sorted_methods = sorted(results, key=results.get, reverse=True)
-    top_methods = sorted_methods[:3]  # get the top 3 methods.
+    top_methods = sorted(methods, key=method_avgs.get, reverse=True)[:3]  # get the top 3 methods.
 
-    means = [results[_method] for _method in methods]
+    means = [method_avgs[_method] for _method in methods]
 
     edgecolors = ["None" if method in top_methods else "grey" for method in methods]
 
@@ -244,7 +252,7 @@ def _plot_absolute_mean_per_experiment(dim):
     )
 
     for bar, method in zip(bars, methods):
-        if method == "full/medico-sam-8g" and method not in top_methods:
+        if method == "full/medico-samv2-full/w_decoder" and method not in top_methods:
             bar.set_edgecolor("black")
             bar.set_linestyle("--")
             bar.set_linewidth(3)
@@ -266,7 +274,7 @@ def _plot_absolute_mean_per_experiment(dim):
         )
 
     for label, method in zip(ax.get_xticklabels(), methods):
-        if method == "full/medico-sam-8g":
+        if method == "full/medico-samv2-full/w_decoder":
             label.set_fontweight("bold")
 
     plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=24, fontweight="bold")
@@ -280,8 +288,8 @@ def main():
     _make_per_dataset_plot()
 
     # For figure 1
-    # _plot_absolute_mean_per_experiment(dim="2d")
-    # _plot_absolute_mean_per_experiment(dim="3d")
+    _plot_absolute_mean_per_experiment(dim="2d")
+    _plot_absolute_mean_per_experiment(dim="3d")
 
 
 if __name__ == "__main__":
