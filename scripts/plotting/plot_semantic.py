@@ -26,20 +26,20 @@ NNUNET_RESULTS = {
 
 SWINUNETR_RESULTS = {
     # 2d
-    "oimhs": ...,
-    "isic": ...,
-    "dca1": ...,
-    "cbis_ddsm": ...,
-    "piccolo": ...,
-    "hil_toothseg": ...,
+    "oimhs": [0.8146, 0.5489, 0.5819, 0.9683],
+    "isic": [0.8479],
+    "dca1": [0.6718],
+    "cbis_ddsm": [0.2377],
+    "piccolo": [0.4384],
+    "hil_toothseg": [0.6901],
 
     # 3d
-    "osic_pulmofib": ...,
-    "leg_3d_us": ...,
-    "oasis": ...,
-    "micro_usp": ...,
-    "lgg_mri": ...,
-    "duke_liver": ...,
+    "osic_pulmofib": [0.4844, 0.8954, 0.7638],
+    "leg_3d_us": [0.7266, 0.7004, 0.6299],
+    "oasis": [0.8901, 0.8157, 0.9131, 0.6577],
+    "micro_usp": [0.8498],
+    "lgg_mri": [0.7369],
+    "duke_liver": [0.8666],
 }
 
 DATASET_MAPS = {
