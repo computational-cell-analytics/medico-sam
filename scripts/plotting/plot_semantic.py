@@ -50,6 +50,7 @@ DATASET_MAPS = {
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
+
     # 3d
     "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
     "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
@@ -65,6 +66,7 @@ DATASETS_3D = ["osic_pulmofib", "leg_3d_us", "oasis", "micro_usp", "lgg_mri", "d
 
 MODEL_MAPS = {
     "nnunet": "nnUNet",
+    "swinunetr": "SwinUNETR",
     "full/sam": "SAM",
     "full/medico-samv2-half/wo_decoder": "MedicoSAM*",
     "full/medico-samv2-full/w_decoder": "MedicoSAM (d)",  # TODO: update connotations.
@@ -106,9 +108,9 @@ def get_results(dataset_name):
 
 def _make_per_dataset_plot():
     results = {}
-    for dataset, nnunet_scores in NNUNET_RESULTS.items():
+    for (dataset, nnunet_scores), (_, swinunetr_scores) in zip(NNUNET_RESULTS.items(), SWINUNETR_RESULTS.items()):
         scores = get_results(dataset)
-        results[dataset] = {"nnunet": np.mean(nnunet_scores)}
+        results[dataset] = {"nnunet": np.mean(nnunet_scores), "swinunetr": np.mean(swinunetr_scores)}
         for df_val in scores.iloc:
             name = df_val["name"]
             dice = df_val["dice"]
@@ -162,6 +164,7 @@ def _make_per_dataset_plot():
                 bar.set_linewidth(3)
 
         ax.axhline(methods.get("nnunet"), color="#DC3977", linewidth=4)
+        ax.axhline(methods.get("swinunetr"), color="#7CCBA2", linewidth=4)
 
         ax.set_ylim([0, 1])
         _xticklabels = [MODEL_MAPS[_exp] for _exp in neu_methods_list]
