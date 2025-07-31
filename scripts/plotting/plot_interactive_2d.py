@@ -261,7 +261,7 @@ def _make_per_model_average_plots(dataframes):
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
     _order = [
-        "vanilla", "medsam", "sam2.1", "generalistv2-full"
+        "vanilla", "sam2.1", "medsam", "generalistv2-full"
     ]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
@@ -405,8 +405,8 @@ def _figure_3b():
 
 def main():
     _figure_1b()
-    _figure_3a()
-    _figure_3b()
+    # _figure_3a()
+    # _figure_3b()
 
 
 if __name__ == "__main__":
