@@ -39,8 +39,7 @@ DATASET_MAPS = {
 MODEL_MAPS = {
     "vanilla": "SAM",
     "generalistv2-half": "MedicoSAM*",
-    "generalistv2-full": r"$\bf{MedicoSAM}$",
-    # "generalist_8": r"$\bf{MedicoSAM}$",
+    "generalistv2-full": r"$\bf{MedicoSAM*}$",
     "simplesam_8": "Simple FT*",
     "medsam-self_8": "MedSAM*",
     "medsam": "MedSAM",
@@ -130,7 +129,7 @@ def _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_al
 
     root_dir = ROOT
     if experiment_name.startswith("generalist"):
-        root_dir = root_dir.replace("v1", "v3")
+        root_dir = root_dir.replace("v1", "v3")  # NOTE: Switches all results to new inference outcomes.
 
     for res_dir in glob(os.path.join(root_dir, experiment_name, dataset_name, MODEL, "results", "*")):
         semantic_class = os.path.split(res_dir)[-1]
@@ -406,8 +405,8 @@ def _figure_3b():
 
 def main():
     _figure_1b()
-    # _figure_3a()
-    # _figure_3b()
+    _figure_3a()
+    _figure_3b()
 
 
 if __name__ == "__main__":
