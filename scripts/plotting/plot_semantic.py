@@ -69,8 +69,8 @@ MODEL_MAPS = {
     "swinunetr": "SwinUNETR",
     "full/sam": "SAM",
     "full/medico-samv2-half/wo_decoder": "MedicoSAM*",
-    "full/medico-samv2-full/w_decoder": r"MedicoSAM$_{\mathrm{Dec}}$",
-    "full/medico-samv2-full/wo_decoder": "MedicoSAM",
+    "full/medico-samv2-full/wo_decoder": "MedicoSAM*",
+    "full/medico-samv2-full/w_decoder": r"MedicoSAM*$_{\mathrm{Dec}}$",
     "full/medsam": "MedSAM",
     "full/simplesam": "Simple FT*",
 }
@@ -147,14 +147,6 @@ def _make_per_dataset_plot():
             bar_colors[idx] = top_colors[rank]
             edge_colors[idx] = "none"
 
-        if "full/medico-samv2-full/w_decoder" in neu_methods_list:
-            index = neu_methods_list.index("full/medico-samv2-full/w_decoder")
-            if index not in sorted_indices[:3]:
-                edge_colors[index] = "black"
-                edge_styles[index] = "dashed"
-            else:
-                edge_colors[index] = "none"
-
         bars = ax.bar(
             neu_methods_list, scores, color=bar_colors, edgecolor=edge_colors, linewidth=1.5
         )
@@ -174,7 +166,7 @@ def _make_per_dataset_plot():
         ax.tick_params(axis='y', labelsize=14)
 
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
-            if method == "full/medico-samv2-full/w_decoder":
+            if "medico-samv2-full" in method:
                 label.set_fontweight("bold")
 
         fontdict = {"fontsize": 18}
@@ -190,7 +182,7 @@ def _make_per_dataset_plot():
         x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
     )
 
-    plt.subplots_adjust(hspace=0.45, wspace=0.1)
+    plt.subplots_adjust(hspace=0.55, wspace=0.1)
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg", bbox_inches="tight")
     plt.close()
@@ -235,7 +227,7 @@ def _plot_absolute_mean_per_experiment(dim):
 
     method_avgs = {m: method_sums[m] / method_counts[m] for m in method_sums}
 
-    fig, ax = plt.subplots(figsize=(22, 15))
+    fig, ax = plt.subplots(figsize=(24, 15))
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     top_methods = sorted(methods, key=method_avgs.get, reverse=True)[:3]  # get the top 3 methods.
@@ -250,12 +242,6 @@ def _plot_absolute_mean_per_experiment(dim):
         linewidth=1.5,
         color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
     )
-
-    for bar, method in zip(bars, methods):
-        if method == "full/medico-samv2-full/w_decoder" and method not in top_methods:
-            bar.set_edgecolor("black")
-            bar.set_linestyle("--")
-            bar.set_linewidth(3)
 
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
@@ -274,7 +260,7 @@ def _plot_absolute_mean_per_experiment(dim):
         )
 
     for label, method in zip(ax.get_xticklabels(), methods):
-        if method == "full/medico-samv2-full/w_decoder":
+        if "medico-samv2-full" in method:
             label.set_fontweight("bold")
 
     plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=24, fontweight="bold")

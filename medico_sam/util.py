@@ -108,12 +108,14 @@ def get_medico_sam_model(
             weights corresponding to the weight file. e.g. if you use weights for SAM with `vit_b` encoder,
             then `model_type` must be given as "vit_b".
         use_sam_med2d: Whether to use SAM-Med2d model for initializing the checkpoints.
+            This is an adaptaton of this paper: https://arxiv.org/abs/2308.16184.
         use_sam3d: Whether to use SAM-3d model for initializing the checkpoints.
+            This is an adaptation to use MA-SAM: https://doi.org/10.1016/j.media.2024.103310.
         encoder_adapter: Whether the encuder in SAM-Med2d has adapter modules.
         kwargs: Additional arguments for the suitable 'get_*_model' function.
 
     Returns:
-        The segment anything predictor.
+        The Segment Anything predictor.
     """
     # checkpoint_path has not been passed, we download a known model and derive the correct
     # URL from the model_type. If the model_type is invalid pooch will raise an error.
@@ -158,16 +160,19 @@ def get_semantic_sam_model(
     """Get the Segment Anything Model for semantic segmentation (with additional convolution decoder attached).
 
     Args:
-        model_type: ...
-        checkpoint_path: ...
-        ndim: ...
-        num_classes: ...
-        peft_kwargs: ...
-        device: ...
+        model_type: The Segment Anything model to use. Will use the standard `vit_b` model by default.
+            To get a list of all available model names, you can call `get_model_names`.
+        checkpoint_path: The path to a file with weights that should be used instead of using the
+            weights corresponding to the weight file. e.g. if you use weights for SAM with `vit_b` encoder,
+            then `model_type` must be given as "vit_b".
+        ndim: The number of input dimensions.
+        num_classes: The number of output classes.
+        peft_kwargs: The additional kwargs for PEFT methods.
+        device: The device for the model. If `None` is given, it will use GPU if available.
         init_decoder_weights: Whether to initialize pretrained decoder weights for semantic segmentation.
 
     Returns:
-        ...
+        The semantic segmentation (UNETR-style) model.
     """
     if ndim == 2:
         # Get the basic 2d UNETR model.

@@ -39,8 +39,7 @@ DATASET_MAPS = {
 MODEL_MAPS = {
     "vanilla": "SAM",
     "generalistv2-half": "MedicoSAM*",
-    "generalistv2-full": r"$\bf{MedicoSAM}$",
-    # "generalist_8": r"$\bf{MedicoSAM}$",
+    "generalistv2-full": r"$\bf{MedicoSAM*}$",
     "simplesam_8": "Simple FT*",
     "medsam-self_8": "MedSAM*",
     "medsam": "MedSAM",
@@ -130,7 +129,7 @@ def _get_sam_results_per_dataset_per_class(dataset_name, experiment_name, get_al
 
     root_dir = ROOT
     if experiment_name.startswith("generalist"):
-        root_dir = root_dir.replace("v1", "v3")
+        root_dir = root_dir.replace("v1", "v3")  # NOTE: Switches all results to new inference outcomes.
 
     for res_dir in glob(os.path.join(root_dir, experiment_name, dataset_name, MODEL, "results", "*")):
         semantic_class = os.path.split(res_dir)[-1]
@@ -262,7 +261,7 @@ def _make_per_model_average_plots(dataframes):
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
     _order = [
-        "vanilla", "medsam", "sam2.1", "generalistv2-full"
+        "vanilla", "sam2.1", "medsam", "generalistv2-full"
     ]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
