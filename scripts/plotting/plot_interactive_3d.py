@@ -23,7 +23,6 @@ MODEL_MAPS = {
     "sam2.1": "SAM2 (2.1)",
     "medsam": "MedSAM",
     "simplesam": "SimpleFT",
-    # "medico-sam-8g": r"$\bf{MedicoSAM}$",
     "medico-samv2-full": r"$\bf{MedicoSAM}$",
 }
 
@@ -229,7 +228,7 @@ def _get_average_plots():
 
 def main():
     _get_plots()
-    # _get_average_plots()
+    _get_average_plots()
 
 
 if __name__ == "__main__":
