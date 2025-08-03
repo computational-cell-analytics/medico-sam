@@ -9,7 +9,7 @@ from micro_sam.util import get_sam_model, precompute_image_embeddings
 from micro_sam.visualization import project_embeddings_for_visualization
 
 
-def check_embeddings(raw, model_type, embedding_path, checkpoint=None, view=False):
+def check_embeddings(raw, model_type="vit_b", embedding_path=None, checkpoint=None, view=False):
 
     # Resize the images
     transform = ResizeLongestSideInputs(target_shape=(1024, 1024), is_rgb=(raw.ndim == 3))
@@ -37,6 +37,12 @@ def check_embeddings(raw, model_type, embedding_path, checkpoint=None, view=Fals
         as_rgb=False,
     )
 
+    if view:
+        import napari
+        v = napari.Viewer()
+        v.add_image(embedding_vis)
+        napari.run()
+
     # Bring it up to (1024, 1024) first.
     etrafo = ResizeInputs(target_shape=(1024, 1024), is_rgb=True)
     embedding_vis = etrafo(embedding_vis.transpose(2, 0, 1)).transpose(1, 2, 0)
@@ -48,12 +54,6 @@ def check_embeddings(raw, model_type, embedding_path, checkpoint=None, view=Fals
             embedding_vis.transpose(2, 0, 1)
         ).transpose(1, 2, 0)
 
-    if view:
-        import napari
-        v = napari.Viewer()
-        v.add_image(embedding_vis)
-        napari.run()
-
     return embedding_vis
 
 
@@ -61,18 +61,18 @@ def main():
     # Load the image
 
     # 1. Brain MRI: MedicoSAM looks good.
-    # efname = "mri"
-    # image_path = "/home/anwai/data/pedims/PediMS/P1/T1/processed/54714428_brain_FLAIR.nii.gz"
-    # image = read_image(image_path)
+    efname = "mri"
+    image_path = "/home/anwai/data/pedims/PediMS/P1/T1/processed/54714428_brain_FLAIR.nii.gz"
+    image = read_image(image_path)
     # image = normalize(image) * 255
-    # image = image.transpose(2, 1, 0)[26]
+    image = image.transpose(2, 0, 1)[19]
 
     # 2. Abdomen CT: MedicoSAM looks good again!
-    efname = "ct"
-    image_path = "/media/anwai/ANWAI/data/curvas/training_set/UKCHLL001/image.nii.gz"
-    image = read_image(image_path)
-    image = normalize(image) * 255
-    image = image.transpose(2, 1, 0)[480]
+    # efname = "ct"
+    # image_path = "/media/anwai/ANWAI/data/curvas/training_set/UKCHLL001/image.nii.gz"
+    # image = read_image(image_path)
+    # image = normalize(image) * 255
+    # image = image.transpose(2, 1, 0)[480]
 
     # View image
     view = False
@@ -89,7 +89,12 @@ def main():
         embedding_path=f"{efname}_medsam.zarr",
         checkpoint="/home/anwai/data/medsam_vit_b.pth",
     )
-    embed_mi = check_embeddings(raw=image, model_type="vit_b_medical_imaging", embedding_path=f"{efname}_mi.zarr")
+    embed_mi = check_embeddings(
+        raw=image,
+        model_type="vit_b",
+        embedding_path=f"{efname}_mi.zarr",
+        checkpoint="/media/anwai/ANWAI/models/medico_sam/model.pt",
+    )
 
     # Change to 8bit.
     embed_default = (normalize(embed_default) * 255).astype("uint8")
@@ -98,11 +103,24 @@ def main():
 
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 4, figsize=(30, 20))
-    ax[0].imshow(image, cmap="gray")
-    ax[1].imshow(embed_default, cmap="inferno")
-    ax[2].imshow(embed_medsam, cmap="inferno")
-    ax[3].imshow(embed_mi, cmap="inferno")
-    plt.savefig("./test.png")
+
+    kwargs = {}
+    if efname == "ct":
+        kwargs["vmin"] = 0.8 * image.max()
+        kwargs["vmax"] = image.max()
+
+    ax[0].imshow(image, cmap="gray", **kwargs)
+    ax[1].imshow(embed_default)
+    ax[2].imshow(embed_medsam)
+    ax[3].imshow(embed_mi)
+
+    for a in ax:
+        a.axis("off")
+
+    plt.tight_layout()
+    plt.savefig(f"./{efname}.png", dpi=600, bbox_inches="tight")
+    plt.savefig(f"./{efname}.svg", dpi=600, bbox_inches="tight")
+    plt.close()
 
 
 if __name__ == "__main__":
