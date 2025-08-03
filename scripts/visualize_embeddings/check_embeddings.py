@@ -1,5 +1,3 @@
-import numpy as np
-
 from tukra.io import read_image
 
 from torch_em.transform.raw import normalize
@@ -64,7 +62,7 @@ def main():
     efname = "mri"
     image_path = "/home/anwai/data/pedims/PediMS/P1/T1/processed/54714428_brain_FLAIR.nii.gz"
     image = read_image(image_path)
-    # image = normalize(image) * 255
+    image = normalize(image) * 255
     image = image.transpose(2, 0, 1)[19]
 
     # 2. Abdomen CT: MedicoSAM looks good again!
