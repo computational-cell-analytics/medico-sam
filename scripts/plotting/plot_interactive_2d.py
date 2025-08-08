@@ -405,8 +405,8 @@ def _figure_3b():
 
 def main():
     _figure_1b()
-    # _figure_3a()
-    # _figure_3b()
+    _figure_3a()
+    _figure_3b()
 
 
 if __name__ == "__main__":

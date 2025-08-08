@@ -27,11 +27,11 @@ MODEL_MAPS = {
 }
 
 
-def _get_sam2_results_per_dataset(dataset_name):
+def _get_sam2_results_per_dataset(dataset_name, model_type="hvit_b"):
     res_list = []
     for bpath in glob(os.path.join(ROOT, "*")):
         backbone = os.path.basename(bpath)
-        for res_path in glob(os.path.join(bpath, "hvit_b", dataset_name, "results", "**", "*.csv")):
+        for res_path in glob(os.path.join(bpath, model_type, dataset_name, "results", "**", "*.csv")):
             res = pd.read_csv(res_path)
 
             score_columns = [
@@ -85,7 +85,7 @@ def _get_plots():
 
     for i, (dname, dmap) in enumerate(DATASETS.items()):
         df1 = _get_sam_results_per_dataset(dname)
-        df2 = _get_sam2_results_per_dataset(dname)
+        df2 = _get_sam2_results_per_dataset(dname, model_type="hvit_b")
         df = pd.concat([df1, df2], ignore_index=True)
 
         methods = [m for m in MODEL_MAPS.keys() if m != "sam"]
@@ -228,7 +228,7 @@ def _get_average_plots():
 
 def main():
     _get_plots()
-    _get_average_plots()
+    # _get_average_plots()
 
 
 if __name__ == "__main__":

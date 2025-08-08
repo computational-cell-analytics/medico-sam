@@ -68,7 +68,7 @@ def interactive_segmentation_for_3d_images(
             labels=labels,
             model_type=model_type,
             backbone=backbone,
-            checkpoint_path=CHECKPOINT_PATHS[backbone][model_type],
+            checkpoint_path=CHECKPOINT_PATHS[backbone][model_type[:6]],
             start_with_box_prompt=start_with_box_prompt,
             prediction_dir=prediction_dir,
             prediction_fname=image_name,
