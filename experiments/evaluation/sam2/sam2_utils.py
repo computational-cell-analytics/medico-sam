@@ -19,5 +19,6 @@ CHECKPOINT_PATHS = {
         "hvit_s": os.path.join(MODELS_DIR, "sam2.1_hiera_small.pt"),
         "hvit_b": os.path.join(MODELS_DIR, "sam2.1_hiera_base_plus.pt"),
         "hvit_l": os.path.join(MODELS_DIR, "sam2.1_hiera_large.pt"),
-    }
+        "hvit_t_medsam": os.path.join(MODELS_DIR, "MedSAM2_latest.pt"),
+    },
 }
