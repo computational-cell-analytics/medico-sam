@@ -106,7 +106,7 @@ def submit_to_slurm(
 
         # NOTE: for the current experiments, we stick to 'hvit_b', 'hvit_t' and 'hvit_t_medsam2' models.
         mtype = "hvit_t"
-        if use_mask and is_3d:
+        if is_3d and (use_mask or dname not in DATASETS_3D):
             continue
 
         write_batch_script(
