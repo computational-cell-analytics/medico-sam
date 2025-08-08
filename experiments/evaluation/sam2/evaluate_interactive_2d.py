@@ -39,7 +39,7 @@ def interactive_segmentation_for_2d_images(
         prediction_dir=prediction_dir,
         model_type=model_type,
         backbone=backbone,
-        checkpoint_path=CHECKPOINT_PATHS[backbone][model_type[:6]],
+        checkpoint_path=CHECKPOINT_PATHS[backbone][model_type],
         start_with_box_prompt=start_with_box,
         device=device,
         use_masks=use_masks,
