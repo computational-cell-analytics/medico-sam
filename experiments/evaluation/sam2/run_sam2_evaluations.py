@@ -103,8 +103,10 @@ def submit_to_slurm(
 
     time_delay = 0
     for dname, bb, rchoice, use_mask in itertools.product(dnames, backbones, run_choices, use_masks):
-        mtype = "hvit_b"  # NOTE: for the current experiments, we stick to 'hvit_b' model.
-        if use_mask and is_3d:
+
+        # NOTE: for the current experiments, we stick to 'hvit_b', 'hvit_t' and 'hvit_t_medsam2' models.
+        mtype = "hvit_t_medsam2"
+        if is_3d and (use_mask or dname not in DATASETS_3D):
             continue
 
         write_batch_script(
