@@ -144,7 +144,7 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         checkpoint = None
 
     elif experiment_set == "medsam":
-        checkpoint = "/scratch-grete/projects/nim00007/sam/models/medsam/medsam_vit_b.pth"
+        checkpoint = "/mnt/vast-nhr/projects/cidas/cca/models/medsam/original/medsam_vit_b.pth"
 
     elif experiment_set == "sam-med2d":
         checkpoint = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b.pth"

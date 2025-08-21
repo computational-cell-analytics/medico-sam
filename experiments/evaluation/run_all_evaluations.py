@@ -4,12 +4,15 @@ import itertools
 
 
 CMD = "python submit_all_evaluations.py "
+
 DATASETS = [
     "camus", "uwaterloo_skin", "montgomery", "sega",
     "duke_liver", "cbis_ddsm", "piccolo", "dca1",
     "papila", "jnu-ifm", "siim_acr", "m2caiseg",
     "toothfairy", "spider", "han-seg", "microusp",
+    "abus",
 ]
+
 EXPERIMENTS = [
     "vanilla", "generalist_1", "generalist_8", "simplesam_1", "simplesam_8",
     "medsam-self_1", "medsam-self_8", "medsam", "sam-med2d", "sam-med2d-adapter",

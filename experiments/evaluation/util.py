@@ -10,7 +10,7 @@ import torch
 VALID_DATASETS = [
     "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "isic", "dca1",
     "papila", "m2caiseg", "siim_acr", "jnu-ifm", "cbis_ddsm", "piccolo", "duke_liver", "spider", "microusp",
-    "han-seg", "toothfairy", "drive",
+    "han-seg", "toothfairy", "drive", "abus",
 ]
 
 DEXT = {
@@ -65,6 +65,7 @@ SEMANTIC_CLASS_MAPS = {
     "osic_pulmofib_3d": {"heart": 1, "trachea": 2, "lung_1": 3, "lung_2": 4},
     "kits": {"all": None},
     "segthy": {"all": None},
+    "abus": {"tumor": 1},
 }
 
 MULTICLASS_SEMANTIC = [
