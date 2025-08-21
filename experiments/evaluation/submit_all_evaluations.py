@@ -194,7 +194,8 @@ def submit_slurm(args):
         # NOTE: v1 was the first version of evaluation with all datasets having inference as expected
         # v2 are the additional experiments for iterative prompting with masks.
         # v3 are all the experiments for interactive segmentation (iterative prompting with masks) for joint trained models.  # noqa
-        experiment_folder = os.path.join(ROOT, "experiments", "v3", ename, dataset_name, model_type)
+        # v4 is the statistical significance experiment on one particular data, but can be run on all.
+        experiment_folder = os.path.join(ROOT, "experiments", "v4", ename, dataset_name, model_type)
     else:
         experiment_folder = args.experiment_path
 
