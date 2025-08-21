@@ -15,6 +15,8 @@ DATASETS_2D = [
     "cbis_ddsm",
     "piccolo",
     "hil_toothseg",
+    # NOTE: Dataset below is used for statistical testing
+    "abus",
 ]
 
 DATASETS_3D = [
@@ -114,6 +116,15 @@ def get_dataloaders(patch_shape, data_path, dataset_name, benchmark_models=False
         )
         val_loader = medical.get_hil_toothseg_loader(
             path=data_path, batch_size=1, resize_inputs=True, split="val", **kwargs,
+        )
+
+    elif dataset_name == "abus":
+        kwargs["label_transform"] = LabelTrafoToBinary(label_id_mapping={1: 0, 2: 1})
+        train_loader = medical.abus.get_abus_loader(
+            path=data_path, batch_size=6, resize_inputs=True, split="train", category="benign", **kwargs,
+        )
+        val_loader = medical.abus.get_abus_loader(
+            path=data_path, batch_size=1, resize_inputs=True, split="val", category="benign", **kwargs,
         )
 
     # 3D DATASETS
@@ -229,7 +240,7 @@ def get_num_classes(dataset_name):
     elif dataset_name in ["osic_pulmofib", "leg_3d_us", "curvas", "amos"]:
         num_classes = 4
     elif dataset_name in [
-        "piccolo", "cbis_ddsm", "dca1", "isic", "hil_toothseg",  # 2d datasets
+        "piccolo", "cbis_ddsm", "dca1", "isic", "hil_toothseg", "abus",  # 2d datasets
         "duke_liver", "lgg_mri", "micro_usp",  # 3d datasets
     ]:
         num_classes = 2
@@ -245,7 +256,7 @@ def get_in_channels(dataset):
         "osic_pulmofib", "leg_3d_us", "micro_usp", "lgg_mri", "duke_liver", "oasis", "curvas", "amos",
     ]:
         return 1
-    elif dataset in ["oimhs", "isic", "piccolo"]:
+    elif dataset in ["oimhs", "isic", "piccolo", "abus"]:
         return 3
     else:
         raise ValueError

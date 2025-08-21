@@ -97,14 +97,18 @@ def submit_slurm(args, tmp_folder):
             # NOTE: Next one model is the old medico-sam model.
             # checkpoints["medico-sam-1g"] = "medico-sam/single_gpu/checkpoints/vit_b/medical_generalist_sam_single_gpu/best.pt"  # noqa
             # NOTE: Next one model is the new medico-sam (half data) generalist model.
-            checkpoints["medico-samv2-half"] = "medico-sam/v2/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu_0.5/model.pt"  # noqa
-            checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt"  # noqa
+            # checkpoints["medico-samv2-half"] = "medico-sam/v2/multi_gpu/checkpoints/vit_b/medical_generalist_sam_multi_gpu_0.5/model.pt"  # noqa
+            # checkpoints["simplesam"] = "simplesam/multi_gpu/checkpoints/vit_b/medical_generalist_simplesam_multi_gpu/best_exported.pt"  # noqa
 
     lora_choices = [True, False]
     for (per_dataset, ckpt_name, use_lora) in itertools.product(datasets, checkpoints.keys(), lora_choices):
         checkpoint = None if checkpoints[ckpt_name] is None else os.path.join(MODELS_ROOT, checkpoints[ckpt_name])
 
         init_decoder_weights = ckpt_name.startswith("medico-sam")
+
+        # HACK: We donot train any new models with LoRA for the new version (as there were no meaningful observations)!
+        if use_lora:
+            continue
 
         def _write_script(init_decoder=False):
             print(
@@ -116,7 +120,10 @@ def submit_slurm(args, tmp_folder):
                 save_root=os.path.join(
                     args.save_root,
                     "semantic_sam" + ("_uno" if args.uno else ""),
-                    "v2",  # NOTE: v2 models are the UNETR style models.
+                    # NOTE:
+                    # - v2 models are the UNETR style models for all data.
+                    # - v3 is where the statistical significance experiments are stored.
+                    "v3", "set_0",
                     "lora_finetuning" if use_lora else "full_finetuning"
                 ),
                 checkpoint=checkpoint,
