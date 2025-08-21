@@ -741,42 +741,43 @@ def for_abus(save_dir):
         return
 
     image_paths, gt_paths = medical.abus.get_abus_paths(
-        path=os.path.join(ROOT, "abus"), split="train", category="benign", image_choice="raw", download=True,
+        path=os.path.join(ROOT, "abus"), split="test", category="benign", image_choice="raw", download=True,
     )
 
     fext = "abus_"
-    convert_simple_datasets(image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext)
+    convert_simple_datasets(
+        image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext, map_to_id={1: 0, 2: 1}
+    )
     _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
 
 
 def _preprocess_datasets(save_dir):
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
-    # for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
-    # for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
-    # for_idrid(save_dir=os.path.join(save_dir, "idrid", "slices"))
-    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "2ch"), chamber_choice=2)
-    # for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
-    # for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
-    # for_oimhs(save_dir=os.path.join(save_dir, "oimhs", "slices"))
-    # for_dca1(save_dir=os.path.join(save_dir, "dca1", "slices"))
-    # for_btcv(save_dir=os.path.join(save_dir, "btcv", "slices"))
-    # for_isic(save_dir=os.path.join(save_dir, "isic", "slices"))
-    # for_papila(save_dir=os.path.join(save_dir, "papila", "slices", "cup"), task="cup")
-    # for_papila(save_dir=os.path.join(save_dir, "papila", "slices", "disc"), task="disc")
-    # for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
-    # for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
-    # for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
-    # for_jnu_fim(save_dir=os.path.join(save_dir, "jnu-ifm", "slices"))
-    # for_microusp(save_dir=os.path.join(save_dir, "microusp", "slices"))
-    # for_cbis_ddsm(save_dir=os.path.join(save_dir, "cbis_ddsm", "slices"))
-    # for_piccolo(save_dir=os.path.join(save_dir, "piccolo", "slices"))
-    # for_toothfairy(save_dir=os.path.join(save_dir, "toothfairy", "slices"))
-    # for_duke_liver(save_dir=os.path.join(save_dir, "duke_liver", "slices"))
-    # for_spider(save_dir=os.path.join(save_dir, "spider", "slices"))
-    # for_han_seg(save_dir=os.path.join(save_dir, "han-seg", "slices"))
-    # for_drive(save_dir=os.path.join(save_dir, "drive", "slices"))
-
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
+    for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "dongyang"), split_choice="Dongyang")
+    for_uwaterloo_skin(save_dir=os.path.join(save_dir, "uwaterloo_skin", "slices"))
+    for_idrid(save_dir=os.path.join(save_dir, "idrid", "slices"))
+    for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "2ch"), chamber_choice=2)
+    for_camus(save_dir=os.path.join(save_dir, "camus", "slices", "4ch"), chamber_choice=4)
+    for_montgomery(save_dir=os.path.join(save_dir, "montgomery", "slices"))
+    for_oimhs(save_dir=os.path.join(save_dir, "oimhs", "slices"))
+    for_dca1(save_dir=os.path.join(save_dir, "dca1", "slices"))
+    for_btcv(save_dir=os.path.join(save_dir, "btcv", "slices"))
+    for_isic(save_dir=os.path.join(save_dir, "isic", "slices"))
+    for_papila(save_dir=os.path.join(save_dir, "papila", "slices", "cup"), task="cup")
+    for_papila(save_dir=os.path.join(save_dir, "papila", "slices", "disc"), task="disc")
+    for_osic_pulmofib(save_dir=os.path.join(save_dir, "osic_pulmofib", "slices"))
+    for_m2caiseg(save_dir=os.path.join(save_dir, "m2caiseg", "slices"))
+    for_siim_acr(save_dir=os.path.join(save_dir, "siim_acr", "slices"))
+    for_jnu_fim(save_dir=os.path.join(save_dir, "jnu-ifm", "slices"))
+    for_microusp(save_dir=os.path.join(save_dir, "microusp", "slices"))
+    for_cbis_ddsm(save_dir=os.path.join(save_dir, "cbis_ddsm", "slices"))
+    for_piccolo(save_dir=os.path.join(save_dir, "piccolo", "slices"))
+    for_toothfairy(save_dir=os.path.join(save_dir, "toothfairy", "slices"))
+    for_duke_liver(save_dir=os.path.join(save_dir, "duke_liver", "slices"))
+    for_spider(save_dir=os.path.join(save_dir, "spider", "slices"))
+    for_han_seg(save_dir=os.path.join(save_dir, "han-seg", "slices"))
+    for_drive(save_dir=os.path.join(save_dir, "drive", "slices"))
     for_abus(save_dir=os.path.join(save_dir, "abus", "slices"))
 
 
