@@ -20,9 +20,10 @@ DATASETS = {
 
 MODEL_MAPS = {
     "sam": "SAM",
-    "sam2.1": "SAM2 (2.1)",
     "medsam": "MedSAM",
-    "simplesam": "SimpleFT",
+    "sam2.1": "SAM2 (2.1)",
+    "medsam2": "MedSAM2",
+    "simplesam": "SimpleFT*",
     "medico-samv2-full": r"$\bf{MedicoSAM*}$",
 }
 
@@ -86,7 +87,12 @@ def _get_plots():
     for i, (dname, dmap) in enumerate(DATASETS.items()):
         df1 = _get_sam_results_per_dataset(dname)
         df2 = _get_sam2_results_per_dataset(dname, model_type="hvit_b")
-        df = pd.concat([df1, df2], ignore_index=True)
+
+        # Results for MedSAM2.
+        df3 = _get_sam2_results_per_dataset(dname, model_type="hvit_t_medsam2")
+        df3["backbone"] = df3["backbone"].replace("sam2.1", "medsam2")
+
+        df = pd.concat([df1, df2, df3], ignore_index=True)
 
         methods = [m for m in MODEL_MAPS.keys() if m != "sam"]
         labels = [MODEL_MAPS[m] for m in methods]
@@ -153,7 +159,7 @@ def _get_plots():
     fig.legend(handles, labels, loc='lower center', fontsize=fontsize_legend, ncol=2)
 
     plt.text(
-        x=-6, y=-0.175, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-7.5, y=-0.225, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=fontsize_axis_label
     )
 
