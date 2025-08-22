@@ -123,7 +123,7 @@ def submit_slurm(args, tmp_folder):
                     # NOTE:
                     # - v2 models are the UNETR style models for all data.
                     # - v3 is where the statistical significance experiments are stored.
-                    "v3", "set_0",
+                    "v3",
                     "lora_finetuning" if use_lora else "full_finetuning"
                 ),
                 checkpoint=checkpoint,
