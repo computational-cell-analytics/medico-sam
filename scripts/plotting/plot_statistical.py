@@ -128,8 +128,81 @@ def _interactive_seg_stats():
     plt.show()
 
 
+def _semantic_seg_stats():
+    base_dir = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam/v3"
+
+    def _get_res(set_dir, method, decoder=False):
+        res_path = os.path.join(
+            set_dir, "full_finetuning", method, "inference", "abus",
+            ("w_decoder" if decoder else "wo_decoder"),
+            "results", "tumor", "semantic_segmentation.csv"
+        )
+        df = pd.read_csv(res_path)
+        return float(df["dice"].iloc[0])
+
+    sam_vals, medsam_vals = [], []
+    medico_wo_vals, medico_w_vals = [], []
+
+    for set_dir in sorted(glob(os.path.join(base_dir, "*"))):
+        sam_vals.append(_get_res(set_dir, "sam"))
+        medsam_vals.append(_get_res(set_dir, "medsam"))
+        medico_wo_vals.append(_get_res(set_dir, "medico-samv2-full", decoder=False))
+        medico_w_vals.append(_get_res(set_dir, "medico-samv2-full", decoder=True))
+
+    labels = ["SAM", "MedSAM", r"$\mathbf{MedicoSAM*}$", r"$\mathbf{MedicoSAM*}_{\mathrm{Dec}}$"]
+    stacks = [
+        np.asarray(sam_vals),
+        np.asarray(medsam_vals),
+        np.asarray(medico_wo_vals),
+        np.asarray(medico_w_vals),
+    ]
+    means = np.array([arr.mean() for arr in stacks])
+    stds = np.array([arr.std(ddof=1) if len(arr) > 1 else 0.0 for arr in stacks])
+    ns = np.array([len(arr) for arr in stacks])
+
+    base_hex = "#045275"
+
+    def hex_to_rgb01(h):
+        h = h.lstrip("#")
+        return tuple(int(h[i:i+2], 16)/255.0 for i in (0, 2, 4))
+
+    def rgb01_to_hex(rgb):
+        return "#{:02X}{:02X}{:02X}".format(*(int(round(c*255)) for c in rgb))
+
+    def mix_with_white(hex_color, factor):
+        r, g, b = hex_to_rgb01(hex_color)
+        rw, gw, bw = 1.0, 1.0, 1.0
+        return rgb01_to_hex(
+            (r*(1-factor)+rw*factor, g*(1-factor)+gw*factor, b*(1-factor)+bw*factor)
+        )
+
+    order_by_perf = np.argsort(-means)
+    ranks = np.empty_like(order_by_perf)
+    ranks[order_by_perf] = np.arange(len(means))
+
+    light_factors = {0: 0.00, 1: 0.20, 2: 0.40, 3: 0.60}
+    bar_colors = [mix_with_white(base_hex, light_factors[int(r)]) for r in ranks]
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    x = np.arange(len(labels))
+    ax.bar(x, means, yerr=stds, capsize=6, ecolor="black", color=bar_colors, zorder=2)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel("Dice Score Coefficient", fontweight="bold")
+    ax.set_title("Semantic Segmentation (Breast Tumor in Ultrasound)", fontweight="bold")
+
+    summary_df = pd.DataFrame({"method": labels, "mean": means, "std": stds, "n": ns})
+    print(summary_df.to_string(index=False))
+
+    fig.tight_layout()
+    fig.savefig("./semantic_summary_mean_sd.png", dpi=600, bbox_inches="tight")
+    plt.show()
+
+
 def main():
-    _interactive_seg_stats()
+    # _interactive_seg_stats()
+    _semantic_seg_stats()
 
 
 if __name__ == "__main__":
