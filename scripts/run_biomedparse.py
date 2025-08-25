@@ -13,22 +13,25 @@ from elf.evaluation import dice_score
 
 CLASS_MAPS = {
     # 2d datasets
-    "oimhs": {"choroid": 1, "retina": 2, "intraretinal_cysts": 3, "macular_hole": 4},
-    "isic": {"lesion": 1},  # WORKS
-    "piccolo": {"neoplastic polyp": 1, "non-neoplastic polyp": 1},  # WORKS
+    # NOTE for OIMHS: edema, also coined as custoid macular edema, are form of intraretinal cysts:
+    # here's a reference paper for this: https://doi.org/10.1136/bjophthalmol-2014-305305
+    "oimhs": {"edema": 1},  # NOTE: Only one out of four classes available for this data.
+    "isic": {"lesion": 1},
+    "piccolo": {"neoplastic polyp": 1, "non-neoplastic polyp": 1},  # NOTE: Done to map polyps to one class for eval.
 
-    "dca1": {"vessel": 1},
-    "cbis_ddsm": {"mass": 1},
-    "hil_toothseg": {"teeth": 1},
+    # "dca1": {"vessel": 1},
+    # "cbis_ddsm": {"mass": 1},
+    # "hil_toothseg": {"teeth": 1},
 }
 
 DATASET_MAPPING_2D = {
     "oimhs": "Dataset201_OIMHS",
     "isic": "Dataset202_ISIC",
-    "dca1": "Dataset203_DCA1",
-    "cbis_ddsm": "Dataset204_CBISDDSM",
     "piccolo": "Dataset206_PICCOLO",
-    "hil_toothseg": "Dataset208_HIL_ToothSeg",
+
+    # "dca1": "Dataset203_DCA1",
+    # "cbis_ddsm": "Dataset204_CBISDDSM",
+    # "hil_toothseg": "Dataset208_HIL_ToothSeg",
 }
 
 
@@ -64,9 +67,10 @@ def run_biomedparse_prediction(image, gt, modality, class_maps):
 
 
 def main():
-    # dataset_name, modality = "piccolo", "Endoscopy"  # R1
-    dataset_name, modality = "isic", "Dermoscopy"  # R2
-    # dataset_name, modality = "oimhs", "OCT"
+    # NOTE: Below are datasets for which BioMedParse could be run for (in an automatic fashion)!
+    # dataset_name, modality = "piccolo", "Endoscopy"  # Mean score for polyps: 0.8459717204324456
+    # dataset_name, modality = "isic", "Dermoscopy"  # Mean score for lesions: 
+    dataset_name, modality = "oimhs", "OCT"  # Mean score for CME: 0.7079523903144189
 
     image_paths, gt_paths, class_maps = get_2d_dataset_paths(dataset_name)
 
@@ -74,6 +78,12 @@ def main():
     for image_path, gt_path in tqdm(zip(image_paths, gt_paths), total=len(image_paths)):
         image = read_image(image_path)
         gt = read_image(gt_path)
+
+        if dataset_name == "oimhs":
+            gt = (gt == 3).astype("uint8")
+
+        if len(np.unique(gt)) == 1:  # NOTE: For images with no foreground, there's no point running the model.
+            continue
 
         prediction = run_biomedparse_prediction(image, gt, modality, class_maps)
 
@@ -90,6 +100,9 @@ def main():
         scores.append(score)
 
     breakpoint()
+
+    final_score = np.mean(scores)
+    print(final_score)
 
 
 if __name__ == "__main__":
