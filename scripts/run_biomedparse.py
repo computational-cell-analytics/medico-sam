@@ -18,20 +18,12 @@ CLASS_MAPS = {
     "oimhs": {"edema": 1},  # NOTE: Only one out of four classes available for this data.
     "isic": {"lesion": 1},
     "piccolo": {"neoplastic polyp": 1, "non-neoplastic polyp": 1},  # NOTE: Done to map polyps to one class for eval.
-
-    # "dca1": {"vessel": 1},
-    # "cbis_ddsm": {"mass": 1},
-    # "hil_toothseg": {"teeth": 1},
 }
 
 DATASET_MAPPING_2D = {
     "oimhs": "Dataset201_OIMHS",
     "isic": "Dataset202_ISIC",
     "piccolo": "Dataset206_PICCOLO",
-
-    # "dca1": "Dataset203_DCA1",
-    # "cbis_ddsm": "Dataset204_CBISDDSM",
-    # "hil_toothseg": "Dataset208_HIL_ToothSeg",
 }
 
 
@@ -69,7 +61,7 @@ def run_biomedparse_prediction(image, gt, modality, class_maps):
 def main():
     # NOTE: Below are datasets for which BioMedParse could be run for (in an automatic fashion)!
     # dataset_name, modality = "piccolo", "Endoscopy"  # Mean score for polyps: 0.8459717204324456
-    # dataset_name, modality = "isic", "Dermoscopy"  # Mean score for lesions: 
+    # dataset_name, modality = "isic", "Dermoscopy"  # Mean score for lesions:
     dataset_name, modality = "oimhs", "OCT"  # Mean score for CME: 0.7079523903144189
 
     image_paths, gt_paths, class_maps = get_2d_dataset_paths(dataset_name)
