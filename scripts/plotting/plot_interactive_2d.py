@@ -22,18 +22,18 @@ DATASET_MAPS = {
     "uwaterloo_skin": "UWaterloo Skin (Skin Lesion in Dermoscopy)",
     "montgomery": "Montgomery (Lungs in Chest X-Ray)",
     "sega": "SegA (Aorta in CT)",
-    "duke_liver": "DLDS (Liver Segmentation in MRI)",
+    "duke_liver": "DLDS (Liver in MRI)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
-    "papila": "Papila (Optic Disc & Optic Cup in Fundus)",
+    "papila": "Papila (Optic Disc & Cup in Fundus)",
     "jnu-ifm": "JNU IFM (Pubic Symphysis & Fetal Head in US)",
     "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
-    "m2caiseg": "m2caisSeg (Tools and Organs in Endoscopy)",
-    "toothfairy": "ToothFairy (Mandibular Canal Segmentation in CBCT)",
-    "spider": "SPIDER (Lumbar Spine & Vertebrae Segmentation in MRI)",
-    "han-seg": "HaN-Seg (Head & Neck Organ Segmentation in CT)",
-    "microusp": "MicroUSP (Prostate Segmentation in Micro-Ultrasound)",
+    "m2caiseg": "m2caisSeg (Tools & Organs in Endoscopy)",
+    "toothfairy": "ToothFairy (Mandibular Canal in CBCT)",
+    "spider": "SPIDER (Lumbar Spine & Vertebrae in MRI)",
+    "han-seg": "HaN-Seg (Head & Neck Organ in CT)",
+    "microusp": "MicroUSP (Prostate in Micro-Ultrasound)",
 }
 
 MODEL_MAPS = {
@@ -188,7 +188,7 @@ def _get_results_per_dataset(dataset_name, get_all=False, use_masks=True):
 
 
 def _make_per_experiment_plots(dataframes, datasets):
-    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(32, 32))
+    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(30, 30))
     axes = axes.flatten()
 
     bar_width = 0.2
@@ -231,10 +231,10 @@ def _make_per_experiment_plots(dataframes, datasets):
         _xticklabels = [MODEL_MAPS[_exp] for _exp in df["experiment"]]
         tick_positions = [r + 3 * bar_width for r in range(len(df))]
         axes[i].set_xticks(tick_positions)
-        axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=16)
-        axes[i].tick_params(axis='y', labelsize=14)
+        axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=20)
+        axes[i].tick_params(axis='y', labelsize=20)
 
-        axes[i].set_title(f'{DATASET_MAPS[datasets[i]]}', fontsize=16)
+        axes[i].set_title(f'{DATASET_MAPS[datasets[i]]}', fontsize=20)
         axes[i].legend()
 
     all_lines, all_labels = [], []
@@ -246,14 +246,14 @@ def _make_per_experiment_plots(dataframes, datasets):
                 all_labels.append(label)
         ax.legend().remove()
 
-    fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
+    fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=20)
 
     plt.text(
-        x=-37, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
-        rotation=90, fontweight="bold", fontsize=24
+        x=-37.5, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        rotation=90, fontweight="bold", fontsize=24,
     )
 
-    plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.3, wspace=0.2)
+    plt.subplots_adjust(top=0.95, bottom=0.075, right=0.95, left=0.05, hspace=0.45, wspace=0.2)
     plt.savefig("./fig_3_interactive_segmentation_per_dataset.png", bbox_inches="tight", dpi=600)
     plt.savefig("./fig_3_interactive_segmentation_per_dataset.svg", bbox_inches="tight", dpi=600)
     plt.close()
@@ -363,17 +363,17 @@ def _make_full_iterative_prompting_average_plots(dataframes):
             color=bcolors[i], label=r"I$_{B}$", edgecolor="grey"
         )
 
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=16, fontweight="bold")
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=22, fontweight="bold")
     ax.set_xticks(index + bar_width * (num_colors / 2))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in experiments]
-    ax.set_xticklabels(_xticklabels, fontsize=16)
-    ax.tick_params(axis='y', labelsize=16)
+    ax.set_xticklabels(_xticklabels, fontsize=20)
+    ax.tick_params(axis='y', labelsize=20)
 
     handles, labels = ax.get_legend_handles_labels()
     simplified_handles = [handles[0], handles[1], handles[-2], handles[-1]]
     simplified_labels = [labels[0], labels[1], labels[-2], labels[-1]]
     fig.legend(
-        simplified_handles, simplified_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.5, 0.875), fontsize=16
+        simplified_handles, simplified_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.245, 0.875), fontsize=20
     )
 
     plt.savefig("./fig_3_interactive_segmentation_average_iterative_prompting.png", bbox_inches="tight")
@@ -412,8 +412,8 @@ def _figure_3b():
 
 
 def main():
-    _figure_1b()
-    _figure_3a()
+    # _figure_1b()
+    # _figure_3a()
     _figure_3b()
 
 
