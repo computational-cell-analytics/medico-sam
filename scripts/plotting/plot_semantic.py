@@ -53,19 +53,19 @@ BIOMEDPARSE_RESULTS = {
 
 DATASET_MAPS = {
     # 2d
-    "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
+    "oimhs": "OIMHS (Retinal Structures in OCT)",
     "isic": "ISIC (Skin Lesion in Dermoscopy)",
     "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
     "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
     "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
-    "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
+    "hil_toothseg": "HIL ToothSeg (Teeth in Dental Radiographs)",
 
     # 3d
     "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
     "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
     "oasis": "OASIS (Brain Tissue in MRI)",
     "micro_usp": "MicroUSP (Prostate in Micro-Ultrasound)",
-    "lgg_mri": "LGG MRI (Low-Grade Glioma in Brain MRI)",
+    "lgg_mri": "LGG MRI (Glioma in Brain MRI)",
     "duke_liver": "DLDS (Liver in MRI)",
 }
 
@@ -129,7 +129,7 @@ def _make_per_dataset_plot():
             score = np.mean(dice)
             results[dataset][name] = score
 
-    fig, axes = plt.subplots(4, 3, figsize=(35, 30))
+    fig, axes = plt.subplots(4, 3, figsize=(40, 30))
     axes = axes.flatten()
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
@@ -174,17 +174,17 @@ def _make_per_dataset_plot():
             kwargs = {"linestyle": "--"} if dataset == "oimhs" else {}
             ax.axhline(methods.get("biomedparse"), color="#C99833", linewidth=4, **kwargs)
 
-        ax.set_ylim([0, 1])
+        ax.set_ylim([0.2, 1])
         _xticklabels = [MODEL_MAPS[_exp] for _exp in neu_methods_list]
         ax.set_xticks(np.arange(len(neu_methods_list)))
-        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=18)
-        ax.tick_params(axis='y', labelsize=14)
+        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=22)
+        ax.tick_params(axis='y', labelsize=20)
 
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
             if "medico-samv2-full" in method:
                 label.set_fontweight("bold")
 
-        fontdict = {"fontsize": 18}
+        fontdict = {"fontsize": 28}
         if dataset in ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]:
             fontdict["fontstyle"] = "italic"
         else:
@@ -199,14 +199,14 @@ def _make_per_dataset_plot():
 
     fig.legend(
         handles=[nnunet_line, swinunetr_line, biomed_line],
-        loc="lower center", bbox_to_anchor=(0.5, 0.02), ncol=3, fontsize=20,
+        loc="lower center", bbox_to_anchor=(0.5, 0.02), ncol=3, fontsize=26,
     )
 
     plt.text(
-        x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
+        x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=28,
     )
 
-    plt.subplots_adjust(hspace=0.55, wspace=0.1)
+    plt.subplots_adjust(hspace=0.7, wspace=0.1, bottom=0.125)
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg", bbox_inches="tight")
     plt.close()

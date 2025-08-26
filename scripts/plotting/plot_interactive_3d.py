@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/3d"
 
 DATASETS = {
-    "lgg_mri": "LGG MRI (Low-Grade Glioma in MRI)",
+    "lgg_mri": "LGG MRI (Glioma in MRI)",
     "microusp": "MicroUSP (Prostate in Micro-Ultrasound)",
     "kits": "KiTS (Kidney Tumor in CT)",
     "duke_liver": "DLDS (Liver in MRI)",
-    "segthy": "SegThy (Thyroid, Jugular Vein & Cartoid Artery and Vein in US)",
+    "segthy": "SegThy (Thyroid in US)",
     "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
 }
 
@@ -75,14 +75,14 @@ def _get_sam_results_per_dataset(dataset_name):
 
 
 def _get_plots():
-    fig, ax = plt.subplots(2, 3, figsize=(32, 23))
+    fig, ax = plt.subplots(2, 3, figsize=(47, 22))
     ax = ax.flatten()
 
     bar_width = 0.2
-    scale = 1.2
+    scale = 1.8
     fontsize_base = int(16 * scale)
     fontsize_legend = int(16 * scale)
-    fontsize_axis_label = int(20 * scale)
+    fontsize_axis_label = int(16 * scale)
 
     for i, (dname, dmap) in enumerate(DATASETS.items()):
         df1 = _get_sam_results_per_dataset(dname)
@@ -163,7 +163,7 @@ def _get_plots():
         rotation=90, fontweight="bold", fontsize=fontsize_axis_label
     )
 
-    plt.subplots_adjust(top=0.95, bottom=0.055, right=0.95, left=0.05, hspace=0.125, wspace=0.1)
+    plt.subplots_adjust(top=0.95, bottom=0.08, right=0.95, left=0.05, hspace=0.125, wspace=0.1)
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.svg", bbox_inches="tight")
     plt.close()
@@ -234,7 +234,7 @@ def _get_average_plots():
 
 def main():
     _get_plots()
-    _get_average_plots()
+    # _get_average_plots()
 
 
 if __name__ == "__main__":
