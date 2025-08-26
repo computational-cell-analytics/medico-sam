@@ -193,9 +193,9 @@ def _make_per_dataset_plot():
         ax.set_title(f'{DATASET_MAPS[dataset]}', fontdict=fontdict)
         ax.title.set_color("#212427")
 
-    nnunet_line = mlines.Line2D([], [], color="#DC3977", linewidth=4, label="nnU-Net")
-    swinunetr_line = mlines.Line2D([], [], color="#7CCBA2", linewidth=4, label="Swin UNETR")
-    biomed_line = mlines.Line2D([], [], color="#C99833", linewidth=4, label="BiomedParse")
+    nnunet_line = mlines.Line2D([], [], color="#DC3977", linewidth=8, label="nnUNet")
+    swinunetr_line = mlines.Line2D([], [], color="#7CCBA2", linewidth=8, label="SwinUNETR")
+    biomed_line = mlines.Line2D([], [], color="#C99833", linewidth=8, label="BiomedParse")
 
     fig.legend(
         handles=[nnunet_line, swinunetr_line, biomed_line],
