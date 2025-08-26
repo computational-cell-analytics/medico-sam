@@ -46,6 +46,7 @@ MODEL_MAPS = {
     "sam-med2d": "FT-SAM",
     "sam-med2d-adapter": "SAM-Med2D",
     "sam2.1": "SAM2 (2.1)",
+    "medsam2": "MedSAM2",
 }
 
 
@@ -173,8 +174,14 @@ def _get_results_per_dataset(dataset_name, get_all=False, use_masks=True):
 
     # Get SAM2 results
     # NOTE: It's hard-coded at the moment in 'mask_dir' argument that uses "with_masks" for iterative prompting.
-    res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.1", get_all=get_all))
     # res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.0", get_all=get_all))
+    res_per_dataset.append(_get_sam2_results_per_dataset_per_class(dataset_name, "sam2.1", get_all=get_all))
+    res_per_dataset.append(_get_sam2_results_per_dataset_per_class(
+        dataset_name, "sam2.1", get_all=get_all, model="hvit_t_medsam2")
+    )
+
+    # Replace the experiment name for the last MedSAM2 results (currently, it's named "sam2.1")
+    res_per_dataset[-1]["experiment"] = res_per_dataset[-1]["experiment"].replace("sam2.1", "medsam2")
 
     res_per_dataset = pd.concat(res_per_dataset, ignore_index=True)
     return res_per_dataset
@@ -187,8 +194,9 @@ def _make_per_experiment_plots(dataframes, datasets):
     bar_width = 0.2
     for i, df in enumerate(dataframes):
         _order = [
-            "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8",
-            "sam2.1",  # "sam2.0",
+            "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter",
+            "sam2.1",  "medsam2",  # "sam2.0",
+            "medsam-self_8", "simplesam_8",
             "generalistv2-half", "generalistv2-full",  # "generalist_8",
         ]
         df['experiment'] = pd.Categorical(df['experiment'], categories=_order, ordered=True)
@@ -241,7 +249,7 @@ def _make_per_experiment_plots(dataframes, datasets):
     fig.legend(all_lines, all_labels, loc="lower center", ncols=4, bbox_to_anchor=(0.5, 0), fontsize=24)
 
     plt.text(
-        x=-32.75, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-37, y=1, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=24
     )
 
@@ -312,7 +320,7 @@ def _make_full_iterative_prompting_average_plots(dataframes):
     avg_df = combined_df[numeric_columns].groupby('experiment').mean().reset_index()
 
     _order = [
-        "vanilla", "sam2.1", "medsam", "sam-med2d", "sam-med2d-adapter", "medsam-self_8", "simplesam_8",
+        "vanilla", "medsam", "sam-med2d", "sam-med2d-adapter", "sam2.1", "medsam2", "medsam-self_8", "simplesam_8",
         "generalistv2-half", "generalistv2-full",  # "generalist_8"
     ]
     avg_df['experiment'] = pd.Categorical(avg_df['experiment'], categories=_order, ordered=True)

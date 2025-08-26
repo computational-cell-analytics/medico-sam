@@ -4,6 +4,7 @@ from natsort import natsorted
 
 import torch
 
+from torch_em.data import datasets
 from torch_em.util import load_model
 
 from medico_sam.evaluation import inference
@@ -21,6 +22,7 @@ CLASS_MAPS = {
     "cbis_ddsm": {"mass": 1},
     "piccolo": {"polyps": 1},
     "hil_toothseg": {"teeth": 1},
+    "abus": {"tumor": 1},
 }
 
 DATASET_MAPPING_2D = {
@@ -46,9 +48,19 @@ def _run_semantic_segmentation(image_paths, semantic_class_maps, exp_folder, mod
 
 
 def get_2d_dataset_paths(dataset_name):
-    root_dir = os.path.join("/mnt/vast-nhr/projects/cidas/cca/nnUNetv2/nnUNet_raw", DATASET_MAPPING_2D[dataset_name])
-    image_paths = natsorted(glob(os.path.join(root_dir, "imagesTs", "*")))
-    gt_paths = natsorted(glob(os.path.join(root_dir, "labelsTs", "*")))
+    if dataset_name == "abus":  # Additional experiment for statistical inference.
+        # NOTE: Remember to adapt the labels.
+        root_dir = "/mnt/vast-nhr/projects/cidas/cca/data/abus"
+        image_paths, gt_paths = datasets.medical.abus.get_abus_paths(
+            path=root_dir, split="test", category="benign", image_choice="raw",
+        )
+    else:
+        root_dir = os.path.join(
+            "/mnt/vast-nhr/projects/cidas/cca/nnUNetv2/nnUNet_raw", DATASET_MAPPING_2D[dataset_name]
+        )
+        image_paths = natsorted(glob(os.path.join(root_dir, "imagesTs", "*")))
+        gt_paths = natsorted(glob(os.path.join(root_dir, "labelsTs", "*")))
+
     assert len(image_paths) == len(gt_paths)
     return image_paths, gt_paths, CLASS_MAPS[dataset_name]
 

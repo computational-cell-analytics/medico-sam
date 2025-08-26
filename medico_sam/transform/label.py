@@ -24,11 +24,19 @@ class LabelTransformJointTraining:
 
 
 class LabelTrafoToBinary:
-    def __init__(self, switch_last_axes=False):
+    def __init__(self, label_id_mapping=None, switch_last_axes=False):
         self.switch_last_axes = switch_last_axes
+        self.label_id_mapping = label_id_mapping
 
     def _binarise_labels(self, labels):
-        labels = (labels > 0).astype(labels.dtype)
+        if self.label_id_mapping is None:
+            labels = (labels > 0).astype(labels.dtype)
+        else:
+            neu_labels = np.zeros_like(labels)
+            for curr_id, neu_id in self.label_id_mapping.items():
+                neu_labels[labels == curr_id] = neu_id
+            labels = neu_labels
+
         return labels
 
     def _switch_last_axes_for_labels(self, labels):

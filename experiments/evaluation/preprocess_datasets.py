@@ -733,6 +733,24 @@ def for_drive(save_dir):
     _get_val_test_splits(save_dir=save_dir, val_fraction=1, fname_ext=fext)
 
 
+def for_abus(save_dir):
+    """Tumor segmentation in breast US.
+    """
+    if _check_preprocessing(save_dir=save_dir):
+        print("Looks like the preprocessing has completed.")
+        return
+
+    image_paths, gt_paths = medical.abus.get_abus_paths(
+        path=os.path.join(ROOT, "abus"), split="test", category="benign", image_choice="raw", download=True,
+    )
+
+    fext = "abus_"
+    convert_simple_datasets(
+        image_paths=image_paths, gt_paths=gt_paths, save_dir=save_dir, fname_ext=fext, map_to_id={1: 0, 2: 1}
+    )
+    _get_val_test_splits(save_dir=save_dir, val_fraction=10, fname_ext=fext)
+
+
 def _preprocess_datasets(save_dir):
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "kits"), split_choice="KiTS")
     for_sega(save_dir=os.path.join(save_dir, "sega", "slices", "rider"), split_choice="Rider")
@@ -760,6 +778,7 @@ def _preprocess_datasets(save_dir):
     for_spider(save_dir=os.path.join(save_dir, "spider", "slices"))
     for_han_seg(save_dir=os.path.join(save_dir, "han-seg", "slices"))
     for_drive(save_dir=os.path.join(save_dir, "drive", "slices"))
+    for_abus(save_dir=os.path.join(save_dir, "abus", "slices"))
 
 
 def main():
