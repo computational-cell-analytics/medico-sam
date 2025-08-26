@@ -61,7 +61,7 @@ def _interactive_seg_stats():
     group_gap = 0.25
     exp_centers = np.arange(n_exps) * (block_width + group_gap)
 
-    fig, ax = plt.subplots(figsize=(max(10, 3 + 3*n_exps), 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     point_base = "#7CCBA2"
     box_base = "#FCDE9C"
@@ -120,12 +120,12 @@ def _interactive_seg_stats():
         Patch(facecolor=box_last, label=r"I$_{B}$"),
     ]
     fig.legend(
-        legend_handles, [h.get_label() for h in legend_handles], loc="lower center",
-        ncols=4, bbox_to_anchor=(0.525, -0.05), fontsize=11,
+        legend_handles, [h.get_label() for h in legend_handles], loc="upper center",
+        ncols=4, bbox_to_anchor=(0.5, 0.94), fontsize=11,
     )
     fig.tight_layout()
-    fig.savefig("./test.png", dpi=600, bbox_inches="tight")
-    plt.show()
+    fig.savefig("./fig_stats_interactive_segmentation.png", dpi=600, bbox_inches="tight")
+    fig.savefig("./fig_stats_interactive_segmentation.svg", dpi=600, bbox_inches="tight")
 
 
 def _semantic_seg_stats():
@@ -196,12 +196,12 @@ def _semantic_seg_stats():
     print(summary_df.to_string(index=False))
 
     fig.tight_layout()
-    fig.savefig("./semantic_summary_mean_sd.png", dpi=600, bbox_inches="tight")
-    plt.show()
+    fig.savefig("./fig_stats_semantic_segmentation.png", dpi=600, bbox_inches="tight")
+    fig.savefig("./fig_stats_semantic_segmentation.svg", dpi=600, bbox_inches="tight")
 
 
 def main():
-    # _interactive_seg_stats()
+    _interactive_seg_stats()
     _semantic_seg_stats()
 
 
