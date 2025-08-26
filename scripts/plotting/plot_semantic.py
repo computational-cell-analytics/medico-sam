@@ -42,6 +42,13 @@ SWINUNETR_RESULTS = {
     "duke_liver": [0.8666],
 }
 
+BIOMEDPARSE_RESULTS = {
+    # 2d
+    "oimhs": [0.7079],  # numbers for intraretinal cysts only.
+    "isic": [0.8851],
+    "piccolo": [0.8459],
+}
+
 DATASET_MAPS = {
     # 2d
     "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
