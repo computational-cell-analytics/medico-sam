@@ -61,7 +61,7 @@ def run_biomedparse_prediction(image, gt, modality, class_maps):
 def main():
     # NOTE: Below are datasets for which BioMedParse could be run for (in an automatic fashion)!
     # dataset_name, modality = "piccolo", "Endoscopy"  # Mean score for polyps: 0.8459717204324456
-    # dataset_name, modality = "isic", "Dermoscopy"  # Mean score for lesions:
+    # dataset_name, modality = "isic", "Dermoscopy"  # Mean score for lesions: 0.88506975337394
     dataset_name, modality = "oimhs", "OCT"  # Mean score for CME: 0.7079523903144189
 
     image_paths, gt_paths, class_maps = get_2d_dataset_paths(dataset_name)
