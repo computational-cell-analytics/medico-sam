@@ -3,7 +3,9 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 
 NNUNET_RESULTS = {
@@ -118,6 +120,9 @@ def _make_per_dataset_plot():
     for (dataset, nnunet_scores), (_, swinunetr_scores) in zip(NNUNET_RESULTS.items(), SWINUNETR_RESULTS.items()):
         scores = get_results(dataset)
         results[dataset] = {"nnunet": np.mean(nnunet_scores), "swinunetr": np.mean(swinunetr_scores)}
+        if dataset in BIOMEDPARSE_RESULTS:
+            results[dataset] = {**results[dataset], "biomedparse": np.mean(BIOMEDPARSE_RESULTS[dataset])}
+
         for df_val in scores.iloc:
             name = df_val["name"]
             dice = df_val["dice"]
@@ -165,6 +170,9 @@ def _make_per_dataset_plot():
 
         ax.axhline(methods.get("nnunet"), color="#DC3977", linewidth=4)
         ax.axhline(methods.get("swinunetr"), color="#7CCBA2", linewidth=4)
+        if dataset in BIOMEDPARSE_RESULTS:
+            kwargs = {"linestyle": "--"} if dataset == "oimhs" else {}
+            ax.axhline(methods.get("biomedparse"), color="#C99833", linewidth=4, **kwargs)
 
         ax.set_ylim([0, 1])
         _xticklabels = [MODEL_MAPS[_exp] for _exp in neu_methods_list]
@@ -184,6 +192,18 @@ def _make_per_dataset_plot():
 
         ax.set_title(f'{DATASET_MAPS[dataset]}', fontdict=fontdict)
         ax.title.set_color("#212427")
+
+    nnunet_line = mlines.Line2D([], [], color="#DC3977", linewidth=4, label="nnU-Net")
+    swinunetr_line = mlines.Line2D([], [], color="#7CCBA2", linewidth=4, label="Swin UNETR")
+    biomed_line = mlines.Line2D([], [], color="#C99833", linewidth=4, label="BiomedParse")
+
+    fig.legend(
+        handles=[nnunet_line, swinunetr_line, biomed_line],
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.02),
+        ncol=3,
+        fontsize=20,
+    )
 
     plt.text(
         x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20,
@@ -281,8 +301,8 @@ def main():
     _make_per_dataset_plot()
 
     # For figure 1
-    _plot_absolute_mean_per_experiment(dim="2d")
-    _plot_absolute_mean_per_experiment(dim="3d")
+    # _plot_absolute_mean_per_experiment(dim="2d")
+    # _plot_absolute_mean_per_experiment(dim="3d")
 
 
 if __name__ == "__main__":

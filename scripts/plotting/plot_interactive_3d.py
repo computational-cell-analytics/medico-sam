@@ -234,7 +234,7 @@ def _get_average_plots():
 
 def main():
     _get_plots()
-    # _get_average_plots()
+    _get_average_plots()
 
 
 if __name__ == "__main__":
