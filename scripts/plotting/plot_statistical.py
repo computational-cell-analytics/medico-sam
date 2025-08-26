@@ -61,7 +61,7 @@ def _interactive_seg_stats():
     group_gap = 0.25
     exp_centers = np.arange(n_exps) * (block_width + group_gap)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(15, 10))
 
     point_base = "#7CCBA2"
     box_base = "#FCDE9C"
@@ -98,17 +98,18 @@ def _interactive_seg_stats():
         y_top = max(y_top, np.max(b_mean + b_std))
 
     ax.set_xticks(all_iter_positions)
-    ax.set_xticklabels(all_iter_labels, fontsize=8)
+    ax.tick_params(axis='y', labelsize=24)
+    ax.set_xticklabels(all_iter_labels, fontsize=20)
 
     secax = ax.secondary_xaxis(-0.04, functions=(lambda x: x, lambda x: x))
     secax.set_xticks(exp_centers)
-    secax.set_xticklabels([MODEL_MAPS.get(exp, exp) for exp in exps], fontsize=11)
+    secax.set_xticklabels([MODEL_MAPS.get(exp, exp) for exp in exps], fontsize=24)
     secax.set_xlabel("")
     secax.spines["bottom"].set_visible(False)
     secax.tick_params(axis="x", length=0)
 
-    ax.set_ylabel("Dice Score Coefficient", fontweight="bold")
-    ax.set_title("Interactive Segmentation (Breast Tumor in Ultrasound)", fontweight="bold")
+    ax.set_ylabel("Dice Score Coefficient", fontweight="bold", fontsize=24)
+    ax.set_title("Interactive Segmentation (Breast Tumor in Ultrasound)", fontweight="bold", fontsize=24)
 
     upper = max(1.0, y_top * 1.05)
     ax.set_ylim(0, min(1.05, upper))
@@ -121,7 +122,7 @@ def _interactive_seg_stats():
     ]
     fig.legend(
         legend_handles, [h.get_label() for h in legend_handles], loc="upper center",
-        ncols=4, bbox_to_anchor=(0.5, 0.94), fontsize=11,
+        ncols=4, bbox_to_anchor=(0.5, 0.95), fontsize=18,
     )
     fig.tight_layout()
     fig.savefig("./fig_stats_interactive_segmentation.png", dpi=600, bbox_inches="tight")
@@ -183,14 +184,15 @@ def _semantic_seg_stats():
     light_factors = {0: 0.00, 1: 0.20, 2: 0.40, 3: 0.60}
     bar_colors = [mix_with_white(base_hex, light_factors[int(r)]) for r in ranks]
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(15, 10))
     x = np.arange(len(labels))
     ax.bar(x, means, yerr=stds, capsize=6, ecolor="black", color=bar_colors, zorder=2)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.set_ylabel("Dice Score Coefficient", fontweight="bold")
-    ax.set_title("Semantic Segmentation (Breast Tumor in Ultrasound)", fontweight="bold")
+    ax.tick_params(axis='y', labelsize=24)
+    ax.set_xticklabels(labels, fontsize=24)
+    ax.set_ylabel("Dice Score Coefficient", fontweight="bold", fontsize=24)
+    ax.set_title("Semantic Segmentation (Breast Tumor in Ultrasound)", fontweight="bold", fontsize=24)
 
     summary_df = pd.DataFrame({"method": labels, "mean": means, "std": stds, "n": ns})
     print(summary_df.to_string(index=False))
