@@ -120,8 +120,8 @@ def _interactive_seg_stats():
         Patch(facecolor=box_last, label=r"I$_{B}$"),
     ]
     fig.legend(
-        legend_handles, [h.get_label() for h in legend_handles], loc="lower center",
-        ncols=4, bbox_to_anchor=(0.525, -0.05), fontsize=11,
+        legend_handles, [h.get_label() for h in legend_handles], loc="upper center",
+        ncols=4, bbox_to_anchor=(0.5, 0.94), fontsize=11,
     )
     fig.tight_layout()
     fig.savefig("./fig_stats_interactive_segmentation.png", dpi=600, bbox_inches="tight")
