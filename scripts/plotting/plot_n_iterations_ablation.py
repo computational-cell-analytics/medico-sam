@@ -1,13 +1,13 @@
 import os
-from glob import glob
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 
 ROOT = "/mnt/vast-nhr/home/nimanwai/medico-sam/experiments/evaluation/res/piccolo"
-
 
 LABELS = {
     ("sam", True): "SAM",  # with masks result used as reference.
@@ -31,118 +31,96 @@ BAR_LABELS = ["Point", "Box", r"I$_P$", r"I$_B$"]
 BAR_COLORS = ["#7CCBA2", "#FCDE9C", "#045275", "#90477F"]
 
 
-def _score_at_iteration(df: pd.DataFrame, it: int) -> float:
-    if "dice" not in df.columns:
-        raise ValueError("Expected 'dice' column in CSV.")
-
-    if "Unnamed: 0" in df.columns:
-        if (df["Unnamed: 0"].astype(int) == it).any():
-            return float(df.loc[df["Unnamed: 0"].astype(int) == it, "dice"].iloc[0])
-
-    if len(df) <= it:
-        raise ValueError(f"Dataframe has only {len(df)} rows; cannot fetch iteration {it}.")
-
-    return float(df["dice"].iloc[it])
+def _read_series(csv_path):
+    df = pd.read_csv(csv_path)
+    it_col = "Unnamed: 0" if "Unnamed: 0" in df.columns else df.columns[0]
+    ser = pd.Series(df["dice"].values, index=df[it_col].astype(int)).sort_index()
+    return ser.reindex(range(32))
 
 
-def _load_point_box_iter(exp_dir: str, use_mask: bool, it: int) -> tuple[float, float]:
+def _load_point_box_series(exp_dir, use_mask):
     mask_dir = "with_mask" if use_mask else "without_mask"
     base = os.path.join(exp_dir, mask_dir, "results", "polyp")
     p_csv = os.path.join(base, "iterative_prompts_start_point.csv")
     b_csv = os.path.join(base, "iterative_prompts_start_box.csv")
-
-    p_df = pd.read_csv(p_csv)
-    b_df = pd.read_csv(b_csv)
-    return _score_at_iteration(p_df, it), _score_at_iteration(b_df, it)
+    return _read_series(p_csv), _read_series(b_csv)
 
 
 def _plot_iterative_prompting_use_mask():
-    experiments = []
-    for exp_dir in glob(os.path.join(ROOT, "*")):
-        ename = os.path.basename(exp_dir)
-        if ename in ["sam", "medicosam-old", "medicosam-neu"]:
-            experiments.append((ename, exp_dir))
+    models = ["sam", "medicosam-old", "medicosam-neu"]
+    cols = [False, True]  # True = with mask, False = without
+    col_titles = ["Without Mask Inputs", "With Mask Inputs"]
+    model_titles = {
+        "sam": "SAM",
+        "medicosam-old": r"MedicoSAM*",
+        "medicosam-neu": r"$\mathbf{MedicoSAM*}$",
+    }
 
-    table = {}
-    for ename, exp_dir in experiments:
-        for use_mask in (True, False):
-            p0, b0 = _load_point_box_iter(exp_dir, use_mask, it=0)
-            p7, b7 = _load_point_box_iter(exp_dir, use_mask, it=7)
-            table[(ename, use_mask)] = {"p0": p0, "b0": b0, "p7": p7, "b7": b7}
-
-    ref_key = ("sam", True)
-
-    ref = table[ref_key]
-    groups, rel_vals = [], {k: [] for k in BAR_KEYS}
-
-    for key in GROUP_ORDER:
-        if key not in table:
+    data = {}
+    global_max_box = 0.0
+    for m in models:
+        exp_dir = os.path.join(ROOT, m)
+        if not os.path.isdir(exp_dir):
             continue
+        for use_mask in cols:
+            try:
+                p_ser, b_ser = _load_point_box_series(exp_dir, use_mask)
+            except FileNotFoundError:
+                continue
+            p8, b8 = p_ser.iloc[:8], b_ser.iloc[:8]
+            data[(m, use_mask)] = (p8, b8)
+            max_here = np.nanmax(b8.values)
+            if np.isfinite(max_here):
+                global_max_box = max(global_max_box, max_here)
 
-        groups.append(LABELS.get(key, f"{key[0]} {'w/' if key[1] else 'w/o'} mask"))
-        vals = table[key]
-        rel_vals["p0"].append(vals["p0"] - ref["p0"])
-        rel_vals["b0"].append(vals["b0"] - ref["b0"])
-        rel_vals["p7"].append(vals["p7"] - ref["p7"])
-        rel_vals["b7"].append(vals["b7"] - ref["b7"])
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(15, 10), sharey=True)
+    x = np.arange(8)
 
-    fig, ax = plt.subplots(figsize=(10, 9))
-    n_groups = len(groups)
-    n_bars = len(BAR_KEYS)
-    bar_width = 0.18
+    for c, title in enumerate(col_titles):
+        axes[0, c].set_title(title, fontsize=24, fontweight="bold")
 
-    group_x = np.arange(n_groups)
-    offsets = (np.arange(n_bars) - (n_bars - 1) / 2) * bar_width
+    for r, m in enumerate(models):
+        for c, use_mask in enumerate(cols):
+            ax = axes[r, c]
+            if (m, use_mask) not in data:
+                ax.axis("off")
+                continue
 
-    for i, (k, label, color) in enumerate(zip(BAR_KEYS, BAR_LABELS, BAR_COLORS)):
-        x = group_x + offsets[i]
-        ax.bar(x, rel_vals[k], width=bar_width, edgecolor="grey", label=label, color=color)
+            p8, b8 = data[(m, use_mask)]
+            rel = b8 - p8
 
-    all_vals = np.concatenate([np.array(rel_vals[k]) for k in BAR_KEYS]) if n_groups else np.array([0.0])
-    max_val = float(np.nanmax(all_vals)) if all_vals.size else 0.0
-    min_val = float(np.nanmin(all_vals)) if all_vals.size else 0.0
-    ax.axhspan(0, max_val, facecolor="lightgreen", alpha=0.2)
-    ax.axhspan(min_val, 0, facecolor="lightcoral", alpha=0.2)
+            ax.bar(x, p8, width=0.8, color="#7CCBA2", edgecolor="grey", label="Point")
+            ax.bar(x, rel, width=0.8, bottom=p8, color="#FCDE9C", edgecolor="grey", label="Box")
 
-    ax.set_xticks(group_x)
-    ax.set_xticklabels(groups, fontsize=12)
-    ax.tick_params(axis='y', labelsize=12)
-    ax.set_ylabel(
-        "Relative Dice Similarity Score (compared to " + r"SAM$_{\mathrm{Mask}}$" + ")", fontweight="bold", fontsize=16
+            ax.set_xlim(-0.6, 7.6)
+            ax.set_xticks(np.arange(0, 8, 1))
+
+            if c == 0:
+                ax.set_ylabel(model_titles[m], rotation=90, labelpad=10, fontsize=20)
+
+            ax.grid(axis="y", linestyle=":", alpha=0.4)
+            ax.tick_params(axis="y", labelsize=18)
+            ax.tick_params(axis="x", labelsize=18)
+
+    y_top = min(1.02, global_max_box + max(0.02, 0.05 * global_max_box))
+    for ax in axes.ravel():
+        if ax.has_data():
+            ax.set_ylim(0, y_top)
+
+    fig.text(-0.01, 0.5, "Dice Similarity Coefficient", va="center", rotation=90, fontsize=24, fontweight="bold")
+    legend_handles = [
+        Patch(facecolor="#7CCBA2", edgecolor="grey", label="Point"),
+        Patch(facecolor="#FCDE9C", edgecolor="grey", label="Box")
+    ]
+    fig.legend(
+        legend_handles, ["Point", "Box"], loc="lower center",
+        ncols=2, bbox_to_anchor=(0.5, -0.055), fontsize=20,
     )
-    ax.axhline(0, linestyle="--", linewidth=1)
-    ax.legend(ncols=4, loc="upper center")
-    plt.tight_layout()
 
+    plt.tight_layout()
     plt.savefig("./fig_iterative_prompting_mask_ablation.png", dpi=600, bbox_inches="tight")
     plt.savefig("./fig_iterative_prompting_mask_ablation.svg", dpi=600, bbox_inches="tight")
     plt.close()
-
-
-def _read_series(csv_path):
-    df = pd.read_csv(csv_path)
-    it_col = "Unnamed: 0" if "Unnamed: 0" in df.columns else df.columns[0]
-    it = df[it_col].astype(int)
-    ser = pd.Series(df["dice"].values, index=it).sort_index()
-    ser = ser.reindex(range(32))
-    return ser
-
-
-def _load_point_box_series(exp_dir, use_mask):
-    base = os.path.join(exp_dir, ("with_mask" if use_mask else "without_mask"), "results", "polyp")
-    p_csv = os.path.join(base, "iterative_prompts_start_point.csv")
-    b_csv = os.path.join(base, "iterative_prompts_start_box.csv")
-
-    if not os.path.isfile(p_csv):
-        raise FileNotFoundError(f"Missing file: {p_csv}")
-
-    if not os.path.isfile(b_csv):
-        raise FileNotFoundError(f"Missing file: {b_csv}")
-
-    p_ser = _read_series(p_csv)
-    b_ser = _read_series(b_csv)
-
-    return p_ser, b_ser
 
 
 def _plot_iterative_prompting_n_iterations():
@@ -190,8 +168,8 @@ def _plot_iterative_prompting_n_iterations():
 
 
 def main():
-    # _plot_iterative_prompting_use_mask()
-    _plot_iterative_prompting_n_iterations()
+    _plot_iterative_prompting_use_mask()
+    # _plot_iterative_prompting_n_iterations()
 
 
 if __name__ == "__main__":
