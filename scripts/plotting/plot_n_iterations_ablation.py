@@ -131,7 +131,7 @@ def _plot_iterative_prompting_n_iterations():
             present.append((name, exp_dir))
 
     n = len(present)
-    fig, axes = plt.subplots(nrows=1, ncols=n, figsize=(6*n, 6), sharey=True)
+    fig, axes = plt.subplots(nrows=1, ncols=n, figsize=(7*n, 7), sharey=True)
     if n == 1:
         axes = [axes]
 
@@ -147,29 +147,30 @@ def _plot_iterative_prompting_n_iterations():
         model_names = {
             "sam": "SAM",
             "medsam-self": "MedSAM*",
-            "simplesam": "Simple-FT*",
+            "simplesam": "Simple FT*",
             "medicosam-neu": r"$\bf{MedicoSAM*}$",
         }
 
-        ax.set_title(model_names.get(ename, ename), fontsize=14)
+        ax.set_title(model_names.get(ename, ename), fontsize=20)
         ax.set_xlim(-0.6, 31.6)
         ax.set_xticks(np.arange(0, 32, 2))
         ax.grid(axis="y", linestyle=":", alpha=0.4)
-        ax.tick_params(axis='y', labelsize=12)
+        ax.tick_params(axis='both', labelsize=14)
         ax.set_ylim(0, 1)
 
-    axes[0].set_ylabel("Dice Similarity Coefficient")
+    axes[0].set_ylabel("Dice Similarity Coefficient", fontsize=20, fontweight="bold")
     handles, labels = axes[-1].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncols=2, bbox_to_anchor=(0.5, 1.04))
+    fig.legend(handles, labels, loc="lower center", ncols=2, bbox_to_anchor=(0.5, -0.075), fontsize=18)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig("./test.png", dpi=300, bbox_inches="tight")
+    plt.tight_layout()
+    plt.savefig("./fig_iterative_prompting_iteration_ablation.png", dpi=600, bbox_inches="tight")
+    plt.savefig("./fig_iterative_prompting_iteration_ablation.svg", dpi=600, bbox_inches="tight")
     plt.close()
 
 
 def main():
-    _plot_iterative_prompting_use_mask()
-    # _plot_iterative_prompting_n_iterations()
+    # _plot_iterative_prompting_use_mask()
+    _plot_iterative_prompting_n_iterations()
 
 
 if __name__ == "__main__":
