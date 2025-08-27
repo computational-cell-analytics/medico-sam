@@ -18,22 +18,22 @@ EXPERIMENTS = [
 MODEL = "vit_b"
 
 DATASET_MAPS = {
-    "camus": "CAMUS (Cardiac Structures in Echocardipgraphy)",
-    "uwaterloo_skin": "UWaterloo Skin (Skin Lesion in Dermoscopy)",
-    "montgomery": "Montgomery (Lungs in Chest X-Ray)",
-    "sega": "SegA (Aorta in CT)",
-    "duke_liver": "DLDS (Liver in MRI)",
-    "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
-    "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
-    "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
-    "papila": "Papila (Optic Disc & Cup in Fundus)",
-    "jnu-ifm": "JNU IFM (Pubic Symphysis & Fetal Head in US)",
-    "siim_acr": "SIIM ACR (Pneumothorax in Chest X-Ray)",
-    "m2caiseg": "m2caisSeg (Tools & Organs in Endoscopy)",
-    "toothfairy": "ToothFairy (Mandibular Canal in CBCT)",
-    "spider": "SPIDER (Lumbar Spine & Vertebrae in MRI)",
-    "han-seg": "HaN-Seg (Head & Neck Organ in CT)",
-    "microusp": "MicroUSP (Prostate in Micro-Ultrasound)",
+    "camus": "CAMUS (Echocardiography)",
+    "uwaterloo_skin": "UWaterloo Skin (Dermoscopy)",
+    "montgomery": "Montgomery (Chest X-Ray)",
+    "sega": "SegA (CT)",
+    "duke_liver": "DLDS (MRI)",
+    "piccolo": "PICCOLO (Narrow Band Imaging)",
+    "cbis_ddsm": "CBIS DDSM (Mammography)",
+    "dca1": "DCA1 (X-Ray Coronary Angiograms)",
+    "papila": "Papila (Fundus)",
+    "jnu-ifm": "JNU IFM (Ultrasound)",
+    "siim_acr": "SIIM ACR (Chest X-Ray)",
+    "m2caiseg": "m2caisSeg (Endoscopy)",
+    "toothfairy": "ToothFairy (CBCT)",
+    "spider": "SPIDER (MRI)",
+    "han-seg": "HaN-Seg (CT)",
+    "microusp": "MicroUSP (Micro-Ultrasound)",
 }
 
 MODEL_MAPS = {
@@ -233,8 +233,7 @@ def _make_per_experiment_plots(dataframes, datasets):
         axes[i].set_xticks(tick_positions)
         axes[i].set_xticklabels(_xticklabels, rotation=45, ha='right', fontsize=20)
         axes[i].tick_params(axis='y', labelsize=20)
-
-        axes[i].set_title(f'{DATASET_MAPS[datasets[i]]}', fontsize=20)
+        axes[i].set_title(f'{DATASET_MAPS[datasets[i]]}', fontsize=24)
         axes[i].legend()
 
     all_lines, all_labels = [], []
@@ -268,9 +267,7 @@ def _make_per_model_average_plots(dataframes):
 
     grouped_data = filtered_data.groupby('experiment')[['point', 'box', 'ip', 'ib']].mean().reset_index()
 
-    _order = [
-        "vanilla", "sam2.1", "medsam", "generalistv2-full"
-    ]
+    _order = ["vanilla", "medsam", "sam2.1", "generalistv2-full"]
     grouped_data['experiment'] = pd.Categorical(grouped_data['experiment'], categories=_order, ordered=True)
     grouped_data = grouped_data.sort_values('experiment')
 
@@ -287,25 +284,13 @@ def _make_per_model_average_plots(dataframes):
     for i, (metric, color, label) in enumerate(zip(metrics, color_map, label_map)):
         ax.bar(x + i * width, grouped_data[metric], width, label=label, color=color, edgecolor='grey')
 
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=36, fontweight="bold")
     ax.set_xticks(x + width * (len(metrics) - 1) / 2)
     _xticklabels = [MODEL_MAPS[_exp] for _exp in experiments]
-    ax.set_xticklabels(_xticklabels, fontsize=18)
-    ax.tick_params(axis='y', labelsize=16)
-    ax.legend()
+    ax.set_xticklabels(_xticklabels, fontsize=32)
+    ax.tick_params(axis='y', labelsize=30)
 
-    all_lines, all_labels = [], []
-    for ax in fig.axes:
-        lines, labels = ax.get_legend_handles_labels()
-        for line, label in zip(lines, labels):
-            if label not in all_labels:
-                all_lines.append(line)
-                all_labels.append(label)
-        ax.legend().remove()
-
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.29, 0.875), fontsize=18)
-
-    plt.title("Interactive Segmentation (2D)", fontsize=24, fontweight="bold")
+    plt.title("Interactive Segmentation (2D)", fontsize=40, fontweight="bold")
     plt.savefig("./fig_1b_interactive_segmentation_2d_average.png", bbox_inches="tight")
     plt.savefig("./fig_1b_interactive_segmentation_2d_average.svg", bbox_inches="tight")
     plt.close()

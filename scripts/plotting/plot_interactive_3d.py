@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/3d"
 
 DATASETS = {
-    "lgg_mri": "LGG MRI (Glioma in MRI)",
-    "microusp": "MicroUSP (Prostate in Micro-Ultrasound)",
-    "kits": "KiTS (Kidney Tumor in CT)",
-    "duke_liver": "DLDS (Liver in MRI)",
-    "segthy": "SegThy (Thyroid in US)",
-    "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
+    "lgg_mri": "LGG MRI (MRI)",
+    "microusp": "MicroUSP (Micro-Ultrasound)",
+    "kits": "KiTS (CT)",
+    "duke_liver": "DLDS (MRI)",
+    "segthy": "SegThy (Ultrasound)",
+    "osic_pulmofib": "OSIC PulmoFib (CT)",
 }
 
 MODEL_MAPS = {
@@ -148,7 +148,7 @@ def _get_plots():
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels, fontsize=fontsize_base)
         ax[i].tick_params(axis='y', labelsize=fontsize_base)
-        ax[i].set_title(dmap, fontweight="bold", fontsize=fontsize_base)
+        ax[i].set_title(dmap, fontsize=fontsize_base)
 
         ax[i].axhline(0, color='black', linewidth=0.8, linestyle="--")
 
@@ -170,7 +170,9 @@ def _get_plots():
 
 
 def _get_average_plots():
-    method_scores = {method: {'box': [], 'point': []} for method in MODEL_MAPS.keys() if method != "simplesam"}
+    method_scores = {
+        method: {'box': [], 'point': []} for method in MODEL_MAPS.keys() if method not in ["simplesam", "medsam2"]
+    }
 
     for dname in DATASETS.keys():
         df1 = _get_sam_results_per_dataset(dname)
@@ -196,7 +198,7 @@ def _get_average_plots():
 
     fig, ax = plt.subplots(figsize=(20, 15))
 
-    methods = [MODEL_MAPS[m] for m in MODEL_MAPS.keys() if m != "simplesam"]
+    methods = [MODEL_MAPS[m] for m in MODEL_MAPS.keys() if m not in ["simplesam", "medsam2"]]
     x = np.arange(len(methods))
     bar_width = 0.2
 
@@ -211,21 +213,10 @@ def _get_average_plots():
     )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(methods, fontsize=18)
-    ax.set_ylabel("Dice Similarity Coefficient", fontsize=20, fontweight="bold")
-    ax.set_title("Interactive Segmentation (3D)", fontsize=24, fontweight="bold")
-    ax.tick_params(axis='y', labelsize=18)
-
-    all_lines, all_labels = [], []
-    for ax in fig.axes:
-        lines, labels = ax.get_legend_handles_labels()
-        for line, label in zip(lines, labels):
-            if label not in all_labels:
-                all_lines.append(line)
-                all_labels.append(label)
-        ax.legend().remove()
-
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.22, 0.875), fontsize=18)
+    ax.set_xticklabels(methods, fontsize=32)
+    ax.set_ylabel("Dice Similarity Coefficient", fontsize=36, fontweight="bold")
+    ax.set_title("Interactive Segmentation (3D)", fontsize=40, fontweight="bold")
+    ax.tick_params(axis='y', labelsize=30)
 
     plt.savefig("./fig_1b_interactive_segmentation_3d_average.png", bbox_inches="tight")
     plt.savefig("./fig_1b_interactive_segmentation_3d_average.svg", bbox_inches="tight")
