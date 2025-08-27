@@ -53,20 +53,20 @@ BIOMEDPARSE_RESULTS = {
 
 DATASET_MAPS = {
     # 2d
-    "oimhs": "OIMHS (Retinal Structures in OCT)",
-    "isic": "ISIC (Skin Lesion in Dermoscopy)",
-    "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
-    "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
-    "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
-    "hil_toothseg": "HIL ToothSeg (Teeth in Dental Radiographs)",
+    "oimhs": "OIMHS (OCT)",
+    "isic": "ISIC (Dermoscopy)",
+    "dca1": "DCA1 (X-Ray Coronary Angiograms)",
+    "cbis_ddsm": "CBIS DDSM (Mammography)",
+    "piccolo": "PICCOLO (Narrow Band Imaging)",
+    "hil_toothseg": "HIL ToothSeg (Dental Radiographs)",
 
     # 3d
-    "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
-    "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
-    "oasis": "OASIS (Brain Tissue in MRI)",
-    "micro_usp": "MicroUSP (Prostate in Micro-Ultrasound)",
-    "lgg_mri": "LGG MRI (Glioma in Brain MRI)",
-    "duke_liver": "DLDS (Liver in MRI)",
+    "osic_pulmofib": "OSIC PulmoFib (CT)",
+    "leg_3d_us": "LEG 3D US (Ultrasound)",
+    "oasis": "OASIS (MRI)",
+    "micro_usp": "MicroUSP (Micro-Ultrasound)",
+    "lgg_mri": "LGG MRI (Brain MRI)",
+    "duke_liver": "DLDS (MRI)",
 }
 
 DATASETS_2D = ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]
@@ -177,14 +177,14 @@ def _make_per_dataset_plot():
         ax.set_ylim([0.2, 1])
         _xticklabels = [MODEL_MAPS[_exp] for _exp in neu_methods_list]
         ax.set_xticks(np.arange(len(neu_methods_list)))
-        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=22)
+        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=26)
         ax.tick_params(axis='y', labelsize=20)
 
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
             if "medico-samv2-full" in method:
                 label.set_fontweight("bold")
 
-        fontdict = {"fontsize": 28}
+        fontdict = {"fontsize": 30}
         if dataset in ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]:
             fontdict["fontstyle"] = "italic"
         else:
@@ -199,14 +199,14 @@ def _make_per_dataset_plot():
 
     fig.legend(
         handles=[nnunet_line, swinunetr_line, biomed_line],
-        loc="lower center", bbox_to_anchor=(0.5, 0.02), ncol=3, fontsize=26,
+        loc="lower center", bbox_to_anchor=(0.5, 0.0175), ncol=3, fontsize=32,
     )
 
     plt.text(
-        x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=28,
+        x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=32,
     )
 
-    plt.subplots_adjust(hspace=0.7, wspace=0.1, bottom=0.125)
+    plt.subplots_adjust(hspace=0.875, wspace=0.1, bottom=0.125)
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg", bbox_inches="tight")
     plt.close()
@@ -251,7 +251,7 @@ def _plot_absolute_mean_per_experiment(dim):
 
     method_avgs = {m: method_sums[m] / method_counts[m] for m in method_sums}
 
-    fig, ax = plt.subplots(figsize=(24, 15))
+    fig, ax = plt.subplots(figsize=(28, 15))
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
     top_methods = sorted(methods, key=method_avgs.get, reverse=True)[:3]  # get the top 3 methods.
@@ -270,15 +270,15 @@ def _plot_absolute_mean_per_experiment(dim):
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
-    ax.set_xticklabels(_xticklabels, fontsize=18)
-    ax.tick_params(axis='y', labelsize=18)
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
+    ax.set_xticklabels(_xticklabels, rotation=15, fontsize=32)
+    ax.tick_params(axis='y', labelsize=30)
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=36, fontweight="bold")
 
     # NOTE: adds values on top of each bar
     for bar, mean, method in zip(bars, means, methods):
         ax.text(
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, round(mean, 4),
-            ha='center', va='bottom', fontsize=18,
+            ha='center', va='bottom', fontsize=32,
             color="black" if method in top_methods else "#696969",
             fontweight="bold" if method in top_methods else "normal",
         )
@@ -287,7 +287,7 @@ def _plot_absolute_mean_per_experiment(dim):
         if "medico-samv2-full" in method:
             label.set_fontweight("bold")
 
-    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=24, fontweight="bold")
+    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=40, fontweight="bold")
     plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.png", bbox_inches="tight")
     plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.svg", bbox_inches="tight")
     plt.close()
