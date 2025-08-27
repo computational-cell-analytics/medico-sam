@@ -114,17 +114,84 @@ def _plot_iterative_prompting_use_mask():
     ax.legend(ncols=4, loc="upper center")
     plt.tight_layout()
 
+    plt.savefig("./fig_iterative_prompting_mask_ablation.png", dpi=600, bbox_inches="tight")
+    plt.savefig("./fig_iterative_prompting_mask_ablation.svg", dpi=600, bbox_inches="tight")
+    plt.close()
+
+
+def _read_series(csv_path):
+    df = pd.read_csv(csv_path)
+    it_col = "Unnamed: 0" if "Unnamed: 0" in df.columns else df.columns[0]
+    it = df[it_col].astype(int)
+    ser = pd.Series(df["dice"].values, index=it).sort_index()
+    ser = ser.reindex(range(32))
+    return ser
+
+
+def _load_point_box_series(exp_dir, use_mask):
+    base = os.path.join(exp_dir, ("with_mask" if use_mask else "without_mask"), "results", "polyp")
+    p_csv = os.path.join(base, "iterative_prompts_start_point.csv")
+    b_csv = os.path.join(base, "iterative_prompts_start_box.csv")
+
+    if not os.path.isfile(p_csv):
+        raise FileNotFoundError(f"Missing file: {p_csv}")
+
+    if not os.path.isfile(b_csv):
+        raise FileNotFoundError(f"Missing file: {b_csv}")
+
+    p_ser = _read_series(p_csv)
+    b_ser = _read_series(b_csv)
+
+    return p_ser, b_ser
+
+
+def _plot_iterative_prompting_n_iterations():
+    present = []
+    for name in ["sam", "medsam-self", "simplesam", "medicosam-neu"]:
+        exp_dir = os.path.join(ROOT, name)
+        if os.path.isdir(exp_dir):
+            present.append((name, exp_dir))
+
+    n = len(present)
+    fig, axes = plt.subplots(nrows=1, ncols=n, figsize=(6*n, 6), sharey=True)
+    if n == 1:
+        axes = [axes]
+
+    for ax, (ename, exp_dir) in zip(axes, present):
+        use_mask = ename in ["sam", "medicosam-neu"]
+        point, box = _load_point_box_series(exp_dir, use_mask)
+        rel_box = box - point
+
+        x = np.arange(32)
+        ax.bar(x, point, width=0.8, color="#7CCBA2", edgecolor="grey", label="Point")
+        ax.bar(x, rel_box, width=0.8, bottom=point, color="#FCDE9C", edgecolor="grey", label="Box")
+
+        model_names = {
+            "sam": "SAM",
+            "medsam-self": "MedSAM*",
+            "simplesam": "Simple-FT*",
+            "medicosam-neu": r"$\bf{MedicoSAM*}$",
+        }
+
+        ax.set_title(model_names.get(ename, ename), fontsize=14)
+        ax.set_xlim(-0.6, 31.6)
+        ax.set_xticks(np.arange(0, 32, 2))
+        ax.grid(axis="y", linestyle=":", alpha=0.4)
+        ax.tick_params(axis='y', labelsize=12)
+        ax.set_ylim(0, 1)
+
+    axes[0].set_ylabel("Dice Similarity Coefficient")
+    handles, labels = axes[-1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncols=2, bbox_to_anchor=(0.5, 1.04))
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig("./test.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def _plot_iterative_prompting_n_iterations():
-    ...
-
-
 def main():
-    _plot_iterative_prompting_use_mask()
-    # _plot_iterative_prompting_n_iterations()
+    # _plot_iterative_prompting_use_mask()
+    _plot_iterative_prompting_n_iterations()
 
 
 if __name__ == "__main__":
