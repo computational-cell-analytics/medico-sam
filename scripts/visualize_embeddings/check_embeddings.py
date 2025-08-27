@@ -1,3 +1,5 @@
+import numpy as np
+
 from tukra.io import read_image
 
 from torch_em.transform.raw import normalize
@@ -58,19 +60,57 @@ def check_embeddings(raw, model_type="vit_b", embedding_path=None, checkpoint=No
 def main():
     # Load the image
 
-    # 1. Brain MRI: MedicoSAM looks good.
-    efname = "mri"
-    image_path = "/home/anwai/data/pedims/PediMS/P1/T1/processed/54714428_brain_FLAIR.nii.gz"
-    image = read_image(image_path)
-    image = normalize(image) * 255
-    image = image.transpose(2, 0, 1)[19]
+    # 1. Brain MRI (PedIMS)
+    # efname = "mri"
+    # image_path = "/home/anwai/data/pedims/PediMS/P1/T1/processed/54714428_brain_FLAIR.nii.gz"
+    # image = read_image(image_path)
+    # image = normalize(image) * 255
+    # image = image.transpose(2, 0, 1)[19]
 
-    # 2. Abdomen CT: MedicoSAM looks good again!
+    # 2. Abdomen CT (CURVAS)
     # efname = "ct"
     # image_path = "/media/anwai/ANWAI/data/curvas/training_set/UKCHLL001/image.nii.gz"
     # image = read_image(image_path)
     # image = normalize(image) * 255
     # image = image.transpose(2, 1, 0)[480]
+
+    # 3. Narrow Band Imaging (PICCOLO)
+    # efname = "nbi"
+    # image_path = "/home/anwai/data/embedding_data/003_VP3_frame0051.png"
+    # image = read_image(image_path)
+
+    # 4. Dermoscopy (UWaterloo Skin)
+    # efname = "dm"
+    # image_path = "/home/anwai/data/embedding_data/SSM10_orig.jpg"
+    # image = read_image(image_path)
+
+    # 5. X-Ray (Montgomery)
+    # efname = "xray"
+    # image_path = "/home/anwai/data/embedding_data/MCUCXR_0001_0.png"
+    # image = read_image(image_path)
+
+    # 6. Mammography (CBIS DDSM)
+    # efname = "mm"
+    # image_path = "/home/anwai/data/embedding_data/Mass-Test_P_00194_RIGHT_CC_FULL_PRE.png"
+    # image = read_image(image_path)
+
+    # 7.Fundus (Papila)
+    efname = "fd"
+    image_path = "/home/anwai/data/embedding_data/RET010OD.jpg"
+    image = read_image(image_path)
+
+    # 8. Spine MRI (SPIDER)
+    # efname = "sm"
+    # image_path = "/home/anwai/data/embedding_data/104_t2.mha"
+    # image = read_image(image_path).transpose(2, 0, 1)[6]
+    # image = np.clip(image, 0, image.max())
+    # image = normalize(image) * 255
+
+    # 9. Ultrasound (CAMUS)
+    # efname = "us"
+    # image_path = "/home/anwai/data/embedding_data/camus_patient0012_2CH_half_sequence.nii_00015.tif"
+    # image = read_image(image_path)[:, :, 0]
+    # image = np.rot90(image, k=3)
 
     # View image
     view = False
@@ -106,6 +146,8 @@ def main():
     if efname == "ct":
         kwargs["vmin"] = 0.8 * image.max()
         kwargs["vmax"] = image.max()
+    elif efname == "fd":
+        image = (normalize(image) * 255).astype("uint8")
 
     ax[0].imshow(image, cmap="gray", **kwargs)
     ax[1].imshow(embed_default)
