@@ -143,6 +143,9 @@ def get_default_arguments():
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("--box", action="store_true", help="If passed, starts with first prompt as box")
     parser.add_argument("--use_masks", action="store_true", help="To use logits masks for iterative prompting.")
+    parser.add_argument(
+        "--iterations", default=8, type=int, help="The number of iterations for interactive segmentation."
+    )
 
     # for SAM-Med2d models
     parser.add_argument("--use_sam_med2d", action="store_true", help="Whether to use the SAM-Med2d model.")

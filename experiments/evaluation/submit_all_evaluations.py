@@ -21,6 +21,7 @@ def write_batch_script(
     use_masks=False,
     use_sam_med2d=False,
     adapter=False,
+    iterations=8,
 ):
     "Writing scripts with different fold-trainings for medico-sam evaluation"
     batch_script = f"""#!/bin/bash
@@ -42,6 +43,7 @@ micromamba activate super \n"""
     python_script += f"-e {experiment_folder} "  # experiment folder
     python_script += f"-d {dataset_name} "  # choice of the dataset
     python_script += f"-c {checkpoint} "  # add the finetuned checkpoint
+    python_script += f"--iterations {iterations} "  # number of iterations for interactive segmentation.
 
     if inference_setup == "iterative_prompting" and use_masks:  # use logits for iterative prompting
         python_script += "--use_masks "
@@ -209,7 +211,7 @@ def submit_slurm(args):
             dataset_name=dataset_name,
             use_masks=args.use_masks,
             **extra_params
-            )
+        )
 
     if args.dry:
         return
