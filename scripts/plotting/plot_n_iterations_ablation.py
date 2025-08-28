@@ -98,10 +98,6 @@ def _plot_iterative_prompting_use_mask():
             if c == 0:
                 ax.set_ylabel(model_titles[m], rotation=90, labelpad=10, fontsize=20)
 
-<<<<<<< HEAD
-=======
-            ax.grid(axis="y", linestyle=":", alpha=0.4)
->>>>>>> dev
             ax.tick_params(axis="y", labelsize=18)
             ax.tick_params(axis="x", labelsize=18)
 
