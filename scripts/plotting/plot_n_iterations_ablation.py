@@ -98,7 +98,6 @@ def _plot_iterative_prompting_use_mask():
             if c == 0:
                 ax.set_ylabel(model_titles[m], rotation=90, labelpad=10, fontsize=20)
 
-            ax.grid(axis="y", linestyle=":", alpha=0.4)
             ax.tick_params(axis="y", labelsize=18)
             ax.tick_params(axis="x", labelsize=18)
 
@@ -151,16 +150,12 @@ def _plot_iterative_prompting_n_iterations():
             "medicosam-neu": r"$\bf{MedicoSAM*}$",
         }
 
-        ax.set_title(model_names.get(ename, ename), fontsize=20)
+        ax.set_title(model_names.get(ename, ename), fontsize=32)
         ax.set_xlim(-0.6, 31.6)
         ax.set_xticks(np.arange(0, 32, 2))
-        ax.grid(axis="y", linestyle=":", alpha=0.4)
-        ax.tick_params(axis='both', labelsize=14)
+        ax.tick_params(axis='y', labelsize=20)
+        ax.tick_params(axis='x', labelsize=15)
         ax.set_ylim(0, 1)
-
-    axes[0].set_ylabel("Dice Similarity Coefficient", fontsize=20, fontweight="bold")
-    handles, labels = axes[-1].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncols=2, bbox_to_anchor=(0.5, -0.075), fontsize=18)
 
     plt.tight_layout()
     plt.savefig("./fig_iterative_prompting_iteration_ablation.png", dpi=600, bbox_inches="tight")
@@ -169,7 +164,7 @@ def _plot_iterative_prompting_n_iterations():
 
 
 def main():
-    # _plot_iterative_prompting_use_mask()
+    _plot_iterative_prompting_use_mask()
     _plot_iterative_prompting_n_iterations()
 
 
