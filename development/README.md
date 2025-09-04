@@ -1,0 +1,1 @@
+NOTE: The scripts here are used solely for development purpose. Some might be outdated compared to our latest experiments. Please check out the [example scripts](https://github.com/computational-cell-analytics/medico-sam/tree/master/examples) for the latest functionalities.
