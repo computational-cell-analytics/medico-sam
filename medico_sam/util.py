@@ -72,7 +72,7 @@ def models():
         "vit_l": "xxh128:a82beb3c660661e3dd38d999cc860e9a",
         "vit_h": "xxh128:97698fac30bd929c2e6d8d8cc15933c2",
         # The MedicoSAM models:
-        "vit_b_medical_imaging": "xxh128:5be672f1458263a9edc9fd40d7f56ac1",
+        "vit_b_medical_imaging": "xxh128:40169f1e3c03a4b67bff58249c176d92",
     }
 
     urls = {
@@ -80,7 +80,7 @@ def models():
         "vit_l": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
         "vit_h": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
         # The MedicoSAM models:
-        "vit_b_medical_imaging": "https://owncloud.gwdg.de/index.php/s/AB69HGhj8wuozXQ/download",
+        "vit_b_medical_imaging": "https://owncloud.gwdg.de/index.php/s/f5Ol4FrjPQWfjUF/download",
     }
 
     models = pooch.create(

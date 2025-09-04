@@ -50,6 +50,7 @@ def run_inference_with_iterative_prompting_per_semantic_class(
         batch_size: The batch size used for batched predictions.
         n_iterations: The number of iterations for iterative prompting.
         use_masks: Whether to make use of logits from previous prompt-based segmentation.
+        min_size: The minimum size to filter out objects.
     """
     if len(image_paths) != len(gt_paths):
         raise ValueError(f"Expect same number of images and gt images, got {len(image_paths)}, {len(gt_paths)}")

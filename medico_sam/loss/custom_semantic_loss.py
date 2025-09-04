@@ -4,6 +4,15 @@ from micro_sam.training.semantic_sam_trainer import CustomDiceLoss
 
 
 class CustomCombinedLoss(torch.nn.Module):
+    """Weighted Dice-CE Loss for training semantic segmentation models.
+
+    Args:
+        num_classes: The total number of classes for semantic segmentation.
+        dice_weight: The weight factor for dice loss.
+
+    Returns:
+        The net loss computed between targets and predicted labels.
+    """
     def __init__(self, num_classes: int, dice_weight: float = 0.5):
         super().__init__()
 
