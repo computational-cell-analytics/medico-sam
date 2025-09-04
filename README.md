@@ -6,7 +6,7 @@ MedicoSAM implements interactive annotation and (automatic) semantic segmentatio
 - The `medico_sam` publicly available model for interactive data annotation in 2d and 3d data that are fine-tuned on publicly available medical images.
 - The `medico_sam` library provides training frameworks, inspired by [Segment Anything for Microscopy](https://computational-cell-analytics.github.io/micro-sam/micro_sam.html), for downstream tasks:
   - Apply Segment Anything to 2d and 3d data or fine-tune it on your data.
-  - Supports semantic segmentation for 2d and 3d data.
+  - Supports semantic segmentation for 2d and 3d data, featuring an additional pretrained segmentation decoder.
 
 Based on these components, `medico_sam` enables fast interactive and automatic annotation for medical images.
 
@@ -24,9 +24,9 @@ To create the environment and install `medico_sam` into it follow these steps:
 
 ## Download Model Checkpoints
 
-You can find the model checkpoints at: https://owncloud.gwdg.de/index.php/s/AB69HGhj8wuozXQ
+You can find the model checkpoints at: https://owncloud.gwdg.de/index.php/s/f5Ol4FrjPQWfjUF
 
-Download it via terminal using: `wget https://owncloud.gwdg.de/index.php/s/AB69HGhj8wuozXQ/download -O vit_b_medicosam.pt`.
+Download it via terminal using: `wget https://owncloud.gwdg.de/index.php/s/f5Ol4FrjPQWfjUF/download -O vit_b_medicosam.pt`.
 
 ## Tool Usage for Interactive Annotation
 
