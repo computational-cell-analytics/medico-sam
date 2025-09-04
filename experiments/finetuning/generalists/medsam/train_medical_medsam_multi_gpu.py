@@ -72,7 +72,7 @@ def finetune_medical_generalist(args):
         optimizer_callable=torch.optim.AdamW,
         optimizer_kwargs={"lr": 5e-5},
         lr_scheduler_callable=torch.optim.lr_scheduler.StepLR,
-        lr_scheduler_kwargs={"step_size": 1, "gamma": 0.9, "verbose": True},
+        lr_scheduler_kwargs={"step_size": 1, "gamma": 0.9},
         # trainer params
         trainer_callable=sam_training.MedSAMTrainer,
         name=checkpoint_name,

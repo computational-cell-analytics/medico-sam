@@ -10,28 +10,29 @@ import matplotlib.pyplot as plt
 ROOT = "/mnt/vast-nhr/projects/cidas/cca/experiments/medico_sam/3d"
 
 DATASETS = {
-    "lgg_mri": "LGG MRI (Low-Grade Glioma in MRI)",
-    "microusp": "MicroUSP (Prostate in Micro-Ultrasound)",
-    "kits": "KiTS (Kidney Tumor in CT)",
-    "duke_liver": "DLDS (Liver in MRI)",
-    "segthy": "SegThy (Thyroid, Jugular Vein & Cartoid Artery and Vein in US)",
-    "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
+    "lgg_mri": "LGG MRI (MRI)",
+    "microusp": "MicroUSP (Micro-Ultrasound)",
+    "kits": "KiTS (CT)",
+    "duke_liver": "DLDS (MRI)",
+    "segthy": "SegThy (Ultrasound)",
+    "osic_pulmofib": "OSIC PulmoFib (CT)",
 }
 
 MODEL_MAPS = {
     "sam": "SAM",
-    "sam2.1": "SAM2 (2.1)",
     "medsam": "MedSAM",
-    "simplesam": "SimpleFT",
-    "medico-sam-8g": r"$\bf{MedicoSAM}$",
+    "sam2.1": "SAM2 (2.1)",
+    "medsam2": "MedSAM2",
+    "simplesam": "SimpleFT*",
+    "medico-samv2-full": r"$\bf{MedicoSAM*}$",
 }
 
 
-def _get_sam2_results_per_dataset(dataset_name):
+def _get_sam2_results_per_dataset(dataset_name, model_type="hvit_b"):
     res_list = []
     for bpath in glob(os.path.join(ROOT, "*")):
         backbone = os.path.basename(bpath)
-        for res_path in glob(os.path.join(bpath, "hvit_b", dataset_name, "results", "**", "*.csv")):
+        for res_path in glob(os.path.join(bpath, model_type, dataset_name, "results", "**", "*.csv")):
             res = pd.read_csv(res_path)
 
             score_columns = [
@@ -74,19 +75,24 @@ def _get_sam_results_per_dataset(dataset_name):
 
 
 def _get_plots():
-    fig, ax = plt.subplots(2, 3, figsize=(32, 23))
+    fig, ax = plt.subplots(2, 3, figsize=(47, 22))
     ax = ax.flatten()
 
     bar_width = 0.2
-    scale = 1.2
+    scale = 1.8
     fontsize_base = int(16 * scale)
     fontsize_legend = int(16 * scale)
-    fontsize_axis_label = int(20 * scale)
+    fontsize_axis_label = int(16 * scale)
 
     for i, (dname, dmap) in enumerate(DATASETS.items()):
         df1 = _get_sam_results_per_dataset(dname)
-        df2 = _get_sam2_results_per_dataset(dname)
-        df = pd.concat([df1, df2], ignore_index=True)
+        df2 = _get_sam2_results_per_dataset(dname, model_type="hvit_b")
+
+        # Results for MedSAM2.
+        df3 = _get_sam2_results_per_dataset(dname, model_type="hvit_t_medsam2")
+        df3["backbone"] = df3["backbone"].replace("sam2.1", "medsam2")
+
+        df = pd.concat([df1, df2, df3], ignore_index=True)
 
         methods = [m for m in MODEL_MAPS.keys() if m != "sam"]
         labels = [MODEL_MAPS[m] for m in methods]
@@ -142,7 +148,7 @@ def _get_plots():
         ax[i].set_xticks(x)
         ax[i].set_xticklabels(labels, fontsize=fontsize_base)
         ax[i].tick_params(axis='y', labelsize=fontsize_base)
-        ax[i].set_title(dmap, fontweight="bold", fontsize=fontsize_base)
+        ax[i].set_title(dmap, fontsize=fontsize_base)
 
         ax[i].axhline(0, color='black', linewidth=0.8, linestyle="--")
 
@@ -153,18 +159,20 @@ def _get_plots():
     fig.legend(handles, labels, loc='lower center', fontsize=fontsize_legend, ncol=2)
 
     plt.text(
-        x=-6, y=-0.175, s="Relative Dice Similarity Coefficient (compared to SAM)",
+        x=-7.5, y=-0.225, s="Relative Dice Similarity Coefficient (compared to SAM)",
         rotation=90, fontweight="bold", fontsize=fontsize_axis_label
     )
 
-    plt.subplots_adjust(top=0.95, bottom=0.055, right=0.95, left=0.05, hspace=0.125, wspace=0.1)
+    plt.subplots_adjust(top=0.95, bottom=0.08, right=0.95, left=0.05, hspace=0.125, wspace=0.1)
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_5_interactive_segmentation_3d_per_dataset.svg", bbox_inches="tight")
     plt.close()
 
 
 def _get_average_plots():
-    method_scores = {method: {'box': [], 'point': []} for method in MODEL_MAPS.keys() if method != "simplesam"}
+    method_scores = {
+        method: {'box': [], 'point': []} for method in MODEL_MAPS.keys() if method not in ["simplesam", "medsam2"]
+    }
 
     for dname in DATASETS.keys():
         df1 = _get_sam_results_per_dataset(dname)
@@ -190,7 +198,7 @@ def _get_average_plots():
 
     fig, ax = plt.subplots(figsize=(20, 15))
 
-    methods = [MODEL_MAPS[m] for m in MODEL_MAPS.keys() if m != "simplesam"]
+    methods = [MODEL_MAPS[m] for m in MODEL_MAPS.keys() if m not in ["simplesam", "medsam2"]]
     x = np.arange(len(methods))
     bar_width = 0.2
 
@@ -205,21 +213,10 @@ def _get_average_plots():
     )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(methods, fontsize=18)
-    ax.set_ylabel("Dice Similarity Coefficient", fontsize=20, fontweight="bold")
-    ax.set_title("Interactive Segmentation (3D)", fontsize=24, fontweight="bold")
-    ax.tick_params(axis='y', labelsize=18)
-
-    all_lines, all_labels = [], []
-    for ax in fig.axes:
-        lines, labels = ax.get_legend_handles_labels()
-        for line, label in zip(lines, labels):
-            if label not in all_labels:
-                all_lines.append(line)
-                all_labels.append(label)
-        ax.legend().remove()
-
-    fig.legend(all_lines, all_labels, loc="upper center", ncols=4, bbox_to_anchor=(0.22, 0.875), fontsize=18)
+    ax.set_xticklabels(methods, fontsize=32)
+    ax.set_ylabel("Dice Similarity Coefficient", fontsize=36, fontweight="bold")
+    ax.set_title("Interactive Segmentation (3D)", fontsize=40, fontweight="bold")
+    ax.tick_params(axis='y', labelsize=30)
 
     plt.savefig("./fig_1b_interactive_segmentation_3d_average.png", bbox_inches="tight")
     plt.savefig("./fig_1b_interactive_segmentation_3d_average.svg", bbox_inches="tight")

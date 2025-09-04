@@ -21,6 +21,7 @@ def write_batch_script(
     use_masks=False,
     use_sam_med2d=False,
     adapter=False,
+    iterations=8,
 ):
     "Writing scripts with different fold-trainings for medico-sam evaluation"
     batch_script = f"""#!/bin/bash
@@ -33,7 +34,7 @@ def write_batch_script(
 #SBATCH --job-name={inference_setup}
 
 source ~/.bashrc
-micromamba activate sam \n"""
+micromamba activate super \n"""
 
     # python script
     inference_script_path = os.path.join(Path(__file__).parent, f"{inference_setup}.py")
@@ -42,6 +43,7 @@ micromamba activate sam \n"""
     python_script += f"-e {experiment_folder} "  # experiment folder
     python_script += f"-d {dataset_name} "  # choice of the dataset
     python_script += f"-c {checkpoint} "  # add the finetuned checkpoint
+    python_script += f"--iterations {iterations} "  # number of iterations for interactive segmentation.
 
     if inference_setup == "iterative_prompting" and use_masks:  # use logits for iterative prompting
         python_script += "--use_masks "
@@ -97,6 +99,21 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         else:
             raise ValueError(n_gpus)
 
+    elif experiment_set.startswith("generalistv2"):  # This is our v2 model trained in joint training fashion.
+        # NOTE: Run the model export scripts for this first before getting started with evaluations!
+        if experiment_set.endswith("half"):
+            checkpoint = os.path.join(
+                ROOT, "models/medico-sam/v2/multi_gpu/checkpoints",
+                model_type, "medical_generalist_sam_multi_gpu_0.5/model.pt"
+            )
+        elif experiment_set.endswith("full"):
+            checkpoint = os.path.join(
+                ROOT, "models/medico-sam/v2/multi_gpu/checkpoints",
+                model_type, "medical_generalist_sam_multi_gpu/model.pt"
+            )
+        else:
+            raise ValueError(experiment_set)
+
     elif experiment_set == "simplesam":
         if n_gpus == 1:
             checkpoint = os.path.join(
@@ -129,7 +146,7 @@ def get_checkpoint_path_and_params(experiment_set, model_type, n_gpus):
         checkpoint = None
 
     elif experiment_set == "medsam":
-        checkpoint = "/scratch-grete/projects/nim00007/sam/models/medsam/medsam_vit_b.pth"
+        checkpoint = "/mnt/vast-nhr/projects/cidas/cca/models/medsam/original/medsam_vit_b.pth"
 
     elif experiment_set == "sam-med2d":
         checkpoint = "/scratch-grete/projects/nim00007/sam/models/sam-med2d/ft-sam_b.pth"
@@ -178,7 +195,9 @@ def submit_slurm(args):
 
         # NOTE: v1 was the first version of evaluation with all datasets having inference as expected
         # v2 are the additional experiments for iterative prompting with masks.
-        experiment_folder = os.path.join(ROOT, "experiments", "v2", ename, dataset_name, model_type)
+        # v3 are all the experiments for interactive segmentation (iterative prompting with masks) for joint trained models.  # noqa
+        # v4 is the statistical significance experiment on one particular data, but can be run on all.
+        experiment_folder = os.path.join(ROOT, "experiments", "v4", ename, dataset_name, model_type)
     else:
         experiment_folder = args.experiment_path
 
@@ -192,7 +211,7 @@ def submit_slurm(args):
             dataset_name=dataset_name,
             use_masks=args.use_masks,
             **extra_params
-            )
+        )
 
     if args.dry:
         return

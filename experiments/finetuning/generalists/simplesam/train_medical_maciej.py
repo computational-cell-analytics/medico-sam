@@ -16,7 +16,7 @@ def get_dataloaders(data_path, patch_shape):
     train_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=7,
+        batch_size=8,
         split="train",
         resize_inputs=True,
         num_workers=64,
@@ -29,7 +29,7 @@ def get_dataloaders(data_path, patch_shape):
     val_loader = get_sa_med2d_loader(
         path=data_path,
         patch_shape=patch_shape,
-        batch_size=7,
+        batch_size=8,
         split="val",
         resize_inputs=True,
         num_workers=64,
@@ -42,7 +42,9 @@ def get_dataloaders(data_path, patch_shape):
 
 
 def finetune_medical_generalist(args):
-    """Code for finetuning SAM on SA-Med2D-20M dataset, compposed of multiple medical datasets"""
+    """Code for finetuning SAM in Mazurowski et al.-style on SA-Med2D-20M dataset,
+    composed of multiple medical datasets
+    """
     # override this (below) if you have some more complex set-up and need to specify the exact gpu
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -64,16 +66,16 @@ def finetune_medical_generalist(args):
 
     # all the stuff we need for training
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9, verbose=True)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
     train_loader, val_loader = get_dataloaders(data_path=args.input_path, patch_shape=patch_shape)
 
     # this class creates all the training data for a batch (inputs, prompts and labels)
     convert_inputs = sam_training.ConvertToSamInputs(transform=model.transform, box_distortion_factor=0.025)
 
-    checkpoint_name = f"{args.model_type}/medical_generalist_sam_single_gpu"
+    checkpoint_name = f"{args.model_type}/medical_generalist_simplesam_single_gpu"
 
     # the trainer which performs the joint training and validation (implemented using "torch_em")
-    trainer = sam_training.SamTrainer(
+    trainer = sam_training.SimpleSamTrainer(
         name=checkpoint_name,
         save_root=args.save_root,
         train_loader=train_loader,
@@ -87,9 +89,10 @@ def finetune_medical_generalist(args):
         mixed_precision=True,
         convert_inputs=convert_inputs,
         n_objects_per_batch=n_objects_per_batch,
-        n_sub_iteration=8,
         compile_model=False,
-        mask_prob=0.5,  # (optional) overwrite to provide the probability of using mask inputs while training
+        # while choosing both the prompting choice, it randomly selects between either of the two per iteration.
+        use_points=True,
+        use_box=True,
     )
     trainer.fit(args.iterations, save_every_kth_epoch=args.save_every_kth_epoch)
     if args.export_path is not None:

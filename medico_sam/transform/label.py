@@ -1,13 +1,42 @@
 import numpy as np
 from math import ceil, floor
+from skimage.measure import label as connected_components
+
+
+# TODO: In future, combine all label transforms into one (?)
+class LabelTransformJointTraining:
+    def __init__(self, ensure_cc: bool = False):
+        self.ensure_cc = ensure_cc
+
+    def __call__(self, labels):
+
+        if self.ensure_cc:
+            # Ensure all objects are with individual ids.
+            labels = connected_components(labels).astype(labels.dtype)
+
+        if labels.ndim == 2:  # Add an empty dimension.
+            labels = labels[None]
+
+        # First channel for interactive segmentation.
+        # Second channel for background semantic segmentation.
+        # Third channel for foreground semantic segmentation.
+        return np.concatenate([labels, labels == 0, labels != 0], axis=0)
 
 
 class LabelTrafoToBinary:
-    def __init__(self, switch_last_axes=False):
+    def __init__(self, label_id_mapping=None, switch_last_axes=False):
         self.switch_last_axes = switch_last_axes
+        self.label_id_mapping = label_id_mapping
 
     def _binarise_labels(self, labels):
-        labels = (labels > 0).astype(labels.dtype)
+        if self.label_id_mapping is None:
+            labels = (labels > 0).astype(labels.dtype)
+        else:
+            neu_labels = np.zeros_like(labels)
+            for curr_id, neu_id in self.label_id_mapping.items():
+                neu_labels[labels == curr_id] = neu_id
+            labels = neu_labels
+
         return labels
 
     def _switch_last_axes_for_labels(self, labels):

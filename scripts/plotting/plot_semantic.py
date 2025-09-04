@@ -3,7 +3,9 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 
 NNUNET_RESULTS = {
@@ -24,21 +26,47 @@ NNUNET_RESULTS = {
     "duke_liver": [0.9117],
 }
 
+SWINUNETR_RESULTS = {
+    # 2d
+    "oimhs": [0.8146, 0.5489, 0.5819, 0.9683],
+    "isic": [0.8479],
+    "dca1": [0.6718],
+    "cbis_ddsm": [0.2377],
+    "piccolo": [0.4384],
+    "hil_toothseg": [0.6901],
+
+    # 3d
+    "osic_pulmofib": [0.4844, 0.8954, 0.7638],
+    "leg_3d_us": [0.7266, 0.7004, 0.6299],
+    "oasis": [0.8901, 0.8157, 0.9131, 0.6577],
+    "micro_usp": [0.8498],
+    "lgg_mri": [0.7369],
+    "duke_liver": [0.8666],
+}
+
+BIOMEDPARSE_RESULTS = {
+    # 2d
+    "oimhs": [0.7079],  # numbers for intraretinal cysts only.
+    "isic": [0.8851],
+    "piccolo": [0.8459],
+}
+
 DATASET_MAPS = {
     # 2d
-    "oimhs": "OIMHS (Macular Hole and Retinal Structures in OCT)",
-    "isic": "ISIC (Skin Lesion in Dermoscopy)",
-    "dca1": "DCA1 (Vessels in X-Ray Coronary Angiograms)",
-    "cbis_ddsm": "CBIS DDSM (Lesion Mass in Mammography)",
-    "piccolo": "PICCOLO (Polyps in Narrow Band Imaging)",
-    "hil_toothseg": "HIL ToothSeg (Teeth in Panoramic Dental Radiographs)",
+    "oimhs": "OIMHS (OCT)",
+    "isic": "ISIC (Dermoscopy)",
+    "dca1": "DCA1 (X-Ray Coronary Angiograms)",
+    "cbis_ddsm": "CBIS DDSM (Mammography)",
+    "piccolo": "PICCOLO (Narrow Band Imaging)",
+    "hil_toothseg": "HIL ToothSeg (Dental Radiographs)",
+
     # 3d
-    "osic_pulmofib": "OSIC PulmoFib (Thoracic Organs in CT)",
-    "leg_3d_us": "LEG 3D US (Leg Muscles in Ultrasound)",
-    "oasis": "OASIS (Brain Tissue in MRI)",
-    "micro_usp": "MicroUSP (Prostate in Micro-Ultrasound)",
-    "lgg_mri": "LGG MRI (Low-Grade Glioma in Brain MRI)",
-    "duke_liver": "Duke Liver (Liver in MRI)",
+    "osic_pulmofib": "OSIC PulmoFib (CT)",
+    "leg_3d_us": "LEG 3D US (Ultrasound)",
+    "oasis": "OASIS (MRI)",
+    "micro_usp": "MicroUSP (Micro-Ultrasound)",
+    "lgg_mri": "LGG MRI (Brain MRI)",
+    "duke_liver": "DLDS (MRI)",
 }
 
 DATASETS_2D = ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]
@@ -47,22 +75,21 @@ DATASETS_3D = ["osic_pulmofib", "leg_3d_us", "oasis", "micro_usp", "lgg_mri", "d
 
 MODEL_MAPS = {
     "nnunet": "nnUNet",
+    "swinunetr": "SwinUNETR",
     "full/sam": "SAM",
-    "lora/sam": "SAM\n(LoRA)",
-    "full/medico-sam-8g": "MedicoSAM",
-    "lora/medico-sam-8g": "MedicoSAM\n(LoRA)",
+    "full/medico-samv2-half/wo_decoder": "MedicoSAM*",
+    "full/medico-samv2-full/wo_decoder": "MedicoSAM*",
+    "full/medico-samv2-full/w_decoder": r"MedicoSAM*$_{\mathrm{Dec}}$",
     "full/medsam": "MedSAM",
-    "lora/medsam": "MedSAM\n(LoRA)",
-    "full/simplesam": "Simple FT",
-    "lora/simplesam": "Simple FT\n(LoRA)",
+    "full/simplesam": "Simple FT*",
 }
 
-ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam"
+ROOT = "/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam/v2"
 
 
 def get_results(dataset_name):
     all_res, all_comb_names = [], []
-    for rpath in sorted(glob(os.path.join(ROOT, "*", "*", "inference", dataset_name, "results", "**", "*.csv"))):
+    for rpath in sorted(glob(os.path.join(ROOT, "*", "*", "inference", dataset_name, "*", "results", "**", "*.csv"))):
         psplits = rpath[len(ROOT) + 1:].rsplit("/")
         ft_name, mname = psplits[0], psplits[1]
         ft_name = ft_name.split("_")[0]
@@ -71,14 +98,18 @@ def get_results(dataset_name):
             continue
 
         res = pd.read_csv(rpath)
-        combination_name = f"{ft_name}/{mname}"
         score = res.iloc[0]["dice"]
-        if f"{ft_name}_{mname}" in all_comb_names:
-            idx = all_comb_names.index(f"{ft_name}_{mname}")
+
+        combination_name = f"{ft_name}/{mname}"
+        if mname.startswith("medico-sam"):
+            combination_name += f"/{psplits[-4]}"
+
+        if combination_name in all_comb_names:
+            idx = all_comb_names.index(combination_name)
             all_res[idx].at[0, "dice"].append(score)
         else:
             all_res.append(pd.DataFrame.from_dict([{"name": combination_name, "dice": [score]}]))
-            all_comb_names.append(f"{ft_name}_{mname}")
+            all_comb_names.append(combination_name)
 
     all_res = pd.concat(all_res, ignore_index=True)
     return all_res
@@ -86,15 +117,19 @@ def get_results(dataset_name):
 
 def _make_per_dataset_plot():
     results = {}
-    for dataset, nnunet_scores in NNUNET_RESULTS.items():
+    for (dataset, nnunet_scores), (_, swinunetr_scores) in zip(NNUNET_RESULTS.items(), SWINUNETR_RESULTS.items()):
         scores = get_results(dataset)
-        results[dataset] = {"nnunet": np.mean(nnunet_scores)}
+        results[dataset] = {"nnunet": np.mean(nnunet_scores), "swinunetr": np.mean(swinunetr_scores)}
+        if dataset in BIOMEDPARSE_RESULTS:
+            results[dataset] = {**results[dataset], "biomedparse": np.mean(BIOMEDPARSE_RESULTS[dataset])}
+
         for df_val in scores.iloc:
             name = df_val["name"]
             dice = df_val["dice"]
-            results[dataset][name] = np.mean(dice)
+            score = np.mean(dice)
+            results[dataset][name] = score
 
-    fig, axes = plt.subplots(4, 3, figsize=(35, 30))
+    fig, axes = plt.subplots(4, 3, figsize=(40, 30))
     axes = axes.flatten()
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
@@ -102,10 +137,12 @@ def _make_per_dataset_plot():
 
     for ax, (dataset, methods) in zip(axes, results.items()):
         methods_list = [
-            "full/sam", "lora/sam",
-            "full/medsam", "lora/medsam",
-            "full/simplesam", "lora/simplesam",
-            "full/medico-sam-8g", "lora/medico-sam-8g",
+            "full/sam",
+            "full/medsam",
+            "full/simplesam",
+            "full/medico-samv2-half/wo_decoder",
+            "full/medico-samv2-full/wo_decoder",
+            "full/medico-samv2-full/w_decoder",
         ]
         scores, neu_methods_list = [], []
         for _method in methods_list:
@@ -122,14 +159,6 @@ def _make_per_dataset_plot():
             bar_colors[idx] = top_colors[rank]
             edge_colors[idx] = "none"
 
-        if "full/medico-sam-8g" in neu_methods_list:
-            index = neu_methods_list.index("full/medico-sam-8g")
-            if index not in sorted_indices[:3]:
-                edge_colors[index] = "black"
-                edge_styles[index] = "dashed"
-            else:
-                edge_colors[index] = "none"
-
         bars = ax.bar(
             neu_methods_list, scores, color=bar_colors, edgecolor=edge_colors, linewidth=1.5
         )
@@ -140,18 +169,22 @@ def _make_per_dataset_plot():
                 bar.set_linewidth(3)
 
         ax.axhline(methods.get("nnunet"), color="#DC3977", linewidth=4)
+        ax.axhline(methods.get("swinunetr"), color="#7CCBA2", linewidth=4)
+        if dataset in BIOMEDPARSE_RESULTS:
+            kwargs = {"linestyle": "--"} if dataset == "oimhs" else {}
+            ax.axhline(methods.get("biomedparse"), color="#C99833", linewidth=4, **kwargs)
 
-        ax.set_ylim([0, 1])
+        ax.set_ylim([0.2, 1])
         _xticklabels = [MODEL_MAPS[_exp] for _exp in neu_methods_list]
         ax.set_xticks(np.arange(len(neu_methods_list)))
-        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=18)
-        ax.tick_params(axis='y', labelsize=14)
+        ax.set_xticklabels(_xticklabels, rotation=45, fontsize=26)
+        ax.tick_params(axis='y', labelsize=20)
 
         for label, method in zip(ax.get_xticklabels(), neu_methods_list):
-            if method == "full/medico-sam-8g":
+            if "medico-samv2-full" in method:
                 label.set_fontweight("bold")
 
-        fontdict = {"fontsize": 18}
+        fontdict = {"fontsize": 30}
         if dataset in ["oimhs", "isic", "dca1", "cbis_ddsm", "piccolo", "hil_toothseg"]:
             fontdict["fontstyle"] = "italic"
         else:
@@ -160,11 +193,20 @@ def _make_per_dataset_plot():
         ax.set_title(f'{DATASET_MAPS[dataset]}', fontdict=fontdict)
         ax.title.set_color("#212427")
 
-    plt.text(
-        x=-20.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=20
+    nnunet_line = mlines.Line2D([], [], color="#DC3977", linewidth=8, label="nnUNet")
+    swinunetr_line = mlines.Line2D([], [], color="#7CCBA2", linewidth=8, label="SwinUNETR")
+    biomed_line = mlines.Line2D([], [], color="#C99833", linewidth=8, label="BiomedParse")
+
+    fig.legend(
+        handles=[nnunet_line, swinunetr_line, biomed_line],
+        loc="lower center", bbox_to_anchor=(0.5, 0.0175), ncol=3, fontsize=32,
     )
 
-    plt.subplots_adjust(hspace=0.45, wspace=0.1)
+    plt.text(
+        x=-15.5, y=2.1, s="Dice Similarity Coefficient", rotation=90, fontweight="bold", fontsize=32,
+    )
+
+    plt.subplots_adjust(hspace=0.875, wspace=0.1, bottom=0.125)
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.png", bbox_inches="tight")
     plt.savefig("./fig_4_semantic_segmentation_per_dataset.svg", bbox_inches="tight")
     plt.close()
@@ -173,14 +215,17 @@ def _make_per_dataset_plot():
 def _plot_absolute_mean_per_experiment(dim):
     methods = [
         "nnunet",
-        "lora/sam", "full/sam",
-        "lora/medsam", "full/medsam",
-        "lora/simplesam", "full/simplesam",
-        "lora/medico-sam-8g", "full/medico-sam-8g",
+        "swinunetr",
+        "full/sam",
+        "full/medsam",
+        "full/simplesam",
+        "full/medico-samv2-half/wo_decoder",
+        "full/medico-samv2-full/wo_decoder",
+        "full/medico-samv2-full/w_decoder",
     ]
 
     results = {}
-    for dataset, nnunet_scores in NNUNET_RESULTS.items():
+    for (dataset, nnunet_scores), (_, swinunetr_scores) in zip(NNUNET_RESULTS.items(), SWINUNETR_RESULTS.items()):
         if dim == "3d" and dataset not in DATASETS_3D:
             continue
 
@@ -188,25 +233,30 @@ def _plot_absolute_mean_per_experiment(dim):
             continue
 
         scores = get_results(dataset)
-        for method in methods:
-            if method == "nnunet":
-                res = np.mean(nnunet_scores)
-            else:
-                res = scores.loc[scores["name"] == method].iloc[0]["dice"]
-                res = np.mean(res)
+        results[dataset] = {"nnunet": np.mean(nnunet_scores), "swinunetr": np.mean(swinunetr_scores)}
+        for df_val in scores.iloc:
+            name = df_val["name"]
+            dice = df_val["dice"]
+            score = np.mean(dice)
+            results[dataset][name] = score
 
-            if method in results:
-                results[method] = np.mean([results[method], res])
-            else:
-                results[method] = res
+    # Calculate average over methods.
+    method_sums = {}
+    method_counts = {}
 
-    fig, ax = plt.subplots(figsize=(22, 15))
+    for dataset, curr_methods in results.items():
+        for method, score in curr_methods.items():
+            method_sums[method] = method_sums.get(method, 0) + score
+            method_counts[method] = method_counts.get(method, 0) + 1
+
+    method_avgs = {m: method_sums[m] / method_counts[m] for m in method_sums}
+
+    fig, ax = plt.subplots(figsize=(28, 15))
 
     top_colors = ["#045275", "#2B6C8F", "#5093A9"]
-    sorted_methods = sorted(results, key=results.get, reverse=True)
-    top_methods = sorted_methods[:3]  # get the top 3 methods.
+    top_methods = sorted(methods, key=method_avgs.get, reverse=True)[:3]  # get the top 3 methods.
 
-    means = [results[_method] for _method in methods]
+    means = [method_avgs[_method] for _method in methods]
 
     edgecolors = ["None" if method in top_methods else "grey" for method in methods]
 
@@ -217,33 +267,27 @@ def _plot_absolute_mean_per_experiment(dim):
         color=[top_colors[top_methods.index(_method)] if _method in top_methods else "#D3D3D3" for _method in methods],
     )
 
-    for bar, method in zip(bars, methods):
-        if method == "full/medico-sam-8g" and method not in top_methods:
-            bar.set_edgecolor("black")
-            bar.set_linestyle("--")
-            bar.set_linewidth(3)
-
     ax.set_ylim([0, 1])
     ax.set_xticks(np.arange(len(methods)))
     _xticklabels = [MODEL_MAPS[_exp] for _exp in methods]
-    ax.set_xticklabels(_xticklabels, fontsize=18)
-    ax.tick_params(axis='y', labelsize=18)
-    ax.set_ylabel('Dice Similarity Coefficient', fontsize=20, fontweight="bold")
+    ax.set_xticklabels(_xticklabels, rotation=15, fontsize=32)
+    ax.tick_params(axis='y', labelsize=30)
+    ax.set_ylabel('Dice Similarity Coefficient', fontsize=36, fontweight="bold")
 
     # NOTE: adds values on top of each bar
     for bar, mean, method in zip(bars, means, methods):
         ax.text(
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, round(mean, 4),
-            ha='center', va='bottom', fontsize=18,
+            ha='center', va='bottom', fontsize=32,
             color="black" if method in top_methods else "#696969",
             fontweight="bold" if method in top_methods else "normal",
         )
 
     for label, method in zip(ax.get_xticklabels(), methods):
-        if method == "full/medico-sam-8g":
+        if "medico-samv2-full" in method:
             label.set_fontweight("bold")
 
-    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=24, fontweight="bold")
+    plt.title(f"Semantic Segmentation {dim.upper()}", fontsize=40, fontweight="bold")
     plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.png", bbox_inches="tight")
     plt.savefig(f"./fig_1b_semantic_segmentation_{dim}_average.svg", bbox_inches="tight")
     plt.close()
@@ -254,8 +298,8 @@ def main():
     _make_per_dataset_plot()
 
     # For figure 1
-    _plot_absolute_mean_per_experiment(dim="2d")
-    _plot_absolute_mean_per_experiment(dim="3d")
+    # _plot_absolute_mean_per_experiment(dim="2d")
+    # _plot_absolute_mean_per_experiment(dim="3d")
 
 
 if __name__ == "__main__":

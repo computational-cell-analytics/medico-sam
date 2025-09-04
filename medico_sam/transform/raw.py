@@ -1,16 +1,28 @@
+from typing import Tuple
+
 import numpy as np
 from math import ceil, floor
 
-from torch_em.transform.raw import normalize
+from torch_em.transform.raw import normalize, normalize_percentile, standardize
+
+
+# TODO: In future, combine all raw transforms into one (?)
+class RawTransformJointTraining:
+
+    def __call__(self, raw: np.ndarray):
+        raw = normalize_percentile(raw)  # Percentile normalization.
+        raw = np.clip(raw, 0, 1)  # Ensure values between range 0 and 1.
+        raw = raw * 255  # Convert to 8-bit.
+        return raw
 
 
 class RawTrafoFor3dInputs:
-    def __init__(self, switch_last_axes=False):
+    def __init__(self, switch_last_axes: bool = False, benchmark_models: bool = False):
         self.switch_last_axes = switch_last_axes
+        self.benchmark_models = benchmark_models
 
     def _normalize_inputs(self, raw):
-        raw = normalize(raw)
-        raw = raw * 255
+        raw = normalize(raw) * 255
         return raw
 
     def _set_channels_for_inputs(self, raw):
@@ -22,8 +34,13 @@ class RawTrafoFor3dInputs:
         return raw
 
     def __call__(self, raw):
-        raw = self._normalize_inputs(raw)
-        raw = self._set_channels_for_inputs(raw)
+        if self.benchmark_models:  # Models trained from scratch.
+            raw = standardize(raw)
+            raw = raw[None]
+        else:  # SAM-pretrained model training style.
+            raw = self._normalize_inputs(raw)
+            raw = self._set_channels_for_inputs(raw)
+
         if self.switch_last_axes:
             raw = self._switch_last_axes_for_inputs(raw)
         return raw
@@ -31,14 +48,24 @@ class RawTrafoFor3dInputs:
 
 # for 3d volumes like SegA
 class RawResizeTrafoFor3dInputs(RawTrafoFor3dInputs):
-    def __init__(self, desired_shape, padding="constant", switch_last_axes=False):
+    def __init__(
+        self,
+        desired_shape: Tuple[int, ...],
+        padding: str = "constant",
+        switch_last_axes:  bool = False,
+        benchmark_models: bool = False
+    ):
         super().__init__()
         self.desired_shape = desired_shape
         self.padding = padding
         self.switch_last_axes = switch_last_axes
+        self.benchmark_models = benchmark_models
 
     def __call__(self, raw):
-        raw = self._normalize_inputs(raw)
+        if self.benchmark_models:
+            raw = standardize(raw)
+        else:
+            raw = self._normalize_inputs(raw)
 
         # let's pad the inputs
         tmp_ddim = (
@@ -55,7 +82,10 @@ class RawResizeTrafoFor3dInputs(RawTrafoFor3dInputs):
             mode=self.padding
         )
 
-        raw = self._set_channels_for_inputs(raw)
+        if self.benchmark_models:  # Models trained from scratch.
+            raw = raw[None]
+        else:   # SAM-pretrained model training style.
+            raw = self._set_channels_for_inputs(raw)
 
         if self.switch_last_axes:
             raw = self._switch_last_axes_for_inputs(raw)

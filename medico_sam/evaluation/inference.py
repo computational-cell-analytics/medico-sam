@@ -7,14 +7,13 @@ import numpy as np
 from skimage.measure import label as connected_components
 
 import torch
+import torch.nn as nn
 
 from torch_em.transform.raw import normalize
 from torch_em.util.segmentation import size_filter
 from torch_em.util.prediction import predict_with_halo
 from torch_em.transform.generic import ResizeLongestSideInputs
 
-from micro_sam import util
-from micro_sam.training.util import ConvertToSemanticSamInputs
 from micro_sam.evaluation.inference import _run_inference_with_iterative_prompting_for_image
 
 from tukra.io import read_image, write_image
@@ -118,28 +117,23 @@ def run_inference_with_iterative_prompting_per_semantic_class(
 
 
 def _run_semantic_segmentation_for_image(
-    predictor: SamPredictor,
+    model: nn.Module,
     image: np.ndarray,
-    embedding_path: Union[os.PathLike, str],
     prediction_path: Union[os.PathLike, str],
 ):
-    # Compute the image embeddings.
-    image_embeddings = util.precompute_image_embeddings(
-        predictor, image, embedding_path, ndim=2, verbose=False,
-    )
-    util.set_precomputed(predictor, image_embeddings)
+    # A simple transform to ensure all values are between 0 - 255.
+    image = normalize(image) * 255
 
-    # Get the predictions out of the SamPredictor
-    batch_masks, _, _ = predictor.predict_torch(
-        point_coords=None,
-        point_labels=None,
-        boxes=None,
-        mask_input=None,
-        multimask_output=True,
-        return_logits=True,
-    )
+    if image.ndim == 3:
+        image = image.transpose(2, 0, 1)[None]
+    else:
+        image = image[None, None]
 
-    masks = torch.argmax(batch_masks, dim=1)
+    image = torch.from_numpy(image).to("cuda")  # NOTE: I hard-code the device here because I am lazy.
+
+    outputs = model(image)
+
+    masks = torch.argmax(outputs, dim=1)
     masks = masks.detach().cpu().numpy().squeeze()
 
     # save the segmentations
@@ -147,11 +141,10 @@ def _run_semantic_segmentation_for_image(
 
 
 def run_semantic_segmentation(
-    predictor: SamPredictor,
+    model: nn.Module,
     image_paths: List[Union[str, os.PathLike]],
     prediction_dir: Union[str, os.PathLike],
     semantic_class_map: Dict[str, int],
-    embedding_dir: Optional[Union[str, os.PathLike]] = None,
     is_multiclass: bool = False,
 ):
     """
@@ -178,13 +171,8 @@ def run_semantic_segmentation(
             # create the prediction folder
             os.makedirs(os.path.join(prediction_dir, semantic_class_name), exist_ok=True)
 
-            if embedding_dir is None:
-                embedding_path = None
-            else:
-                embedding_path = os.path.join(embedding_dir, f"{os.path.splitext(image_name)[0]}.zarr")
-
             _run_semantic_segmentation_for_image(
-                predictor=predictor, image=image, embedding_path=embedding_path, prediction_path=prediction_path,
+                model=model, image=image, prediction_path=prediction_path,
             )
 
 
@@ -192,16 +180,16 @@ def run_semantic_segmentation(
 def _run_semantic_segmentation_for_image_3d(
     model: torch.nn.Module,
     image: np.ndarray,
-    prediction_path: Union[os.PathLike, str],
+    prediction_path: Optional[Union[os.PathLike, str]],
     patch_shape: Tuple[int, int, int],
     halo: Tuple[int, int, int],
-):
+) -> np.ndarray:
     device = next(model.parameters()).device
     block_shape = tuple(bs - 2 * ha for bs, ha in zip(patch_shape, halo))
 
     def preprocess(x):
-        x = 255 * normalize(x)
-        x = np.stack([x] * 3)
+        x = normalize(x) * 255
+        x = np.stack([x] * 3, axis=0)
         return x
 
     # First, we reshape the YX dimension for 3d inputs
@@ -210,10 +198,7 @@ def _run_semantic_segmentation_for_image_3d(
 
     # Custom prepared function to infer per tile.
     def prediction_function(net, inp):
-        convert_inputs = ConvertToSemanticSamInputs()
-        batched_inputs = convert_inputs(inp[0], torch.zeros_like(inp[0]))
-        batched_outputs = net(batched_inputs, multimask_output=True)
-        masks = torch.stack([out["masks"][0] for out in batched_outputs])
+        masks = net(inp.squeeze(0))
         masks = torch.argmax(masks, dim=1)
         return masks
 
@@ -232,8 +217,11 @@ def _run_semantic_segmentation_for_image_3d(
     # Lastly, we resize the predictions back to the original shape.
     output = resize_transform.convert_transformed_inputs_to_original_shape(output)
 
-    # save the segmentations
-    write_image(prediction_path, output, compression="zlib")
+    if prediction_path is not None:
+        # save the segmentations
+        write_image(prediction_path, output, compression="zlib")
+
+    return output
 
 
 def run_semantic_segmentation_3d(
@@ -241,8 +229,8 @@ def run_semantic_segmentation_3d(
     image_paths: List[Union[str, os.PathLike]],
     prediction_dir: Union[str, os.PathLike],
     semantic_class_map: Dict[str, int],
-    patch_shape: Tuple[int, int, int] = (32, 512, 512),
-    halo: Tuple[int, int, int] = (8, 0, 0),
+    patch_shape: Tuple[int, int, int] = (16, 512, 512),
+    halo: Tuple[int, int, int] = (4, 0, 0),
     image_key: Optional[str] = None,
     is_multiclass: bool = False,
     make_channels_first: bool = False,

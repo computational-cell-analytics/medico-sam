@@ -2,10 +2,12 @@ import os
 from glob import glob
 from natsort import natsorted
 
+import torch
+
 from torch_em.util import load_model
 
 from medico_sam.evaluation import inference
-from medico_sam.util import get_medico_sam_model
+from medico_sam.util import get_semantic_sam_model
 from medico_sam.evaluation.evaluation import run_evaluation_for_semantic_segmentation
 
 from util import get_default_arguments
@@ -45,16 +47,17 @@ def main():
     assert args.dataset is not None
 
     image_paths, gt_paths, semantic_class_maps = get_3d_dataset_paths(dataset_name=args.dataset)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model = get_medico_sam_model(
+    model = get_semantic_sam_model(
         model_type="vit_b",
-        device="cuda",
-        use_sam3d=True,
-        lora_rank=args.lora_rank,
-        n_classes=len(semantic_class_maps)+1,
-        image_size=512
+        num_classes=len(semantic_class_maps) + 1,
+        ndim=3,
+        peft_kwargs=None if args.lora_rank is None else {"rank": args.lora_rank},
+        device=device,
     )
-    model = load_model(args.checkpoint, device="cuda", model=model)
+    model = load_model(args.checkpoint, device=device, model=model)
+    model.to(device)
     model.eval()
 
     # Whether to make channels first or not.

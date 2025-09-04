@@ -10,7 +10,7 @@ import torch
 VALID_DATASETS = [
     "sega", "uwaterloo_skin", "idrid", "camus", "montgomery", "oimhs", "btcv", "isic", "dca1",
     "papila", "m2caiseg", "siim_acr", "jnu-ifm", "cbis_ddsm", "piccolo", "duke_liver", "spider", "microusp",
-    "han-seg", "toothfairy", "drive",
+    "han-seg", "toothfairy", "drive", "abus",
 ]
 
 DEXT = {
@@ -65,6 +65,7 @@ SEMANTIC_CLASS_MAPS = {
     "osic_pulmofib_3d": {"heart": 1, "trachea": 2, "lung_1": 3, "lung_2": 4},
     "kits": {"all": None},
     "segthy": {"all": None},
+    "abus": {"tumor": 1},
 }
 
 MULTICLASS_SEMANTIC = [
@@ -142,6 +143,9 @@ def get_default_arguments():
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("--box", action="store_true", help="If passed, starts with first prompt as box")
     parser.add_argument("--use_masks", action="store_true", help="To use logits masks for iterative prompting.")
+    parser.add_argument(
+        "--iterations", default=8, type=int, help="The number of iterations for interactive segmentation."
+    )
 
     # for SAM-Med2d models
     parser.add_argument("--use_sam_med2d", action="store_true", help="Whether to use the SAM-Med2d model.")

@@ -21,11 +21,10 @@ def write_batch_script(dataset, out_path, checkpoint, experiment_folder, use_lor
 #SBATCH -A gzz0001
 #SBATCH -c 16
 #SBATCH --mem 64G
-#SBATCH --constraint=80gb
 #SBATCH --job-name=semsam_{dataset}
 
 source ~/.bashrc
-micromamba activate sam \n"""
+micromamba activate super \n"""
 
     # python script
     python_script = "python ../evaluation/" + \
@@ -69,19 +68,34 @@ def submit_slurm(args):
         datasets = DATASETS
 
     lora_choices = [True, False]
-    model_types = ["sam", "medico-sam-8g", "medico-sam-1g", "simplesam", "medsam"]
+    model_types = [
+        "sam",
+        "medico-samv2-full",
+        "medico-samv2-half",  # "medico-sam-8g", "medico-sam-1g",
+        "simplesam", "medsam"
+    ]
+    init_decoder_choices = [True, False]
 
-    for (per_dataset, model_type, use_lora) in itertools.product(datasets, model_types, lora_choices):
+    for (per_dataset, model_type, use_lora, init_decoder) in itertools.product(
+        datasets, model_types, lora_choices, init_decoder_choices
+    ):
+        if init_decoder and not model_type.startswith("medico-sam"):
+            continue
+
         mchoice = "vit_b"
-        if per_dataset in DATASETS_3D:
-            mchoice = "vit_b_3d_lora_16" if use_lora else "vit_b_3d_all"
 
         base_dir = os.path.join(
-            args.save_root + "_uno" if args.uno else "",
+            args.save_root,
+            "semantic_sam" + ("_uno" if args.uno else ""),
+            "v2",  # NOTE: v2 models are the UNETR style models.
             "lora_finetuning" if use_lora else "full_finetuning",
             model_type
         )
-        checkpoint = os.path.join(base_dir, "checkpoints", mchoice, f"{per_dataset}_semanticsam", "best.pt")
+        checkpoint = os.path.join(
+            base_dir, "checkpoints", mchoice,
+            f"{per_dataset}_semanticsam" + ("_init_decoder" if init_decoder else ""),
+            "best.pt"
+        )
         assert os.path.exists(checkpoint), checkpoint
 
         print(f"Running for {per_dataset}: {model_type}")
@@ -89,7 +103,9 @@ def submit_slurm(args):
             dataset=per_dataset,
             out_path=get_batch_script_names(tmp_folder),
             checkpoint=checkpoint,
-            experiment_folder=os.path.join(base_dir, "inference", per_dataset),
+            experiment_folder=os.path.join(
+                base_dir, "inference", per_dataset, ("w_decoder" if init_decoder else "wo_decoder")
+            ),
             use_lora=use_lora,
             dry=args.dry,
         )
@@ -109,7 +125,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", type=str, default=None)
     parser.add_argument("-c", "--checkpoint", type=str, default=None)
-    parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models/semantic_sam")
+    parser.add_argument("-s", "--save_root", type=str, default="/mnt/vast-nhr/projects/cidas/cca/models")
     parser.add_argument("--uno", action="store_true")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args()
