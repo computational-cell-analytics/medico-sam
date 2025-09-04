@@ -176,8 +176,6 @@ logs/
 *.sh
 gpu_jobs/
 figures/
-data/
-res/
 
 # torch-em stuff
 checkpoints/
