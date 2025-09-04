@@ -65,7 +65,7 @@ def finetune_semantic_sam(args):
 
     train_loader, val_loader = get_dataloaders(patch_shape=patch_shape, data_path=args.input_path, dataset_name=dataset)
 
-    # And the trainer for semantic segmentation and validation (based on `torch-em`).
+    # And the trainer for semantic segmentation training and validation (based on `torch-em`).
     trainer = torch_em.default_segmentation_trainer(
         name=checkpoint_name,
         save_root=args.save_root,
