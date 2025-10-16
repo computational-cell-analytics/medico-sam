@@ -187,7 +187,7 @@ def _semantic_seg_stats():
     fig, ax = plt.subplots(figsize=(15, 10))
     x = np.arange(len(labels))
     ax.bar(x, means, yerr=stds, capsize=6, ecolor="black", color=bar_colors, zorder=2)
-
+    ax.set_ylim(bottom=0.7)
     ax.set_xticks(x)
     ax.tick_params(axis='y', labelsize=24)
     ax.set_xticklabels(labels, fontsize=24)
@@ -203,7 +203,7 @@ def _semantic_seg_stats():
 
 
 def main():
-    _interactive_seg_stats()
+    # _interactive_seg_stats()
     _semantic_seg_stats()
 
 
