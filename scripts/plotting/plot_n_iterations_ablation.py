@@ -130,7 +130,7 @@ def _plot_iterative_prompting_n_iterations():
             present.append((name, exp_dir))
 
     n = len(present)
-    fig, axes = plt.subplots(nrows=1, ncols=n, figsize=(7*n, 7), sharey=True)
+    fig, axes = plt.subplots(nrows=1, ncols=n, figsize=(5*n, 5), sharey=True)
     if n == 1:
         axes = [axes]
 
@@ -140,8 +140,11 @@ def _plot_iterative_prompting_n_iterations():
         rel_box = box - point
 
         x = np.arange(32)
-        ax.bar(x, point, width=0.8, color="#7CCBA2", edgecolor="grey", label="Point")
-        ax.bar(x, rel_box, width=0.8, bottom=point, color="#FCDE9C", edgecolor="grey", label="Box")
+        ax.bar(x, point, width=0.8, color="#7CCBA2", edgecolor="grey", label="Point", alpha=0.5)
+        ax.bar(x, rel_box, width=0.8, bottom=point, color="#FCDE9C", edgecolor="grey", label="Box", alpha=0.5)
+
+        ax.plot(x, point, color="#4B9C7C", linewidth=1.5, marker="o", markersize=5, zorder=3)
+        ax.plot(x, box, color="#DCA53C", linewidth=1.5, marker="s", markersize=5, zorder=3)
 
         model_names = {
             "sam": "SAM",
@@ -150,11 +153,11 @@ def _plot_iterative_prompting_n_iterations():
             "medicosam-neu": r"$\bf{MedicoSAM*}$",
         }
 
-        ax.set_title(model_names.get(ename, ename), fontsize=32)
-        ax.set_xlim(-0.6, 31.6)
-        ax.set_xticks(np.arange(0, 32, 2))
-        ax.tick_params(axis='y', labelsize=20)
-        ax.tick_params(axis='x', labelsize=15)
+        ax.set_title(model_names.get(ename, ename), fontsize=28)
+        ax.set_xlim(-0.6, len(x) - 0.4)
+        ax.set_xticks(np.arange(0, len(x), 8))
+        ax.tick_params(axis='y', labelsize=24)
+        ax.tick_params(axis='x', labelsize=24)
         ax.set_ylim(0, 1)
 
     plt.tight_layout()
@@ -164,7 +167,7 @@ def _plot_iterative_prompting_n_iterations():
 
 
 def main():
-    _plot_iterative_prompting_use_mask()
+    # _plot_iterative_prompting_use_mask()
     _plot_iterative_prompting_n_iterations()
 
 
