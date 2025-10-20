@@ -155,7 +155,8 @@ def _plot_iterative_prompting_n_iterations():
 
         ax.set_title(model_names.get(ename, ename), fontsize=28)
         ax.set_xlim(-0.6, len(x) - 0.4)
-        ax.set_xticks(np.arange(0, len(x), 8))
+        ax.set_xticks([0, 8, 16, 24, 31])
+        ax.set_xticklabels(["0", "8", "16", "24", "31"])
         ax.tick_params(axis='y', labelsize=24)
         ax.tick_params(axis='x', labelsize=24)
         ax.set_ylim(0, 1)
