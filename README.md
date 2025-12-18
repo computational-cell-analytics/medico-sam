@@ -37,6 +37,7 @@ See [`TOOL_USAGE.md`](./TOOL_USAGE.md) document for details.
 ## Citation
 If you are using this repository in your research please cite:
 
+- our [paper](https://doi.org/10.1109/TMI.2025.3644811) (now published in IEEE Transactions in Medical Imaging!)
 - our [preprint](https://doi.org/10.48550/arXiv.2501.11734).
 - the [Segment Anything fo Microscopy](https://www.nature.com/articles/s41592-024-02580-4) publication.
 - and the original [Segment Anything](https://arxiv.org/abs/2304.02643) publication.
