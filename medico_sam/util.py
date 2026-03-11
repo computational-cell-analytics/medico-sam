@@ -203,6 +203,7 @@ def get_semantic_sam_model(
             decoder_state=decoder_state,
             out_channels=num_classes,
             flexible_load_checkpoint=True,
+            final_activation=None,
         )
 
     elif ndim == 3:
