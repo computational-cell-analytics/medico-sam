@@ -2,7 +2,7 @@ import os
 import sys
 
 import numpy as np
-from skimage.measure import label as connected_components
+from bioimage_cpp.segmentation import label as connected_components
 
 from torch_em.data.datasets import medical
 from torch_em.transform.raw import normalize
