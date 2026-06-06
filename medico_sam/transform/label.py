@@ -1,6 +1,6 @@
 import numpy as np
 from math import ceil, floor
-from skimage.measure import label as connected_components
+from bioimage_cpp.segmentation import label as connected_components
 
 
 # TODO: In future, combine all label transforms into one (?)

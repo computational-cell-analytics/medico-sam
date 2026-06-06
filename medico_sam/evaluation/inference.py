@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Union, Dict, Optional, Tuple
 
 import numpy as np
-from skimage.measure import label as connected_components
+from bioimage_cpp.segmentation import label as connected_components
 
 import torch
 import torch.nn as nn
