@@ -173,7 +173,8 @@ class SimpleUNETR3D(nn.Module):
         # is second (expected by the adapted transformer)
         x = x.transpose(1, 2)
         assert x.shape[1] == D
-        x = x.contiguous().view(-1, C, H, W)  # Performs B*Z to work with 2d convolutions!
+        # The spatial shape comes from the preprocessed volume, which is resized and padded to the encoder.
+        x = x.contiguous().view(-1, C, *x.shape[-2:])  # Performs B*Z to work with 2d convolutions!
 
         # Run the image encoder
         encoder_outputs = self.encoder(x, d_size=D)  # 'd_size' corresponds to the z-dimension.

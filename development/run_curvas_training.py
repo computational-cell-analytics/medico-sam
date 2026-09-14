@@ -40,14 +40,12 @@ class CustomCombinedLoss(torch.nn.Module):
         super().__init__()
 
         self.dice_weight = dice_weight
-        self.device = "cuda"
 
         self.dice_loss = CustomDiceLoss(num_classes=num_classes)
         self.ce_loss = torch.nn.CrossEntropyLoss()
 
     def __call__(self, pred, target):
-        pred = pred.to(self.device, non_blocking=True)
-        target = target.to(self.device, non_blocking=True)
+        target = target.to(pred.device, non_blocking=True)
 
         # Compute the dice loss.
         dice_loss = self.dice_loss(pred, target)
@@ -120,6 +118,7 @@ def train_semantic_2d(dataset_name, checkpoint_path, init_decoder):
         decoder_state=decoder_state if init_decoder else None,
         out_channels=n_classes,
         flexible_load_checkpoint=True,
+        final_activation=None,
     )
 
     # All the stuff we need for training

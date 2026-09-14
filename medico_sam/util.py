@@ -227,7 +227,7 @@ def get_semantic_sam_model(
         model = SimpleUNETR3D(
             encoder=sam_3d.sam_model.image_encoder,
             out_channels=num_classes,
-            final_activation="Sigmoid",
+            final_activation=None,
         )
 
         if init_decoder_weights:

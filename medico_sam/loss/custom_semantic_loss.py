@@ -17,14 +17,12 @@ class CustomCombinedLoss(torch.nn.Module):
         super().__init__()
 
         self.dice_weight = dice_weight
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.dice_loss = CustomDiceLoss(num_classes=num_classes)
         self.ce_loss = torch.nn.CrossEntropyLoss()
 
     def __call__(self, pred, target):
-        pred = pred.to(self.device, non_blocking=True)
-        target = target.to(self.device, non_blocking=True)
+        target = target.to(pred.device, non_blocking=True)
 
         # Compute the dice loss.
         dice_loss = self.dice_loss(pred, target)
